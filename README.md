@@ -29,7 +29,7 @@ Esto iniciará:
 - Backend en http://localhost:8000
 - Frontend en http://localhost:3000
 
-si van a http://localhost:8000/docs van a ver la una documentacion interactiva de la API
+Si van a http://localhost:8000/docs van a ver la una documentacion interactiva de la API.
 
 ## Scripts Disponibles
 
@@ -79,6 +79,19 @@ my-health-companion/
 - El frontend está construido con React + TypeScript
 - Se usa Material-UI para los componentes de la interfaz
 - La autenticación se maneja con JWT tokens
+
+### Documentacion de FastAPI
+Para usar los endpoints que requieren autenticación:
+
+Una vez registrado un usuario con el endpoint `/register`, haga click en uno de los candados.   
+
+![image](https://github.com/user-attachments/assets/fbc55ba3-ae24-4aa6-bd88-427ceb56d294) 
+
+Ingrese el email utilizado y la contraseña sin modificar los demás campos. 
+
+![image](https://github.com/user-attachments/assets/d7962b0e-1c33-494b-8c7d-82b51cacb5e1)
+
+Cualquier cosa en `backend\routers` están los endpoints. 
 
 ## Solución de Problemas
 
