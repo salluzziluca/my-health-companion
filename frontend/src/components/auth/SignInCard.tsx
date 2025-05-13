@@ -29,7 +29,9 @@ const Card = styled(MuiCard)(({ theme }) => ({
     [theme.breakpoints.up('sm')]: {
         width: '450px',
     },
-    ...theme.applyStyles?.('dark', {
+    ...(theme.palette.mode === 'dark' && {
+        backgroundColor: 'rgba(18, 18, 18, 0.6)',
+        backdropFilter: 'blur(8px)',
         boxShadow:
             'hsla(220, 30%, 5%, 0.5) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.08) 0px 15px 35px -5px',
     }),

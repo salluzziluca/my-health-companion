@@ -31,6 +31,10 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
                 borderColor: 'rgba(255, 255, 255, 0.5)',
             },
         },
+        '& .MuiPaper-root': {
+            backgroundColor: 'rgba(18, 18, 18, 0.8)',
+            backdropFilter: 'blur(8px)',
+        }
     }),
 }));
 
@@ -61,9 +65,6 @@ export default function ForgotPassword({ open, handleClose }: ForgotPasswordProp
                     },
                     sx: {
                         backgroundImage: 'none',
-                        ...(theme.palette.mode === 'dark' && {
-                            backgroundColor: '#1e1e1e',
-                        }),
                     },
                 },
             }}
