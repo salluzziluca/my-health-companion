@@ -3,14 +3,19 @@ import {
     Box,
     Button,
     TextField,
-    Typography,
-    Container,
-    Paper,
-    Alert
+    Alert,
+    FormControl,
+    FormLabel,
+    Link,
+    Checkbox,
+    FormControlLabel,
+    Divider,
+    Typography
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/api';
 import { LoginCredentials } from '../../types/auth';
+import AuthLayout from './AuthLayout';
 
 const LoginForm: React.FC = () => {
     const navigate = useNavigate();
@@ -47,71 +52,98 @@ const LoginForm: React.FC = () => {
     };
 
     return (
-        <Container component="main" maxWidth="xs">
+        <AuthLayout title="Sign In">
+            {error && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                    {error}
+                </Alert>
+            )}
+
             <Box
-                sx={{
-                    marginTop: 8,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                }}
+                component="form"
+                onSubmit={handleSubmit}
+                sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 2 }}
             >
-                <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
-                    <Typography component="h1" variant="h5" align="center" gutterBottom>
-                        Sign In
-                    </Typography>
-
-                    {error && (
-                        <Alert severity="error" sx={{ mb: 2 }}>
-                            {error}
-                        </Alert>
-                    )}
-
-                    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-                        <TextField
-                            margin="normal"
-                            required
-                            fullWidth
-                            id="username"
-                            label="Email Address"
-                            name="username"
-                            autoComplete="email"
-                            autoFocus
-                            value={formData.username}
-                            onChange={handleChange}
-                        />
-                        <TextField
-                            margin="normal"
-                            required
-                            fullWidth
-                            name="password"
-                            label="Password"
-                            type="password"
-                            id="password"
-                            autoComplete="current-password"
-                            value={formData.password}
-                            onChange={handleChange}
-                        />
-                        <Button
-                            type="submit"
-                            fullWidth
-                            variant="contained"
-                            sx={{ mt: 3, mb: 2 }}
-                            disabled={loading}
+                <FormControl>
+                    <FormLabel htmlFor="username">Email</FormLabel>
+                    <TextField
+                        id="username"
+                        type="email"
+                        name="username"
+                        placeholder="your@email.com"
+                        autoComplete="email"
+                        autoFocus
+                        required
+                        fullWidth
+                        variant="outlined"
+                    />
+                </FormControl>
+                <FormControl>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <FormLabel htmlFor="password">Password</FormLabel>
+                        <Link
+                            component="button"
+                            type="button"
+                            variant="body2"
+                            sx={{ alignSelf: 'baseline' }}
                         >
-                            {loading ? 'Signing in...' : 'Sign In'}
-                        </Button>
-                        <Button
-                            fullWidth
-                            variant="text"
-                            onClick={() => navigate('/register')}
-                        >
-                            Don't have an account? Sign Up
-                        </Button>
+                            Forgot your password?
+                        </Link>
                     </Box>
-                </Paper>
+                    <TextField
+                        name="password"
+                        placeholder="••••••"
+                        type="password"
+                        id="password"
+                        autoComplete="current-password"
+                        required
+                        fullWidth
+                        variant="outlined"
+                    />
+                </FormControl>
+                <FormControlLabel
+                    control={<Checkbox value="remember" color="primary" />}
+                    label="Remember me"
+                />
+                <Button
+                    type="submit"
+                    fullWidth
+                    variant="contained"
+                    disabled={loading}
+                >
+                    {loading ? 'Signing in...' : 'Sign in'}
+                </Button>
+                <Typography sx={{ textAlign: 'center' }}>
+                    Don&apos;t have an account?{' '}
+                    <Link
+                        component="button"
+                        type="button"
+                        onClick={() => navigate('/register')}
+                        variant="body2"
+                        sx={{ alignSelf: 'center' }}
+                    >
+                        Sign up
+                    </Link>
+                </Typography>
             </Box>
-        </Container>
+            <Divider sx={{ my: 2 }}>or</Divider>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={() => alert('Sign in with Google')}
+                >
+                    Sign in with Google
+                </Button>
+                <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={() => alert('Sign in with Facebook')}
+                >
+                    Sign in with Facebook
+                </Button>
+            </Box>
+        </AuthLayout>
     );
 };
 

@@ -9,10 +9,10 @@ import RegisterForm from './components/auth/RegisterForm';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2',
+      main: '#023047',
     },
     secondary: {
-      main: '#dc004e',
+      main: '#342E37',
     },
   },
 });

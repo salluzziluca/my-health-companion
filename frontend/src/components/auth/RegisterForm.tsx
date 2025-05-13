@@ -3,20 +3,21 @@ import {
     Box,
     Button,
     TextField,
-    Typography,
-    Container,
-    Paper,
     Alert,
     FormControl,
-    InputLabel,
+    FormLabel,
+    Link,
     Select,
     MenuItem,
-    SelectChangeEvent
+    SelectChangeEvent,
+    Typography,
+    Divider
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/api';
 import { RegisterData } from '../../types/auth';
 import axios from 'axios';
+import AuthLayout from './AuthLayout';
 
 const RegisterForm: React.FC = () => {
     const navigate = useNavigate();
@@ -64,108 +65,129 @@ const RegisterForm: React.FC = () => {
     };
 
     return (
-        <Container component="main" maxWidth="xs">
+        <AuthLayout title="Sign Up">
+            {error && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                    {error}
+                </Alert>
+            )}
+
             <Box
-                sx={{
-                    marginTop: 8,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                }}
+                component="form"
+                onSubmit={handleSubmit}
+                sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 2 }}
             >
-                <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
-                    <Typography component="h1" variant="h5" align="center" gutterBottom>
-                        Sign Up
-                    </Typography>
-
-                    {error && (
-                        <Alert severity="error" sx={{ mb: 2 }}>
-                            {error}
-                        </Alert>
-                    )}
-
-                    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-                        <TextField
-                            margin="normal"
-                            required
-                            fullWidth
-                            id="email"
-                            label="Email Address"
-                            name="email"
-                            autoComplete="email"
-                            autoFocus
-                            value={formData.email}
-                            onChange={handleChange}
-                            error={error.includes('email')}
-                        />
-                        <TextField
-                            margin="normal"
-                            required
-                            fullWidth
-                            name="password"
-                            label="Password"
-                            type="password"
-                            id="password"
-                            autoComplete="new-password"
-                            value={formData.password}
-                            onChange={handleChange}
-                        />
-                        <TextField
-                            margin="normal"
-                            required
-                            fullWidth
-                            name="first_name"
-                            label="First Name"
-                            id="first_name"
-                            autoComplete="given-name"
-                            value={formData.first_name}
-                            onChange={handleChange}
-                        />
-                        <TextField
-                            margin="normal"
-                            required
-                            fullWidth
-                            name="last_name"
-                            label="Last Name"
-                            id="last_name"
-                            autoComplete="family-name"
-                            value={formData.last_name}
-                            onChange={handleChange}
-                        />
-                        <FormControl fullWidth margin="normal">
-                            <InputLabel id="role-label">Role</InputLabel>
-                            <Select
-                                labelId="role-label"
-                                id="role"
-                                name="role"
-                                value={formData.role}
-                                label="Role"
-                                onChange={handleChange}
-                            >
-                                <MenuItem value="user">User</MenuItem>
-                                <MenuItem value="nutritionist">Nutritionist</MenuItem>
-                            </Select>
-                        </FormControl>
-                        <Button
-                            type="submit"
-                            fullWidth
-                            variant="contained"
-                            sx={{ mt: 3, mb: 2 }}
-                            disabled={loading}
-                        >
-                            {loading ? 'Signing up...' : 'Sign Up'}
-                        </Button>
-                        <Button
-                            fullWidth
-                            variant="text"
-                            onClick={() => navigate('/login')}
-                        >
-                            Already have an account? Sign In
-                        </Button>
-                    </Box>
-                </Paper>
+                <FormControl>
+                    <FormLabel htmlFor="email">Email</FormLabel>
+                    <TextField
+                        id="email"
+                        type="email"
+                        name="email"
+                        placeholder="your@email.com"
+                        autoComplete="email"
+                        autoFocus
+                        required
+                        fullWidth
+                        variant="outlined"
+                        value={formData.email}
+                        onChange={handleChange}
+                        error={error.includes('email')}
+                    />
+                </FormControl>
+                <FormControl>
+                    <FormLabel htmlFor="password">Password</FormLabel>
+                    <TextField
+                        name="password"
+                        placeholder="••••••"
+                        type="password"
+                        id="password"
+                        autoComplete="new-password"
+                        required
+                        fullWidth
+                        variant="outlined"
+                        value={formData.password}
+                        onChange={handleChange}
+                    />
+                </FormControl>
+                <FormControl>
+                    <FormLabel htmlFor="first_name">First Name</FormLabel>
+                    <TextField
+                        name="first_name"
+                        id="first_name"
+                        autoComplete="given-name"
+                        required
+                        fullWidth
+                        variant="outlined"
+                        value={formData.first_name}
+                        onChange={handleChange}
+                    />
+                </FormControl>
+                <FormControl>
+                    <FormLabel htmlFor="last_name">Last Name</FormLabel>
+                    <TextField
+                        name="last_name"
+                        id="last_name"
+                        autoComplete="family-name"
+                        required
+                        fullWidth
+                        variant="outlined"
+                        value={formData.last_name}
+                        onChange={handleChange}
+                    />
+                </FormControl>
+                <FormControl fullWidth>
+                    <FormLabel htmlFor="role">Role</FormLabel>
+                    <Select
+                        id="role"
+                        name="role"
+                        value={formData.role}
+                        label="Role"
+                        onChange={handleChange}
+                        variant="outlined"
+                    >
+                        <MenuItem value="user">User</MenuItem>
+                        <MenuItem value="nutritionist">Nutritionist</MenuItem>
+                    </Select>
+                </FormControl>
+                <Button
+                    type="submit"
+                    fullWidth
+                    variant="contained"
+                    disabled={loading}
+                >
+                    {loading ? 'Signing up...' : 'Sign up'}
+                </Button>
+                <Typography sx={{ textAlign: 'center' }}>
+                    Already have an account?{' '}
+                    <Link
+                        component="button"
+                        type="button"
+                        onClick={() => navigate('/login')}
+                        variant="body2"
+                        sx={{ alignSelf: 'center' }}
+                    >
+                        Sign in
+                    </Link>
+                </Typography>
             </Box>
-        </Container>
+            <Divider sx={{ my: 2 }}>or</Divider>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={() => alert('Sign up with Google')}
+                >
+                    Sign up with Google
+                </Button>
+                <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={() => alert('Sign up with Facebook')}
+                >
+                    Sign up with Facebook
+                </Button>
+            </Box>
+        </AuthLayout>
     );
 };
 
