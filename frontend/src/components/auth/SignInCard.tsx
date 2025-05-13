@@ -107,9 +107,9 @@ export default function SignInCard() {
             setEmailErrorMessage('');
         }
 
-        if (!password.value || password.value.length < 6) {
+        if (!password.value) {
             setPasswordError(true);
-            setPasswordErrorMessage('Password must be at least 6 characters long.');
+            setPasswordErrorMessage('Please enter your password.');
             isValid = false;
         } else {
             setPasswordError(false);
