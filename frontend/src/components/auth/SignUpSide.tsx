@@ -1,5 +1,4 @@
 import * as React from 'react';
-import CssBaseline from '@mui/material/CssBaseline';
 import Stack from '@mui/material/Stack';
 import Content from './Content';
 import SignUpCard from './SignUpCard';
@@ -8,7 +7,6 @@ import ColorModeToggle from './ColorModeToggle';
 export default function SignUpSide() {
     return (
         <>
-            <CssBaseline enableColorScheme />
             <ColorModeToggle />
             <Stack
                 direction="column"
