@@ -13,7 +13,7 @@ import Typography from '@mui/material/Typography';
 import { styled } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import ForgotPassword from './ForgotPassword';
-import { GoogleIcon, FacebookIcon, SitemarkIcon } from '../CustomIcons';
+import { GoogleIcon, FacebookIcon, MyHealtCompanionIcon } from '../CustomIcons';
 import { authService } from '../../services/api';
 import { LoginCredentials } from '../../types/auth';
 
@@ -116,7 +116,7 @@ export default function SignInCard() {
     return (
         <Card variant="outlined">
             <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
-                <SitemarkIcon />
+                <MyHealtCompanionIcon />
             </Box>
             <Typography
                 component="h1"

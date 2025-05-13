@@ -10,9 +10,9 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { styled } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
-import Select from '@mui/material/Select';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
-import { GoogleIcon, FacebookIcon, SitemarkIcon } from '../CustomIcons';
+import { GoogleIcon, FacebookIcon, MyHealtCompanionIcon } from '../CustomIcons';
 import { authService } from '../../services/api';
 import { RegisterData } from '../../types/auth';
 import axios from 'axios';
@@ -50,14 +50,20 @@ export default function SignUpCard() {
         role: 'user'
     });
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
+    const handleTextFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        if (name) {
-            setFormData(prev => ({
-                ...prev,
-                [name]: value
-            }));
-        }
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleSelectChange = (e: SelectChangeEvent) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name as string]: value
+        }));
     };
 
     const validateInputs = () => {
@@ -133,7 +139,7 @@ export default function SignUpCard() {
     return (
         <Card variant="outlined">
             <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
-                <SitemarkIcon />
+                <MyHealtCompanionIcon />
             </Box>
             <Typography
                 component="h1"
@@ -164,7 +170,7 @@ export default function SignUpCard() {
                         variant="outlined"
                         color={emailError ? 'error' : 'primary'}
                         value={formData.email}
-                        onChange={handleChange}
+                        onChange={handleTextFieldChange}
                     />
                 </FormControl>
                 <FormControl>
@@ -182,7 +188,7 @@ export default function SignUpCard() {
                         variant="outlined"
                         color={passwordError ? 'error' : 'primary'}
                         value={formData.password}
-                        onChange={handleChange}
+                        onChange={handleTextFieldChange}
                     />
                 </FormControl>
                 <FormControl>
@@ -195,7 +201,7 @@ export default function SignUpCard() {
                         fullWidth
                         variant="outlined"
                         value={formData.first_name}
-                        onChange={handleChange}
+                        onChange={handleTextFieldChange}
                     />
                 </FormControl>
                 <FormControl>
@@ -208,7 +214,7 @@ export default function SignUpCard() {
                         fullWidth
                         variant="outlined"
                         value={formData.last_name}
-                        onChange={handleChange}
+                        onChange={handleTextFieldChange}
                     />
                 </FormControl>
                 <FormControl fullWidth>
@@ -217,7 +223,7 @@ export default function SignUpCard() {
                         id="role"
                         name="role"
                         value={formData.role}
-                        onChange={handleChange}
+                        onChange={handleSelectChange}
                         variant="outlined"
                     >
                         <MenuItem value="user">User</MenuItem>
