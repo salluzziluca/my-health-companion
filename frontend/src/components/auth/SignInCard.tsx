@@ -16,6 +16,7 @@ import ForgotPassword from './ForgotPassword';
 import { GoogleIcon, FacebookIcon, MyHealtCompanionIcon } from '../CustomIcons';
 import { authService } from '../../services/api';
 import { LoginCredentials } from '../../types/auth';
+import { appColors } from '../../App';
 
 const Card = styled(MuiCard)(({ theme }) => ({
     display: 'flex',
@@ -43,7 +44,7 @@ const StyledLink = styled(MuiLink)(({ theme }) => ({
         color: theme.palette.primary.dark,
     },
     ...(theme.palette.mode === 'dark' && {
-        color: '#90caf9',
+        color: appColors.darkLink,
         fontWeight: 500,
         '&:hover': {
             color: '#fff',
@@ -60,6 +61,42 @@ const StyledOutlinedButton = styled(Button)(({ theme }) => ({
             backgroundColor: 'rgba(255, 255, 255, 0.08)',
         },
     }),
+    '&.google-button': {
+        ...(theme.palette.mode === 'light' && {
+            color: appColors.googleBlue,
+            borderColor: appColors.googleBlue,
+            '&:hover': {
+                backgroundColor: `rgba(66, 133, 244, 0.08)`,
+                borderColor: appColors.googleBlue,
+            },
+        }),
+        ...(theme.palette.mode === 'dark' && {
+            color: appColors.googleBlue,
+            borderColor: appColors.googleBlue,
+            '&:hover': {
+                backgroundColor: `rgba(66, 133, 244, 0.16)`,
+                borderColor: appColors.googleBlue,
+            },
+        }),
+    },
+    '&.facebook-button': {
+        ...(theme.palette.mode === 'light' && {
+            color: appColors.facebookBlue,
+            borderColor: appColors.facebookBlue,
+            '&:hover': {
+                backgroundColor: `rgba(59, 89, 152, 0.08)`,
+                borderColor: appColors.facebookBlue,
+            },
+        }),
+        ...(theme.palette.mode === 'dark' && {
+            color: appColors.facebookBlue,
+            borderColor: appColors.facebookBlue,
+            '&:hover': {
+                backgroundColor: `rgba(59, 89, 152, 0.16)`,
+                borderColor: appColors.facebookBlue,
+            },
+        }),
+    },
 }));
 
 export default function SignInCard() {
@@ -243,6 +280,7 @@ export default function SignInCard() {
                     variant="outlined"
                     onClick={() => alert('Sign in with Google')}
                     startIcon={<GoogleIcon />}
+                    className="google-button"
                 >
                     Sign in with Google
                 </StyledOutlinedButton>
@@ -251,6 +289,7 @@ export default function SignInCard() {
                     variant="outlined"
                     onClick={() => alert('Sign in with Facebook')}
                     startIcon={<FacebookIcon />}
+                    className="facebook-button"
                 >
                     Sign in with Facebook
                 </StyledOutlinedButton>
