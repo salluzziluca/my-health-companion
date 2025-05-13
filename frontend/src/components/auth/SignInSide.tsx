@@ -1,63 +1,86 @@
 import * as React from 'react';
 import Stack from '@mui/material/Stack';
+import Box from '@mui/material/Box';
 import Content from './Content';
 import SignInCard from './SignInCard';
 import ColorModeToggle from './ColorModeToggle';
 
 export default function SignInSide() {
     return (
-        <>
+        <Box
+            sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: '100vh',
+                position: 'relative',
+                overflow: 'auto',
+            }}
+        >
             <ColorModeToggle />
+            <Box
+                sx={[
+                    {
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        zIndex: -1,
+                    },
+                    (theme) => ({
+                        backgroundImage:
+                            'radial-gradient(ellipse at 50% 50%, hsl(210, 100%, 97%), hsl(0, 0%, 100%))',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundSize: 'cover',
+                        ...(theme.palette.mode === 'dark' && {
+                            backgroundImage:
+                                'radial-gradient(at 50% 50%, hsla(210, 100%, 16%, 0.5), hsl(220, 30%, 5%))',
+                        }),
+                    }),
+                ]}
+            />
             <Stack
                 direction="column"
                 component="main"
-                sx={[
-                    {
-                        justifyContent: 'center',
-                        height: '100vh',
-                        minHeight: '100%',
-                    },
-                    (theme) => ({
-                        '&::before': {
-                            content: '""',
-                            display: 'block',
-                            position: 'absolute',
-                            zIndex: -1,
-                            inset: 0,
-                            backgroundImage:
-                                'radial-gradient(ellipse at 50% 50%, hsl(210, 100%, 97%), hsl(0, 0%, 100%))',
-                            backgroundRepeat: 'no-repeat',
-                            ...(theme.palette.mode === 'dark' && {
-                                backgroundImage:
-                                    'radial-gradient(at 50% 50%, hsla(210, 100%, 16%, 0.5), hsl(220, 30%, 5%))',
-                            }),
-                        },
-                    }),
-                ]}
+                sx={{
+                    flexGrow: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    py: { xs: 4, sm: 6 },
+                    px: 2,
+                }}
             >
-                <Stack
-                    direction={{ xs: 'column-reverse', md: 'row' }}
+                <Box
                     sx={{
+                        width: '100%',
+                        maxWidth: '1200px',
+                        display: 'flex',
+                        flexDirection: { xs: 'column', md: 'row' },
+                        alignItems: 'center',
                         justifyContent: 'center',
-                        gap: { xs: 6, sm: 12 },
-                        p: 2,
-                        mx: 'auto',
+                        gap: { xs: 4, sm: 8 },
                     }}
                 >
-                    <Stack
-                        direction={{ xs: 'column-reverse', md: 'row' }}
+                    <Box
                         sx={{
-                            justifyContent: 'center',
-                            gap: { xs: 6, sm: 12 },
-                            p: { xs: 2, sm: 4 },
-                            m: 'auto',
+                            flex: '1 1 auto',
+                            maxWidth: { xs: '100%', md: '450px' },
+                            display: { xs: 'none', sm: 'block' },
                         }}
                     >
                         <Content />
+                    </Box>
+                    <Box
+                        sx={{
+                            flex: '1 1 auto',
+                            maxWidth: { xs: '100%', sm: '450px' },
+                        }}
+                    >
                         <SignInCard />
-                    </Stack>
-                </Stack>
+                    </Box>
+                </Box>
             </Stack>
-        </>
+        </Box>
     );
 } 
