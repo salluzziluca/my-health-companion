@@ -7,6 +7,7 @@ import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import { styled, useTheme } from '@mui/material/styles';
+import { appColors } from '../../App';
 
 interface ForgotPasswordProps {
     open: boolean;
@@ -32,7 +33,7 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
             },
         },
         '& .MuiPaper-root': {
-            backgroundColor: 'rgba(18, 18, 18, 0.8)',
+            backgroundColor: appColors.darkPaper,
             backdropFilter: 'blur(8px)',
         }
     }),
@@ -40,7 +41,7 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
 
 const StyledButton = styled(Button)(({ theme }) => ({
     ...(theme.palette.mode === 'dark' && {
-        color: '#90caf9',
+        color: appColors.darkLink,
         fontWeight: 500,
         '&:hover': {
             color: '#fff',
