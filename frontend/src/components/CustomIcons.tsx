@@ -3,11 +3,11 @@ import SvgIcon from '@mui/material/SvgIcon';
 
 export function MyHealtCompanionIcon() {
     return (
-        <SvgIcon sx={{ height: 21, width: 100, mr: 2 }}>
+        <SvgIcon sx={{ height: 24, width: 180, mr: 2 }}>
             <svg
-                width={86}
-                height={19}
-                viewBox="0 0 86 19"
+                width={180}
+                height={24}
+                viewBox="0 0 180 24"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
             >
@@ -21,7 +21,7 @@ export function MyHealtCompanionIcon() {
                     d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm-3 3c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-3 3c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"
                 />
                 {/* Text */}
-                <text x="24" y="12" fontSize="8" fontWeight="bold" fill="currentColor">
+                <text x="28" y="15" fontSize="12" fontWeight="bold" fill="currentColor">
                     My Health Companion
                 </text>
             </svg>
