@@ -5,10 +5,10 @@ import MuiCard from '@mui/material/Card';
 import Divider from '@mui/material/Divider';
 import FormLabel from '@mui/material/FormLabel';
 import FormControl from '@mui/material/FormControl';
-import Link from '@mui/material/Link';
+import MuiLink from '@mui/material/Link';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { styled } from '@mui/material/styles';
+import { styled, useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
@@ -35,7 +35,33 @@ const Card = styled(MuiCard)(({ theme }) => ({
     }),
 }));
 
+const StyledLink = styled(MuiLink)(({ theme }) => ({
+    color: theme.palette.primary.main,
+    '&:hover': {
+        color: theme.palette.primary.dark,
+    },
+    ...(theme.palette.mode === 'dark' && {
+        color: '#90caf9',
+        fontWeight: 500,
+        '&:hover': {
+            color: '#fff',
+        },
+    }),
+}));
+
+const StyledOutlinedButton = styled(Button)(({ theme }) => ({
+    ...(theme.palette.mode === 'dark' && {
+        color: theme.palette.common.white,
+        borderColor: 'rgba(255, 255, 255, 0.5)',
+        '&:hover': {
+            borderColor: theme.palette.common.white,
+            backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        },
+    }),
+}));
+
 export default function SignUpCard() {
+    const theme = useTheme();
     const navigate = useNavigate();
     const [emailError, setEmailError] = React.useState(false);
     const [emailErrorMessage, setEmailErrorMessage] = React.useState('');
@@ -240,35 +266,40 @@ export default function SignUpCard() {
                 </Button>
                 <Typography sx={{ textAlign: 'center' }}>
                     Already have an account?{' '}
-                    <Link
-                        component="button"
-                        type="button"
+                    <StyledLink
                         onClick={() => navigate('/login')}
                         variant="body2"
-                        sx={{ alignSelf: 'center' }}
+                        sx={{ alignSelf: 'center', cursor: 'pointer' }}
                     >
                         Sign in
-                    </Link>
+                    </StyledLink>
                 </Typography>
             </Box>
-            <Divider>or</Divider>
+            <Divider sx={{
+                '&::before, &::after': {
+                    borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.12)',
+                },
+                color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+            }}>
+                or
+            </Divider>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Button
+                <StyledOutlinedButton
                     fullWidth
                     variant="outlined"
                     onClick={() => alert('Sign up with Google')}
                     startIcon={<GoogleIcon />}
                 >
                     Sign up with Google
-                </Button>
-                <Button
+                </StyledOutlinedButton>
+                <StyledOutlinedButton
                     fullWidth
                     variant="outlined"
                     onClick={() => alert('Sign up with Facebook')}
                     startIcon={<FacebookIcon />}
                 >
                     Sign up with Facebook
-                </Button>
+                </StyledOutlinedButton>
             </Box>
         </Card>
     );

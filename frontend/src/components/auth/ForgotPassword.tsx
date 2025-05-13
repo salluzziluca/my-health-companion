@@ -6,15 +6,50 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 import OutlinedInput from '@mui/material/OutlinedInput';
+import { styled, useTheme } from '@mui/material/styles';
 
 interface ForgotPasswordProps {
     open: boolean;
     handleClose: () => void;
 }
 
+const StyledDialog = styled(Dialog)(({ theme }) => ({
+    ...(theme.palette.mode === 'dark' && {
+        '& .MuiDialogTitle-root': {
+            color: '#fff',
+            fontWeight: 500,
+        },
+        '& .MuiDialogContentText-root': {
+            color: 'rgba(255, 255, 255, 0.9)',
+        },
+        '& .MuiOutlinedInput-root': {
+            color: theme.palette.common.white,
+            '& fieldset': {
+                borderColor: 'rgba(255, 255, 255, 0.23)',
+            },
+            '&:hover fieldset': {
+                borderColor: 'rgba(255, 255, 255, 0.5)',
+            },
+        },
+    }),
+}));
+
+const StyledButton = styled(Button)(({ theme }) => ({
+    ...(theme.palette.mode === 'dark' && {
+        color: '#90caf9',
+        fontWeight: 500,
+        '&:hover': {
+            color: '#fff',
+            backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        },
+    }),
+}));
+
 export default function ForgotPassword({ open, handleClose }: ForgotPasswordProps) {
+    const theme = useTheme();
+
     return (
-        <Dialog
+        <StyledDialog
             open={open}
             onClose={handleClose}
             slotProps={{
@@ -24,7 +59,12 @@ export default function ForgotPassword({ open, handleClose }: ForgotPasswordProp
                         event.preventDefault();
                         handleClose();
                     },
-                    sx: { backgroundImage: 'none' },
+                    sx: {
+                        backgroundImage: 'none',
+                        ...(theme.palette.mode === 'dark' && {
+                            backgroundColor: '#1e1e1e',
+                        }),
+                    },
                 },
             }}
         >
@@ -42,18 +82,24 @@ export default function ForgotPassword({ open, handleClose }: ForgotPasswordProp
                     margin="dense"
                     id="email"
                     name="email"
-                    label="Email address"
                     placeholder="Email address"
                     type="email"
                     fullWidth
+                    sx={{
+                        ...(theme.palette.mode === 'dark' && {
+                            '&::placeholder': {
+                                color: 'rgba(255, 255, 255, 0.7)',
+                            },
+                        }),
+                    }}
                 />
             </DialogContent>
             <DialogActions sx={{ pb: 3, px: 3 }}>
-                <Button onClick={handleClose}>Cancel</Button>
+                <StyledButton onClick={handleClose}>Cancel</StyledButton>
                 <Button variant="contained" type="submit">
                     Continue
                 </Button>
             </DialogActions>
-        </Dialog>
+        </StyledDialog>
     );
 } 

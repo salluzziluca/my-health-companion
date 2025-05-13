@@ -7,10 +7,10 @@ import Divider from '@mui/material/Divider';
 import FormLabel from '@mui/material/FormLabel';
 import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
-import Link from '@mui/material/Link';
+import MuiLink from '@mui/material/Link';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { styled } from '@mui/material/styles';
+import { styled, useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import ForgotPassword from './ForgotPassword';
 import { GoogleIcon, FacebookIcon, MyHealtCompanionIcon } from '../CustomIcons';
@@ -35,7 +35,33 @@ const Card = styled(MuiCard)(({ theme }) => ({
     }),
 }));
 
+const StyledLink = styled(MuiLink)(({ theme }) => ({
+    color: theme.palette.primary.main,
+    '&:hover': {
+        color: theme.palette.primary.dark,
+    },
+    ...(theme.palette.mode === 'dark' && {
+        color: '#90caf9',
+        fontWeight: 500,
+        '&:hover': {
+            color: '#fff',
+        },
+    }),
+}));
+
+const StyledOutlinedButton = styled(Button)(({ theme }) => ({
+    ...(theme.palette.mode === 'dark' && {
+        color: theme.palette.common.white,
+        borderColor: 'rgba(255, 255, 255, 0.5)',
+        '&:hover': {
+            borderColor: theme.palette.common.white,
+            backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        },
+    }),
+}));
+
 export default function SignInCard() {
+    const theme = useTheme();
     const navigate = useNavigate();
     const [emailError, setEmailError] = React.useState(false);
     const [emailErrorMessage, setEmailErrorMessage] = React.useState('');
@@ -153,15 +179,13 @@ export default function SignInCard() {
                 <FormControl>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                         <FormLabel htmlFor="password">Password</FormLabel>
-                        <Link
-                            component="button"
-                            type="button"
+                        <StyledLink
                             onClick={handleClickOpen}
                             variant="body2"
-                            sx={{ alignSelf: 'baseline' }}
+                            sx={{ alignSelf: 'baseline', cursor: 'pointer' }}
                         >
                             Forgot your password?
-                        </Link>
+                        </StyledLink>
                     </Box>
                     <TextField
                         error={passwordError}
@@ -194,35 +218,40 @@ export default function SignInCard() {
                 </Button>
                 <Typography sx={{ textAlign: 'center' }}>
                     Don&apos;t have an account?{' '}
-                    <Link
-                        component="button"
-                        type="button"
+                    <StyledLink
                         onClick={() => navigate('/register')}
                         variant="body2"
-                        sx={{ alignSelf: 'center' }}
+                        sx={{ alignSelf: 'center', cursor: 'pointer' }}
                     >
                         Sign up
-                    </Link>
+                    </StyledLink>
                 </Typography>
             </Box>
-            <Divider>or</Divider>
+            <Divider sx={{
+                '&::before, &::after': {
+                    borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.12)',
+                },
+                color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+            }}>
+                or
+            </Divider>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Button
+                <StyledOutlinedButton
                     fullWidth
                     variant="outlined"
                     onClick={() => alert('Sign in with Google')}
                     startIcon={<GoogleIcon />}
                 >
                     Sign in with Google
-                </Button>
-                <Button
+                </StyledOutlinedButton>
+                <StyledOutlinedButton
                     fullWidth
                     variant="outlined"
                     onClick={() => alert('Sign in with Facebook')}
                     startIcon={<FacebookIcon />}
                 >
                     Sign in with Facebook
-                </Button>
+                </StyledOutlinedButton>
             </Box>
         </Card>
     );
