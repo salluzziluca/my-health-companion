@@ -4,6 +4,11 @@ import { ThemeProvider, createTheme } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
 import SignInSide from './components/auth/SignInSide';
 import SignUpSide from './components/auth/SignUpSide';
+import Dashboard from './components/pages/Dashboard';
+import MyProfile from './components/pages/MyProfile';
+import MyAccount from './components/pages/MyAccount';
+import Layout from './components/pages/Layout';
+
 
 // Create a theme context
 export const ColorModeContext = createContext({
@@ -154,6 +159,12 @@ function App() {
             <Route path="/login" element={<SignInSide />} />
             <Route path="/register" element={<SignUpSide />} />
             <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<Layout />}>
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="myprofile" element={<MyProfile />} />
+              <Route path="myaccount" element={<MyAccount />} />
+            </Route>
+            <Route path="*" element={<Navigate to="/login" replace />} /> {/* Esta línea */}
           </Routes>
         </Router>
       </ThemeProvider>
