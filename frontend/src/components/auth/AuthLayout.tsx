@@ -42,8 +42,8 @@ const items = [
     },
     {
         icon: <ConstructionRoundedIcon sx={{ color: 'text.secondary' }} />,
-        title: 'Expert Nutrition Guidance',
-        description: 'Connect with qualified nutritionists who can help you achieve your health goals.',
+        title: 'Connect with your personal health coach',
+        description: 'Connect with your personal health coach to get personalized advice and support.',
     },
     {
         icon: <ThumbUpAltRoundedIcon sx={{ color: 'text.secondary' }} />,
