@@ -5,7 +5,7 @@ import { Box } from '@mui/material';
 const Dashboard = () => {
   return (
     <Box>
-      <h1>Bienvenido al Dashboard</h1>
+      <h1>Home</h1>
       {/* Aquí va el contenido de tu Dashboard */}
     </Box>
   );

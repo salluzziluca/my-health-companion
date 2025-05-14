@@ -16,7 +16,8 @@ import AccountCircle from '@mui/icons-material/AccountCircle';
 import MailIcon from '@mui/icons-material/Mail';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import MoreIcon from '@mui/icons-material/MoreVert';
-  
+import HomeIcon from '@mui/icons-material/Home';
+
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
   borderRadius: theme.shape.borderRadius,
@@ -89,6 +90,11 @@ export default function PrimarySearchAppBar() {
     navigate('/myprofile'); // navegamos a /profile
   };
 
+  const handleGoToAccount = () => {
+    handleMenuClose(); // cerramos el menú
+    navigate('/myaccount'); // navegamos a /profile
+  };
+
   const menuId = 'primary-search-account-menu';
   const renderMenu = (
     <Menu
@@ -107,7 +113,7 @@ export default function PrimarySearchAppBar() {
       onClose={handleMenuClose}
     >
       <MenuItem onClick={handleGoToProfile}>Profile</MenuItem>
-      <MenuItem onClick={handleMenuClose}>My account</MenuItem>
+      <MenuItem onClick={handleGoToAccount}>My account</MenuItem>
     </Menu>
   );
 
@@ -175,6 +181,13 @@ export default function PrimarySearchAppBar() {
             sx={{ mr: 2 }}
           >
             <MenuIcon />
+          </IconButton>
+          <IconButton
+            size="large"
+            color="inherit"
+            onClick={() => navigate('/dashboard')}
+          >
+            <HomeIcon />
           </IconButton>
           <Typography
             variant="h6"
