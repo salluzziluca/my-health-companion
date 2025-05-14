@@ -27,6 +27,7 @@ export default function SignUpSide() {
                         width: '100%',
                         height: '100%',
                         zIndex: -1,
+                        transition: 'background-image 1.2s ease-in-out',
                     },
                     (theme) => ({
                         backgroundImage:

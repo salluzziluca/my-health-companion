@@ -27,9 +27,12 @@ const Card = styled(MuiCard)(({ theme }) => ({
     gap: theme.spacing(2),
     boxShadow:
         'hsla(220, 30%, 5%, 0.05) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.05) 0px 15px 35px -5px',
+    backdropFilter: 'blur(4px)',
+    backgroundColor: appColors.lightPaper,
     [theme.breakpoints.up('sm')]: {
         width: '450px',
     },
+    transition: 'background-color 0.8s ease, box-shadow 0.8s ease, backdrop-filter 0.8s ease',
     ...(theme.palette.mode === 'dark' && {
         backgroundColor: appColors.darkPaper,
         backdropFilter: 'blur(8px)',
@@ -43,6 +46,7 @@ const StyledLink = styled(MuiLink)(({ theme }) => ({
     '&:hover': {
         color: theme.palette.primary.dark,
     },
+    transition: 'color 0.4s ease, font-weight 0.4s ease',
     ...(theme.palette.mode === 'dark' && {
         color: appColors.darkLink,
         fontWeight: 500,

@@ -1,4 +1,4 @@
-import React, { createContext, useMemo, useState } from 'react';
+import React, { createContext, useMemo, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -23,9 +23,9 @@ export const appColors = {
   secondaryLight: '#62efff',
 
   // Background colors
-  lightBackground: '#f5f5f5',
+  lightBackground: '#f0f2f5', // Softer blue-gray
   darkBackground: '#121212',
-  lightPaper: '#ffffff',
+  lightPaper: 'rgba(255, 255, 255, 0.9)', // Changed from pure white to slightly transparent white
   darkPaper: 'rgba(18, 18, 18, 0.8)',
 
   // Link colors
@@ -37,18 +37,34 @@ export const appColors = {
   facebookBlue: '#3b5998',
 
   // Gradient colors
-  lightGradientStart: 'hsl(260, 100%, 97%)',
-  lightGradientEnd: 'hsl(0, 0%, 100%)',
+  lightGradientStart: 'hsl(210, 50%, 95%)', // Softer blue tone
+  lightGradientEnd: 'hsl(0, 0%, 98%)', // Very light gray
   darkGradientStart: '#023047',
   darkGradientEnd: '#000',
 };
 
+// Transition duration for theme changes
+const themeTransitionDuration = 800; // milliseconds
+
 function App() {
   const [mode, setMode] = useState<'light' | 'dark'>('light');
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Apply global transition styles when theme is changing
+  useEffect(() => {
+    if (isTransitioning) {
+      // Use an effect cleanup to remove the transitioning class
+      const timer = setTimeout(() => {
+        setIsTransitioning(false);
+      }, themeTransitionDuration + 100); // add a little buffer
+      return () => clearTimeout(timer);
+    }
+  }, [isTransitioning]);
 
   const colorMode = useMemo(
     () => ({
       toggleColorMode: () => {
+        setIsTransitioning(true);
         setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
       },
     }),
@@ -79,6 +95,20 @@ function App() {
           },
         },
         components: {
+          MuiCssBaseline: {
+            styleOverrides: {
+              body: {
+                transition: isTransitioning
+                  ? `background-color ${themeTransitionDuration}ms ease-out, color ${themeTransitionDuration}ms ease-out`
+                  : 'none',
+              },
+              '*, *::before, *::after': {
+                transition: isTransitioning
+                  ? `background-color ${themeTransitionDuration}ms ease-out, color ${themeTransitionDuration}ms ease-out, border-color ${themeTransitionDuration}ms ease-out, box-shadow ${themeTransitionDuration}ms ease-out`
+                  : undefined,
+              },
+            },
+          },
           MuiButton: {
             styleOverrides: {
               root: {
@@ -112,7 +142,7 @@ function App() {
           },
         },
       }),
-    [mode],
+    [mode, isTransitioning],
   );
 
   return (
