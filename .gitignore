@@ -67,3 +67,4 @@ yarn-error.log*
 Thumbs.db
 
 .vscode/settings.json
+node_modules

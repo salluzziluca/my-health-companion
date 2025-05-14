@@ -4,6 +4,7 @@ import Box from '@mui/material/Box';
 import Content from './Content';
 import SignUpCard from './SignUpCard';
 import ColorModeToggle from './ColorModeToggle';
+import { appColors } from '../../App';
 
 export default function SignUpSide() {
     return (
@@ -26,15 +27,16 @@ export default function SignUpSide() {
                         width: '100%',
                         height: '100%',
                         zIndex: -1,
+                        transition: 'background-image 1.2s ease-in-out',
                     },
                     (theme) => ({
                         backgroundImage:
-                            'radial-gradient(ellipse at 50% 50%, hsl(210, 100%, 97%), hsl(0, 0%, 100%))',
+                            `radial-gradient(ellipse at 50% 50%, ${appColors.lightGradientStart}, ${appColors.lightGradientEnd})`,
                         backgroundRepeat: 'no-repeat',
                         backgroundSize: 'cover',
                         ...(theme.palette.mode === 'dark' && {
                             backgroundImage:
-                                'radial-gradient(at 50% 50%, hsla(210, 100%, 16%, 0.5), hsl(220, 30%, 5%))',
+                                `radial-gradient(at 50% 50%, ${appColors.darkGradientStart}, ${appColors.darkGradientEnd})`,
                         }),
                     }),
                 ]}
