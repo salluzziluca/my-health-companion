@@ -110,6 +110,10 @@ export default function SignUpCard() {
     const [emailErrorMessage, setEmailErrorMessage] = React.useState('');
     const [passwordError, setPasswordError] = React.useState(false);
     const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('');
+    const [firstNameError, setFirstNameError] = React.useState(false);
+    const [firstNameErrorMessage, setFirstNameErrorMessage] = React.useState('');
+    const [lastNameError, setLastNameError] = React.useState(false);
+    const [lastNameErrorMessage, setLastNameErrorMessage] = React.useState('');
     const [loading, setLoading] = React.useState(false);
     const [formData, setFormData] = React.useState<RegisterData>({
         email: '',
@@ -162,11 +166,37 @@ export default function SignUpCard() {
         }
 
         if (!firstName.value) {
+            setFirstNameError(true);
+            setFirstNameErrorMessage('Please enter a first name.');
             isValid = false;
+        } else if (firstName.value.length > 40) {
+            setFirstNameError(true);
+            setFirstNameErrorMessage('First name cannot exceed 40 characters.');
+            isValid = false;
+        } else if (!/^[a-zA-Z]+$/.test(firstName.value)) {
+            setFirstNameError(true);
+            setFirstNameErrorMessage('First name must contain only letters.');
+            isValid = false;
+        } else {
+            setFirstNameError(false);
+            setFirstNameErrorMessage('');
         }
 
         if (!lastName.value) {
+            setLastNameError(true);
+            setLastNameErrorMessage('Please enter a last name.');
             isValid = false;
+        } else if (lastName.value.length > 40) {
+            setLastNameError(true);
+            setLastNameErrorMessage('Last name cannot exceed 40 characters.');
+            isValid = false;
+        } else if (!/^[a-zA-Z]+$/.test(lastName.value)) {
+            setLastNameError(true);
+            setLastNameErrorMessage('Last name must contain only letters.');
+            isValid = false;
+        } else {
+            setLastNameError(false);
+            setLastNameErrorMessage('');
         }
 
         return isValid;
@@ -181,6 +211,16 @@ export default function SignUpCard() {
 
         setLoading(true);
 
+        // Reset all error states
+        setEmailError(false);
+        setEmailErrorMessage('');
+        setPasswordError(false);
+        setPasswordErrorMessage('');
+        setFirstNameError(false);
+        setFirstNameErrorMessage('');
+        setLastNameError(false);
+        setLastNameErrorMessage('');
+
         try {
             await authService.register(formData);
             navigate('/login');
@@ -189,6 +229,33 @@ export default function SignUpCard() {
                 if (err.response?.status === 400) {
                     setEmailError(true);
                     setEmailErrorMessage('This email is already registered. Please use a different email or try logging in.');
+                } else if (err.response?.status === 422 && err.response?.data?.detail) {
+                    // Handle validation errors from the backend
+                    const validationErrors = err.response.data.detail;
+
+                    if (Array.isArray(validationErrors)) {
+                        validationErrors.forEach((error: any) => {
+                            const field = error.loc[1]; // Get the field name from the error location
+                            const errorMessage = error.msg;
+
+                            if (field === 'email') {
+                                setEmailError(true);
+                                setEmailErrorMessage(errorMessage);
+                            } else if (field === 'password') {
+                                setPasswordError(true);
+                                setPasswordErrorMessage(errorMessage);
+                            } else if (field === 'first_name') {
+                                setFirstNameError(true);
+                                setFirstNameErrorMessage(errorMessage);
+                            } else if (field === 'last_name') {
+                                setLastNameError(true);
+                                setLastNameErrorMessage(errorMessage);
+                            }
+                        });
+                    } else if (typeof validationErrors === 'string') {
+                        setEmailError(true);
+                        setEmailErrorMessage(validationErrors);
+                    }
                 } else if (err.response?.data?.detail) {
                     setEmailError(true);
                     setEmailErrorMessage(err.response.data.detail);
@@ -271,6 +338,8 @@ export default function SignUpCard() {
                         variant="outlined"
                         value={formData.first_name}
                         onChange={handleTextFieldChange}
+                        error={firstNameError}
+                        helperText={firstNameErrorMessage}
                     />
                 </FormControl>
                 <FormControl>
@@ -284,6 +353,8 @@ export default function SignUpCard() {
                         variant="outlined"
                         value={formData.last_name}
                         onChange={handleTextFieldChange}
+                        error={lastNameError}
+                        helperText={lastNameErrorMessage}
                     />
                 </FormControl>
                 <FormControl fullWidth>
