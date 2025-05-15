@@ -147,9 +147,17 @@ export default function SignUpCard() {
 
         let isValid = true;
 
-        if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
+        // Email validation - strict pattern that rejects special characters
+        // Allow only: letters, numbers, dots, underscores, hyphens, and @ symbol
+        const validEmailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+        if (!email.value) {
             setEmailError(true);
-            setEmailErrorMessage('Please enter a valid email address.');
+            setEmailErrorMessage('Please enter an email address.');
+            isValid = false;
+        } else if (!validEmailPattern.test(email.value)) {
+            setEmailError(true);
+            setEmailErrorMessage('Please enter a valid email address without special characters.');
             isValid = false;
         } else {
             setEmailError(false);
