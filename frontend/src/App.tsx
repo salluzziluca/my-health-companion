@@ -2,6 +2,8 @@ import React, { createContext, useMemo, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
+import Box from '@mui/material/Box';
+import { keyframes } from '@mui/system';
 import SignInSide from './components/auth/SignInSide';
 import SignUpSide from './components/auth/SignUpSide';
 
@@ -36,39 +38,109 @@ export const appColors = {
   googleBlue: '#4285F4',
   facebookBlue: '#3b5998',
 
-  // Gradient colors
+  // Gradient colors for light mode
   lightGradientStart: 'hsl(210, 50%, 95%)', // Softer blue tone
+  lightGradientMiddle: 'hsl(230, 40%, 96%)', // Slight purple tint
   lightGradientEnd: 'hsl(0, 0%, 98%)', // Very light gray
-  darkGradientStart: '#023047',
-  darkGradientEnd: '#000',
+
+  // Gradient colors for dark mode
+  darkGradientStart: '#023047', // Deep blue
+  darkGradientMiddle: '#052A40', // Slightly lighter blue
+  darkGradientEnd: '#000', // Pure black
 };
 
-// Transition duration for theme changes
-const themeTransitionDuration = 800; // milliseconds
+// Animation for the background transition
+const fadeInOut = keyframes`
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+`;
+
+// Define interface for component props
+interface BackgroundTransitionProps {
+  mode: 'light' | 'dark';
+  isChanging: boolean;
+}
+
+// Component that shows a transition effect when theme changes - only for background
+const BackgroundTransition = ({ mode, isChanging }: BackgroundTransitionProps) => {
+  const darkToLight = mode === 'light' && isChanging;
+  const lightToDark = mode === 'dark' && isChanging;
+
+  return (
+    <Box
+      sx={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        zIndex: 0, // Set to 0 to be behind all content
+        pointerEvents: 'none',
+        opacity: 0,
+        animation: isChanging ? `${fadeInOut} 1.5s ease-in-out forwards` : 'none',
+        backgroundImage: darkToLight
+          ? `linear-gradient(135deg, 
+                ${appColors.lightGradientStart} 0%, 
+                ${appColors.lightGradientMiddle} 35%, 
+                ${appColors.lightGradientEnd} 65%, 
+                ${appColors.lightGradientStart} 100%)`
+          : lightToDark
+            ? `linear-gradient(135deg, 
+                ${appColors.darkGradientStart} 0%, 
+                ${appColors.darkGradientMiddle} 35%, 
+                ${appColors.darkGradientEnd} 65%, 
+                ${appColors.darkGradientStart} 100%)`
+            : 'none',
+        backgroundSize: '300% 300%',
+        transition: 'background-image 0.5s ease',
+      }}
+    />
+  );
+};
 
 function App() {
   const [mode, setMode] = useState<'light' | 'dark'>('light');
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [showTransition, setShowTransition] = useState(false);
 
-  // Apply global transition styles when theme is changing
+  // Handle theme mode change
   useEffect(() => {
     if (isTransitioning) {
-      // Use an effect cleanup to remove the transitioning class
-      const timer = setTimeout(() => {
+      // Show the background transition effect
+      setShowTransition(true);
+
+      // Change the mode immediately
+      setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
+
+      // Hide the transition effect after the animation completes
+      const hideTransitionTimer = setTimeout(() => {
+        setShowTransition(false);
         setIsTransitioning(false);
-      }, themeTransitionDuration + 100); // add a little buffer
-      return () => clearTimeout(timer);
+      }, 1500);
+
+      return () => clearTimeout(hideTransitionTimer);
     }
   }, [isTransitioning]);
 
   const colorMode = useMemo(
     () => ({
       toggleColorMode: () => {
-        setIsTransitioning(true);
-        setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
+        if (!isTransitioning) {
+          setIsTransitioning(true);
+        }
       },
     }),
-    [],
+    [isTransitioning],
   );
 
   const theme = useMemo(
@@ -95,20 +167,6 @@ function App() {
           },
         },
         components: {
-          MuiCssBaseline: {
-            styleOverrides: {
-              body: {
-                transition: isTransitioning
-                  ? `background-color ${themeTransitionDuration}ms ease-out, color ${themeTransitionDuration}ms ease-out`
-                  : 'none',
-              },
-              '*, *::before, *::after': {
-                transition: isTransitioning
-                  ? `background-color ${themeTransitionDuration}ms ease-out, color ${themeTransitionDuration}ms ease-out, border-color ${themeTransitionDuration}ms ease-out, box-shadow ${themeTransitionDuration}ms ease-out`
-                  : undefined,
-              },
-            },
-          },
           MuiButton: {
             styleOverrides: {
               root: {
@@ -142,13 +200,15 @@ function App() {
           },
         },
       }),
-    [mode, isTransitioning],
+    [mode],
   );
 
   return (
     <ColorModeContext.Provider value={colorMode}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
+        {/* Add the background transition effect */}
+        <BackgroundTransition mode={mode} isChanging={showTransition} />
         <Router>
           <Routes>
             <Route path="/login" element={<SignInSide />} />

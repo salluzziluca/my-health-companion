@@ -5,6 +5,20 @@ import Content from './Content';
 import SignInCard from './SignInCard';
 import ColorModeToggle from './ColorModeToggle';
 import { appColors } from '../../App';
+import { keyframes } from '@mui/system';
+
+// Create animation keyframes for the gradient movement
+const gradientAnimation = keyframes`
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+`;
 
 export default function SignInSide() {
     return (
@@ -26,18 +40,24 @@ export default function SignInSide() {
                         left: 0,
                         width: '100%',
                         height: '100%',
-                        zIndex: -1,
+                        zIndex: 1,
                         transition: 'background-image 1.2s ease-in-out',
                     },
                     (theme) => ({
-                        backgroundImage:
-                            `radial-gradient(ellipse at 50% 50%, ${appColors.lightGradientStart}, ${appColors.lightGradientEnd})`,
+                        backgroundSize: '300% 300%',
+                        animation: `${gradientAnimation} 15s ease infinite`,
+                        backgroundImage: theme.palette.mode === 'light'
+                            ? `linear-gradient(135deg, 
+                                ${appColors.lightGradientStart} 0%, 
+                                ${appColors.lightGradientMiddle} 35%, 
+                                ${appColors.lightGradientEnd} 65%, 
+                                ${appColors.lightGradientStart} 100%)`
+                            : `linear-gradient(135deg, 
+                                ${appColors.darkGradientStart} 0%, 
+                                ${appColors.darkGradientMiddle} 35%, 
+                                ${appColors.darkGradientEnd} 65%, 
+                                ${appColors.darkGradientStart} 100%)`,
                         backgroundRepeat: 'no-repeat',
-                        backgroundSize: 'cover',
-                        ...(theme.palette.mode === 'dark' && {
-                            backgroundImage:
-                                `radial-gradient(at 50% 50%, ${appColors.darkGradientStart}, ${appColors.darkGradientEnd})`,
-                        }),
                     }),
                 ]}
             />
@@ -51,6 +71,8 @@ export default function SignInSide() {
                     justifyContent: 'center',
                     py: { xs: 4, sm: 6 },
                     px: 2,
+                    position: 'relative',
+                    zIndex: 2,
                 }}
             >
                 <Box
