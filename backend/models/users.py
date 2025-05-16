@@ -2,6 +2,7 @@ from typing import Optional, ClassVar
 from datetime import date
 from pydantic import EmailStr, field_validator
 from sqlmodel import Field, SQLModel, Relationship
+import re
 
 
 class UserBase(SQLModel):
@@ -9,6 +10,15 @@ class UserBase(SQLModel):
     first_name: str
     last_name: str
     role: str  # "user" o "nutritionist"
+    
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, value):
+        # Validar que el email no contenga caracteres especiales no permitidos
+        pattern = re.compile(r'^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+        if not pattern.match(value):
+            raise ValueError('El correo electrónico contiene caracteres no permitidos')
+        return value
     
     @field_validator('first_name', 'last_name')
     @classmethod
@@ -53,6 +63,17 @@ class UserUpdate(SQLModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     password: Optional[str] = None
+    
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, value):
+        # Validar que el email no sea nulo y no contenga caracteres especiales no permitidos
+        if value is None:
+            return value
+        pattern = re.compile(r'^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+        if not pattern.match(value):
+            raise ValueError('El correo electrónico contiene caracteres no permitidos')
+        return value
     
     @field_validator('first_name', 'last_name')
     @classmethod
