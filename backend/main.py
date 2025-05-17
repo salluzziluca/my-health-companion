@@ -2,6 +2,15 @@ from fastapi import FastAPI
 import uvicorn
 from config.database import create_db_and_tables
 
+# Importar todos los modelos para asegurar que estén registrados en la metadata de SQLModel
+from models.users import User
+from models.profiles import Profile
+from models.foods import Food
+from models.ingredients import Ingredient
+from models.ingredient_food import IngredientFood
+from models.meals import Meal
+from models.patient_professional import PatientProfessional
+
 from routers.users import router_users
 from routers.auth import router_auth
 from routers.profiles import router_profiles

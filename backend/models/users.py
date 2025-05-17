@@ -1,8 +1,9 @@
-from typing import Optional, ClassVar
-from datetime import date
+from typing import Optional, List
 from pydantic import EmailStr, field_validator
 from sqlmodel import Field, SQLModel, Relationship
 import re
+
+from models.patient_professional import PatientProfessional
 
 
 class UserBase(SQLModel):
@@ -41,10 +42,24 @@ class UserBase(SQLModel):
 
 # Clase para la tabla de usuarios
 class User(UserBase, table=True):
+    __tablename__ = "user"  
+    
     id: Optional[int] = Field(default=None, primary_key=True)
     password_hash: str
-  
-    profile: Optional["Profile"] = Relationship(back_populates="user")
+ 
+    profile: Optional["Profile"] = Relationship(back_populates="user", sa_relationship_kwargs={"uselist": False}) # type: ignore
+    custom_foods: List["Food"] = Relationship(back_populates="user") # type: ignore
+    meals: List["Meal"] = Relationship(back_populates="user") # type: ignore
+    
+    # Relación Many-to-many con si mismo mediante PatientProfessional
+    patients: List["User"] = Relationship(
+        sa_relationship_kwargs={
+            "secondary": PatientProfessional.__table__,
+            "primaryjoin": "User.id == PatientProfessional.professional_id",
+            "secondaryjoin": "User.id == PatientProfessional.patient_id",
+            "backref": "professionals"
+        }
+    )
 
 
 # Clase para crear un nuevo usuario

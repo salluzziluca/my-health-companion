@@ -1,0 +1,94 @@
+from typing import Optional
+from datetime import datetime
+from sqlmodel import Field, SQLModel, Relationship
+from pydantic import field_validator
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from backend.models.foods import Food
+    from backend.models.users import User
+
+
+class MealBase(SQLModel):
+    meal_name: str
+    grams: float
+    meal_of_the_day: str  # breakfast, lunch, dinner, snack, etc.
+    timestamp: datetime
+    calories: float
+    
+    @field_validator('meal_name')
+    @classmethod
+    def validate_meal_name(cls, value):
+        if len(value) > 100:
+            raise ValueError('El nombre de la comida no puede exceder los 100 caracteres')
+        return value
+    
+    @field_validator('grams', 'calories')
+    @classmethod
+    def validate_positive_numbers(cls, value):
+        if value < 0:
+            raise ValueError('Los valores no pueden ser negativos')
+        return value
+    
+    @field_validator('meal_of_the_day')
+    @classmethod
+    def validate_meal_of_the_day(cls, value):
+        valid_meals = ["breakfast", "lunch", "dinner", "snack"]
+        if value.lower() not in valid_meals:
+            raise ValueError(f'Tipo de comida no válido. Debe ser uno de: {", ".join(valid_meals)}')
+        return value
+
+
+class Meal(MealBase, table=True):
+    __tablename__ = "meals"
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    food_id: int = Field(foreign_key="foods.id")
+    user_id: int = Field(foreign_key="user.id")
+    
+    # Relationships
+    food: "Food" = Relationship(back_populates="meals")
+    user: "User" = Relationship()
+
+
+class MealCreate(MealBase):
+    food_id: int
+    user_id: int
+
+
+class MealRead(MealBase):
+    id: int
+    food_id: int
+    user_id: int
+
+
+class MealUpdate(SQLModel):
+    meal_name: Optional[str] = None
+    grams: Optional[float] = None
+    meal_of_the_day: Optional[str] = None
+    timestamp: Optional[datetime] = None
+    calories: Optional[float] = None
+    
+    @field_validator('meal_name')
+    @classmethod
+    def validate_meal_name(cls, value):
+        if value is not None and len(value) > 100:
+            raise ValueError('El nombre de la comida no puede exceder los 100 caracteres')
+        return value
+    
+    @field_validator('grams', 'calories')
+    @classmethod
+    def validate_positive_numbers(cls, value):
+        if value is not None and value < 0:
+            raise ValueError('Los valores no pueden ser negativos')
+        return value
+    
+    @field_validator('meal_of_the_day')
+    @classmethod
+    def validate_meal_of_the_day(cls, value):
+        if value is None:
+            return value
+        valid_meals = ["breakfast", "lunch", "dinner", "snack"] 
+        if value.lower() not in valid_meals:
+            raise ValueError(f'Tipo de comida no válido. Debe ser uno de: {", ".join(valid_meals)}')
+        return value

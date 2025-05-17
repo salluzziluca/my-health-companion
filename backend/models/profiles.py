@@ -3,6 +3,9 @@ from datetime import date
 from sqlmodel import Field, SQLModel, Relationship
 from pydantic import field_validator
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from models.users import User
 
 # Clase base para perfiles
 class ProfileBase(SQLModel):
@@ -42,6 +45,8 @@ class ProfileBase(SQLModel):
 
 # Clase para la tabla de perfiles
 class Profile(ProfileBase, table=True):
+    __tablename__ = "profile"
+    
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
     
