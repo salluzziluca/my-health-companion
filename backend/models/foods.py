@@ -1,11 +1,11 @@
 from typing import Optional, List
 from sqlmodel import Field, SQLModel, Relationship
 from pydantic import field_validator
-from models.ingredient_food import IngredientFood  
+from models.ingredient_food import IngredientFood 
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from models.users import User
+    from models.patients import Patient
     from models.meals import Meal
     from models.ingredients import Ingredient
 
@@ -24,22 +24,23 @@ class Food(FoodBase, table=True):
     __tablename__ = "foods"
     
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    patient_id: Optional[int] = Field(default=None, foreign_key="patients.id")
     
-    user: Optional["User"] = Relationship()
+    patient: Optional["Patient"] = Relationship(back_populates="custom_foods")
     ingredients: List["Ingredient"] = Relationship(
         back_populates="foods", 
-        link_model=IngredientFood  
+        link_model=IngredientFood
     )
     meals: List["Meal"] = Relationship(back_populates="food")
 
+
 class FoodCreate(FoodBase):
-    user_id: Optional[int] = None
+    patient_id: Optional[int] = None
 
 
 class FoodRead(FoodBase):
     id: int
-    user_id: Optional[int] = None
+    patient_id: Optional[int] = None
 
 
 class FoodUpdate(SQLModel):

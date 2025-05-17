@@ -5,8 +5,8 @@ from pydantic import field_validator
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from backend.models.foods import Food
-    from backend.models.users import User
+    from models.foods import Food
+    from models.patients import Patient
 
 
 class MealBase(SQLModel):
@@ -44,22 +44,22 @@ class Meal(MealBase, table=True):
     
     id: Optional[int] = Field(default=None, primary_key=True)
     food_id: int = Field(foreign_key="foods.id")
-    user_id: int = Field(foreign_key="user.id")
+    patient_id: int = Field(foreign_key="patients.id")
     
     # Relationships
     food: "Food" = Relationship(back_populates="meals")
-    user: "User" = Relationship()
+    patient: "Patient" = Relationship(back_populates="meals")
 
 
 class MealCreate(MealBase):
     food_id: int
-    user_id: int
+    patient_id: int
 
 
 class MealRead(MealBase):
     id: int
     food_id: int
-    user_id: int
+    patient_id: int
 
 
 class MealUpdate(SQLModel):

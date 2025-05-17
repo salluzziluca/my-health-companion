@@ -5,7 +5,7 @@ from models.ingredient_food import IngredientFood
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:  
-    from backend.models.foods import Food
+    from models.foods import Food
 
 class IngredientBase(SQLModel):
     name: str
