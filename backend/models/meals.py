@@ -14,7 +14,6 @@ class MealBase(SQLModel):
     grams: float
     meal_of_the_day: str  # breakfast, lunch, dinner, snack, etc.
     timestamp: datetime
-    calories: float
     
     @field_validator('meal_name')
     @classmethod
@@ -23,7 +22,7 @@ class MealBase(SQLModel):
             raise ValueError('El nombre de la comida no puede exceder los 100 caracteres')
         return value
     
-    @field_validator('grams', 'calories')
+    @field_validator('grams')
     @classmethod
     def validate_positive_numbers(cls, value):
         if value < 0:
@@ -45,6 +44,7 @@ class Meal(MealBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     food_id: int = Field(foreign_key="foods.id")
     patient_id: int = Field(foreign_key="patients.id")
+    calories: float
     
     # Relationships
     food: "Food" = Relationship(back_populates="meals")
@@ -52,8 +52,10 @@ class Meal(MealBase, table=True):
 
 
 class MealCreate(MealBase):
-    food_id: int
-    patient_id: int
+    meal_name: str
+    grams: float
+    meal_of_the_day: str
+    timestamp: datetime
 
 
 class MealRead(MealBase):
@@ -67,7 +69,6 @@ class MealUpdate(SQLModel):
     grams: Optional[float] = None
     meal_of_the_day: Optional[str] = None
     timestamp: Optional[datetime] = None
-    calories: Optional[float] = None
     
     @field_validator('meal_name')
     @classmethod
@@ -76,7 +77,7 @@ class MealUpdate(SQLModel):
             raise ValueError('El nombre de la comida no puede exceder los 100 caracteres')
         return value
     
-    @field_validator('grams', 'calories')
+    @field_validator('grams')
     @classmethod
     def validate_positive_numbers(cls, value):
         if value is not None and value < 0:
