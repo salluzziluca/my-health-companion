@@ -32,7 +32,7 @@ def create_or_update_weekly_note(
     if existing_note:
         # Actualizar nota existente
         existing_note.notes = weekly_note.notes
-        existing_note.updated_at = datetime.utcnow()
+        existing_note.updated_at = datetime.now()
         session.add(existing_note)
         session.commit()
         session.refresh(existing_note)
