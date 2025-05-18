@@ -42,15 +42,7 @@ def create_meal(
     # se recorren los ingredientes que incluye para calcular el total de calorías
 
     # Buscar comida por nombre
-    food = session.exec(
-        select(Food).where(Food.food_name == meal_create.meal_name)
-    ).first()
-
-    if not food:
-        raise HTTPException(
-            status_code=404,
-            detail="Food not found. Please create this food with its ingredients first.",
-        )
+    food = search_food_by_name(session=session, food_name=meal_create.meal_name, current_patient=current_patient)
     
     # Calcular las calorías de la comida
     adjusted_calories = calculate_meal_calories(
@@ -122,15 +114,7 @@ def update_meal(
 
     # Si se actualiza la cantidad de gramos, recalcular las calorías
     if "grams" in meal_data:
-        food = session.exec(
-            select(Food).where(Food.food_name == meal.meal_name)
-        ).first()
-        
-        if not food:
-            raise HTTPException(
-                status_code=404,
-                detail="Food not found. Please create this food with its ingredients first.",
-            )
+        food = search_food_by_name(session=session, food_name=meal.meal_name)
         
         adjusted_calories = calculate_meal_calories(
             session=session,
@@ -168,3 +152,24 @@ def delete_meal(
     session.commit()
     
     return {"message": "Meal deleted successfully"}
+
+def search_food_by_name(
+    session: Session,
+    food_name: str,
+    current_patient: Optional[Patient] = None,
+):
+    """Buscar comida por nombre"""
+    food = session.exec(
+        select(Food).where(
+            (Food.food_name == food_name) &
+            ((Food.patient_id == current_patient.id) | (Food.patient_id == None))
+        )
+    ).first()
+    
+    if not food:
+        raise HTTPException(
+            status_code=404,
+            detail="Food not found. Please create this food with its ingredients first.",
+        )
+    
+    return food

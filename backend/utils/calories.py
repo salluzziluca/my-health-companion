@@ -34,10 +34,7 @@ def calculate_meal_calories(session: Session, food_id: int, meal_grams: float) -
             )
 
         total_grams += ingredient_food.grams
-        print(f"{ingredient.name} ingredient_food grams: {ingredient_food.grams}")
-        print(f"{ingredient.name} calories for 100gr: {ingredient.calories_kcal}")
         total_calories += (ingredient.calories_kcal / 100) * ingredient_food.grams
-        print(f"{ingredient.name} ingredient_food total_calories: {total_calories}")
 
     if total_grams == 0:
         raise HTTPException(
