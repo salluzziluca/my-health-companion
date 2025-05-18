@@ -120,7 +120,25 @@ def update_meal(
     for key, value in meal_data.items():
         setattr(meal, key, value)
 
-    # TODO: Verificar si se necesita recalcular las calorías
+    # Si se actualiza la cantidad de gramos, recalcular las calorías
+    if "grams" in meal_data:
+        food = session.exec(
+            select(Food).where(Food.food_name == meal.meal_name)
+        ).first()
+        
+        if not food:
+            raise HTTPException(
+                status_code=404,
+                detail="Food not found. Please create this food with its ingredients first.",
+            )
+        
+        adjusted_calories = calculate_meal_calories(
+            session=session,
+            food_id=food.id,
+            meal_grams=meal.grams,
+        )
+        
+        meal.calories = adjusted_calories
     
     session.add(meal)
     session.commit()

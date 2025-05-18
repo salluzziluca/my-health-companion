@@ -62,20 +62,13 @@ class MealRead(MealBase):
     id: int
     food_id: int
     patient_id: int
+    calories: float
 
 
 class MealUpdate(SQLModel):
-    meal_name: Optional[str] = None
     grams: Optional[float] = None
     meal_of_the_day: Optional[str] = None
     timestamp: Optional[datetime] = None
-    
-    @field_validator('meal_name')
-    @classmethod
-    def validate_meal_name(cls, value):
-        if value is not None and len(value) > 100:
-            raise ValueError('El nombre de la comida no puede exceder los 100 caracteres')
-        return value
     
     @field_validator('grams')
     @classmethod
