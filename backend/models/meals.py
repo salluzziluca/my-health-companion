@@ -13,7 +13,7 @@ class MealBase(SQLModel):
     meal_name: str
     grams: float
     meal_of_the_day: str  # breakfast, lunch, dinner, snack, etc.
-    timestamp: datetime
+    timestamp: datetime = Field(default_factory=datetime.now)
     calories: float
     
     @field_validator('meal_name')

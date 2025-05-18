@@ -14,6 +14,7 @@ from models.meals import Meal
 from routers.auth import router_auth
 from routers.patients import router_patients
 from routers.professionals import router_professionals
+from routers.weekly_summary import router_weekly_summaries,router_weekly_notes,router_weight_logs
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -27,6 +28,9 @@ create_db_and_tables()
 app.include_router(router_auth)
 app.include_router(router_patients)
 app.include_router(router_professionals)
+app.include_router(router_weight_logs)
+app.include_router(router_weekly_summaries)
+app.include_router(router_weekly_notes)
 
 
 @app.get("/")

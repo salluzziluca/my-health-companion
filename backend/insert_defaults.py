@@ -81,6 +81,23 @@ INSERT INTO ingredients_foods (ingredient_id, food_id) VALUES
 (11, 8), -- Sopa de verduras: Brócoli
 (12, 8), -- Sopa de verduras: Espinaca
 (13, 8); -- Sopa de verduras: Papa
+                     
+-- Example meals for Patient 1
+INSERT INTO meals (meal_name, grams, meal_of_the_day, timestamp, calories, patient_id, food_id) VALUES
+-- Almuerzo: Milanesa de pollo (200g) - Food ID 2
+('Milanesa de pollo', 200, 'almuerzo', '2023-10-23 12:00:00', 500, 1, 2),
+
+-- Cena: Pizza margarita (300g) - Food ID 6
+('Pizza margarita', 300, 'cena', '2023-10-23 19:30:00', 800, 1, 6),
+
+-- Almuerzo: Guiso de lentejas (250g) - Food ID 7
+('Guiso de lentejas', 250, 'almuerzo', '2023-10-24 12:30:00', 450, 1, 7),
+
+-- Desayuno: Tortilla de papa (150g) - Food ID 3
+('Tortilla de papa', 150, 'desayuno', '2023-10-24 08:00:00', 300, 1, 3),
+
+-- Cena: Sopa de verduras (300g) - Food ID 8
+('Sopa de verduras', 300, 'cena', '2023-10-24 20:00:00', 200, 1, 8);
 ''')
 
 conn.commit()
