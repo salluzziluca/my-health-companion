@@ -25,3 +25,6 @@ class IngredientFoodCreate(IngredientFoodBase):
 class IngredientFoodRead(IngredientFoodBase):
     id: int
     ingredient_id: int
+
+class AddIngredientsRequest(SQLModel):
+    ingredients: list[IngredientFoodCreate]

@@ -1,5 +1,6 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
 from sqlmodel import Session, select
 from datetime import datetime
 
@@ -7,7 +8,7 @@ from config.database import get_session
 from models.patients import Patient
 from models.foods import Food, FoodCreate, FoodRead, FoodUpdate, FoodReadWithIngredients
 from models.ingredients import Ingredient
-from models.ingredient_food import IngredientFood, IngredientFoodCreate, IngredientFoodRead
+from models.ingredient_food import IngredientFood, IngredientFoodCreate, IngredientFoodRead, AddIngredientsRequest
 from utils.security import get_current_patient
 
 router_foods = APIRouter(
@@ -67,14 +68,13 @@ def create_custom_food(
     
     return food
 
-# FALTA RETOCAR ESTA LOGICA
-@router_foods.post("/{food_id}/ingredients", response_model=FoodRead)
+@router_foods.post("/{food_id}/ingredients", response_model=FoodReadWithIngredients)
 def add_ingredients_to_custom_food(
     *,
     session: Session = Depends(get_session),
     current_patient: Patient = Depends(get_current_patient),
     food_id: int,
-    ingredients: List[IngredientFoodCreate],
+    ingredients: AddIngredientsRequest,
 ):
     """Agregar ingredientes con gramos a una comida personalizada"""
     food = session.get(Food, food_id)
@@ -85,28 +85,30 @@ def add_ingredients_to_custom_food(
     if food.patient_id != current_patient.id:
         raise HTTPException(status_code=403, detail="Not authorized to modify this food")
     
-    existing_links = session.exec(
-        select(IngredientFood).where(IngredientFood.food_id == food_id)
-    ).all()
-    existing_ingredient_ids = {link.ingredient_id for link in existing_links}
-    
-    # Verificar si los ingredientes existen
-    ingredient_ids = [ingredient.ingredient_id for ingredient in ingredients]
-    existing_ingredients = session.exec(
-        select(Ingredient).where(Ingredient.id.in_(ingredient_ids))
-    ).all()
-    
-    if len(existing_ingredients) != len(ingredient_ids):
-        raise HTTPException(status_code=404, detail="Some ingredients not found")
-    
-    # Agregar los ingredientes a la comida
-    for ingredient in ingredients:
-        if ingredient.ingredient_id in existing_ingredient_ids:
-            raise HTTPException(status_code=400, detail=f"Ingredient {ingredient.ingredient_id} already added")
-        ingredient_food = IngredientFood(**ingredient.model_dump())
-        session.add(ingredient_food)
-    
+    for ing in ingredients.ingredients:
+        ingredient = session.get(Ingredient, ing.ingredient_id)
+        if not ingredient:
+            raise HTTPException(status_code=404, detail=f"Ingredient {ing.ingredient_id} not found")
+        if ing.grams <= 0:
+            raise HTTPException(status_code=400, detail="Grams must be greater than 0")
+        
+        # Verificar si ya existe ese ingrediente en esa comida (opcional)
+        statement = select(IngredientFood).where(
+            IngredientFood.food_id == food_id,
+            IngredientFood.ingredient_id == ing.ingredient_id
+        )
+        existing_link = session.exec(statement).first()
+        if existing_link:
+            raise HTTPException(status_code=400, detail=f"Ingredient {ing.ingredient_id} already added") 
+
+        # Crear el enlace entre el ingrediente y la comida
+        link = IngredientFood(
+            food_id=food_id,
+            ingredient_id=ing.ingredient_id,
+            grams=ing.grams
+        )
+        session.add(link)
+
     session.commit()
     session.refresh(food)
-    
-    return food
+    return JSONResponse(status_code=201, content={"message": "Food created successfully"})
