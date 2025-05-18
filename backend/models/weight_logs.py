@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 class WeightLogBase(SQLModel):
     weight: float
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=datetime.now)
     
     @field_validator('weight')
     @classmethod
