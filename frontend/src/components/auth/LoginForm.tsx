@@ -76,6 +76,8 @@ const LoginForm: React.FC = () => {
                         required
                         fullWidth
                         variant="outlined"
+                        value={formData.username}
+                        onChange={handleChange}
                     />
                 </FormControl>
                 <FormControl>
@@ -86,6 +88,7 @@ const LoginForm: React.FC = () => {
                             type="button"
                             variant="body2"
                             sx={{ alignSelf: 'baseline' }}
+                            onClick={() => navigate('/forgot-password')}
                         >
                             Forgot your password?
                         </Link>
@@ -99,6 +102,8 @@ const LoginForm: React.FC = () => {
                         required
                         fullWidth
                         variant="outlined"
+                        value={formData.password}
+                        onChange={handleChange}
                     />
                 </FormControl>
                 <FormControlLabel
