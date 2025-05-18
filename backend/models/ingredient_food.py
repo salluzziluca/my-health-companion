@@ -7,3 +7,4 @@ class IngredientFood(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     ingredient_id: int = Field(foreign_key="ingredients.id")
     food_id: int = Field(foreign_key="foods.id")
+    grams: float
