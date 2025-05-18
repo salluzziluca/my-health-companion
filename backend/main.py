@@ -14,7 +14,9 @@ from models.meals import Meal
 from routers.auth import router_auth
 from routers.patients import router_patients
 from routers.professionals import router_professionals
-from routers.weekly_summary import router_weekly_summaries,router_weekly_notes,router_weight_logs
+from routers.weight_logs import router_weight_logs
+from routers.weekly_summaries import router_weekly_summaries
+from routers.weekly_notes import router_weekly_notes
 
 from fastapi.middleware.cors import CORSMiddleware
 

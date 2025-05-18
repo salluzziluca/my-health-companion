@@ -1,12 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session, select, func
-from typing import List, Optional
+from typing import Optional
 from datetime import date, datetime, timedelta
 from collections import Counter
 
 from config.database import get_session
-from models.weight_logs import WeightLog, WeightLogCreate, WeightLogRead
-from models.weekly_notes import WeeklyNote, WeeklyNoteCreate, WeeklyNoteRead, WeeklyNoteUpdate
+from models.weight_logs import WeightLog
+from models.weekly_notes import WeeklyNote
 from models.meals import Meal
 from models.foods import Food
 from schemas.weekly_summary import (
@@ -18,21 +18,9 @@ from schemas.weekly_summary import (
 )
 from utils.security import get_current_patient
 
-router_weight_logs = APIRouter(
-    prefix="/patients",
-    tags=["Weight Logs"],
-    responses={404: {"description": "Not found"}},
-)
-
 router_weekly_summaries = APIRouter(
     prefix="/patients",
     tags=["Weekly Summaries"],
-    responses={404: {"description": "Not found"}},
-)
-
-router_weekly_notes = APIRouter(
-    prefix="/patients",
-    tags=["Weekly Notes"],
     responses={404: {"description": "Not found"}},
 )
 
@@ -47,140 +35,6 @@ def get_week_end_date(week_start: date) -> date:
     """Obtiene el final de la semana (domingo) para un inicio de semana dado"""
     return week_start + timedelta(days=6)
 
-
-# ==================== WEIGHT LOGS ====================
-
-@router_weight_logs.post("/weight", response_model=WeightLogRead)
-def create_weight_log(
-    *,
-    session: Session = Depends(get_session),
-    current_patient = Depends(get_current_patient),
-    weight_log: WeightLogCreate,
-):
-    """Registrar nuevo peso del paciente"""
-    db_weight_log = WeightLog(
-        **weight_log.model_dump(),
-        patient_id=current_patient.id
-    )
-    session.add(db_weight_log)
-    session.commit()
-    session.refresh(db_weight_log)
-    return db_weight_log
-
-
-@router_weight_logs.get("/weight-history", response_model=List[WeightLogRead])
-def get_weight_history(
-    *,
-    session: Session = Depends(get_session),
-    current_patient = Depends(get_current_patient),
-    start_date: Optional[date] = Query(None, description="Fecha de inicio (formato: YYYY-MM-DD)"),
-    end_date: Optional[date] = Query(None, description="Fecha de fin (formato: YYYY-MM-DD)"),
-    limit: int = Query(100, description="Número máximo de registros"),
-):
-    """Obtener historial de peso del paciente"""
-    query = select(WeightLog).where(WeightLog.patient_id == current_patient.id)
-    
-    if start_date:
-        query = query.where(func.date(WeightLog.timestamp) >= start_date)
-    if end_date:
-        query = query.where(func.date(WeightLog.timestamp) <= end_date)
-    
-    query = query.order_by(WeightLog.timestamp.desc()).limit(limit)
-    weight_logs = session.exec(query).all()
-    
-    return weight_logs
-
-
-# ==================== WEEKLY NOTES ====================
-
-@router_weekly_notes.post("/weekly-notes", response_model=WeeklyNoteRead)
-def create_or_update_weekly_note(
-    *,
-    session: Session = Depends(get_session),
-    current_patient = Depends(get_current_patient),
-    weekly_note: WeeklyNoteCreate,
-):
-    """Crear o actualizar notas de la semana"""
-    # Verificar si ya existe una nota para esta semana
-    existing_note = session.exec(
-        select(WeeklyNote).where(
-            WeeklyNote.patient_id == current_patient.id,
-            WeeklyNote.week_start_date == weekly_note.week_start_date
-        )
-    ).first()
-    
-    if existing_note:
-        # Actualizar nota existente
-        existing_note.notes = weekly_note.notes
-        existing_note.updated_at = datetime.utcnow()
-        session.add(existing_note)
-        session.commit()
-        session.refresh(existing_note)
-        return existing_note
-    else:
-        # Crear nueva nota
-        db_note = WeeklyNote(
-            **weekly_note.model_dump(),
-            patient_id=current_patient.id
-        )
-        session.add(db_note)
-        session.commit()
-        session.refresh(db_note)
-        return db_note
-
-
-@router_weekly_notes.get("/weekly-notes/{week_start_date}", response_model=WeeklyNoteRead)
-def get_weekly_note(
-    *,
-    session: Session = Depends(get_session),
-    current_patient = Depends(get_current_patient),
-    week_start_date: date,
-):
-    """Obtener notas de una semana específica"""
-    note = session.exec(
-        select(WeeklyNote).where(
-            WeeklyNote.patient_id == current_patient.id,
-            WeeklyNote.week_start_date == week_start_date
-        )
-    ).first()
-    
-    if not note:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No se encontraron notas para esta semana",
-        )
-    
-    return note
-
-
-@router_weekly_notes.delete("/weekly-notes/{week_start_date}")
-def delete_weekly_note(
-    *,
-    session: Session = Depends(get_session),
-    current_patient = Depends(get_current_patient),
-    week_start_date: date,
-):
-    """Eliminar notas de una semana"""
-    note = session.exec(
-        select(WeeklyNote).where(
-            WeeklyNote.patient_id == current_patient.id,
-            WeeklyNote.week_start_date == week_start_date
-        )
-    ).first()
-    
-    if not note:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No se encontraron notas para esta semana",
-        )
-    
-    session.delete(note)
-    session.commit()
-    
-    return {"message": "Notas eliminadas exitosamente"}
-
-
-# ==================== WEEKLY SUMMARIES ====================
 
 @router_weekly_summaries.get("/weekly-summary", response_model=WeeklySummaryResponse)
 def get_weekly_summary(
