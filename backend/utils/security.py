@@ -4,9 +4,11 @@ from sqlmodel import Session, select
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from typing import Optional
-from models.users import User
+from typing import Optional, Tuple, Union
+
 from config.database import get_session
+from models.patients import Patient
+from models.professionals import Professional
 
 SECRET_KEY = "YOUR_SECRET_KEY"  # TODO poner una clave
 ALGORITHM = "HS256"
@@ -29,9 +31,13 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-def authenticate_user(email: str, password: str, session: Session):
+def authenticate_user(email: str, password: str, session: Session, user_type: str = "patient"):
     """Autenticar un usuario por mail y contraseña"""
-    user = session.exec(select(User).where(User.email == email)).first()
+    if user_type == "patient":
+        user = session.exec(select(Patient).where(Patient.email == email)).first()
+    else:  # user_type == "professional"
+        user = session.exec(select(Professional).where(Professional.email == email)).first()
+    
     if not user or not verify_password(password, user.password_hash):
         return False
     return user
@@ -49,8 +55,11 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme), session: Session = Depends(get_session)):
-    """Obtener el usuario autenticado actual desde el token JWT"""
+async def get_current_user_type_and_model(
+    token: str = Depends(oauth2_scheme), 
+    session: Session = Depends(get_session)
+) -> Tuple[str, Union[Patient, Professional]]:
+    """Obtener el tipo de usuario y sus datos a partir del token JWT"""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="No se pudieron validar las credenciales",
@@ -59,12 +68,50 @@ async def get_current_user(token: str = Depends(oauth2_scheme), session: Session
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
+        user_type: str = payload.get("user_type", "patient")  # Valor predeterminado para compatibilidad
+        
         if email is None:
             raise credentials_exception
     except JWTError:
         raise credentials_exception
     
-    user = session.exec(select(User).where(User.email == email)).first()
+    # Buscar al usuario según su tipo
+    if user_type == "patient":
+        user = session.exec(select(Patient).where(Patient.email == email)).first()
+    else:  # user_type == "professional"
+        user = session.exec(select(Professional).where(Professional.email == email)).first()
+    
     if user is None:
         raise credentials_exception
+    
+    return user_type, user
+
+
+async def get_current_patient(
+    current_user_info = Depends(get_current_user_type_and_model)
+) -> Patient:
+    """Obtener el paciente actual autenticado"""
+    user_type, user = current_user_info
+    
+    if user_type != "patient":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="La operación requiere un usuario con rol de paciente",
+        )
+    
+    return user
+
+
+async def get_current_professional(
+    current_user_info = Depends(get_current_user_type_and_model)
+) -> Professional:
+    """Obtener el profesional actual autenticado"""
+    user_type, user = current_user_info
+    
+    if user_type != "professional":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="La operación requiere un usuario con rol de profesional",
+        )
+    
     return user
