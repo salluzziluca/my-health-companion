@@ -14,7 +14,7 @@ import { getAllFoods } from '../services/foods';
 
 interface FoodOption {
   id: number;
-  name: string;
+  food_name: string;
 }
 
 interface Props {
@@ -23,7 +23,14 @@ interface Props {
   onAdd: (meal: NewMeal) => void;
 }
 
-const mealTypes = ['desayuno', 'almuerzo', 'cena', 'snack'];
+const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
+
+const mealTypeLabels: Record<string, string> = {
+  breakfast: 'Desayuno',
+  lunch: 'Almuerzo',
+  dinner: 'Cena',
+  snack: 'Snack',
+};
 
 const AddMealModal: React.FC<Props> = ({ open, onClose, onAdd }) => {
   const [foods, setFoods] = useState<FoodOption[]>([]);
@@ -33,19 +40,31 @@ const AddMealModal: React.FC<Props> = ({ open, onClose, onAdd }) => {
 
   useEffect(() => {
     getAllFoods()
-      .then(setFoods)
+      .then((data) => {
+        console.log('Foods desde API:', data);
+        setFoods(data);
+      })
       .catch((err) => console.error('Error cargando foods:', err));
   }, []);
 
   const handleAdd = () => {
     if (!selectedFood || !grams || !mealType) return;
 
+    const parsedGrams = parseInt(grams);
+    if (isNaN(parsedGrams)) {
+      console.error('Gramos inválidos:', grams);
+      return;
+    }
+
     const newMeal: NewMeal = {
       food_id: selectedFood.id,
-      grams: parseInt(grams),
-      meal_type: mealType,
+      grams: parsedGrams,
+      meal_of_the_day: mealType, // ya en inglés
+      meal_name: selectedFood.food_name,
+      timestamp: new Date().toISOString(),
     };
 
+    console.log('DEBUG payload:', newMeal);
     onAdd(newMeal);
     handleClose();
   };
@@ -63,7 +82,8 @@ const AddMealModal: React.FC<Props> = ({ open, onClose, onAdd }) => {
       <DialogContent>
         <Autocomplete
           options={foods}
-          getOptionLabel={(option) => option.name}
+          getOptionLabel={(option) => option.food_name ?? ''}
+          isOptionEqualToValue={(option, value) => option.id === value.id}
           value={selectedFood}
           onChange={(event, newValue) => setSelectedFood(newValue)}
           renderInput={(params) => (
@@ -90,7 +110,7 @@ const AddMealModal: React.FC<Props> = ({ open, onClose, onAdd }) => {
         >
           {mealTypes.map((type) => (
             <MenuItem key={type} value={type}>
-              {type.charAt(0).toUpperCase() + type.slice(1)}
+              {mealTypeLabels[type]}
             </MenuItem>
           ))}
         </TextField>

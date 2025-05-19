@@ -1,17 +1,14 @@
 import api from './api';
+import { NewMeal } from '../types/Meal';
 
 export const getMeals = async () => {
   const response = await api.get('/meals');
   return response.data;
 };
 
-export const createMeal = async (mealData: {
-  food_id: number;
-  grams: number;
-  meal_type: string; // desayuno | almuerzo | etc.
-}) => {
-  const response = await api.post('/meals', mealData);
-  return response.data;
+export const createMeal = async (mealData: NewMeal) => {
+  const res = await api.post('/meals', mealData);
+  return res.data;
 };
 
 export const getMealById = async (mealId: number) => {

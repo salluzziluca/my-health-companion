@@ -17,7 +17,7 @@ const MealDashboard = () => {
     getMeals()
       .then(setMeals)
       .catch((err) => {
-        console.error('Error al obtener las comidas:', err);
+        console.error('Error al obtener las comidas:', err.response?.data || err.message);
       });
   }, []);
 
@@ -25,8 +25,8 @@ const MealDashboard = () => {
     try {
       const created = await createMeal(newMeal);
       setMeals([...meals, created]);
-    } catch (err) {
-      console.error('Error al crear comida:', err);
+    } catch (err: any) {
+      console.error('Error al crear comida:', err.response?.data || err.message);
     }
   };
 
@@ -34,8 +34,8 @@ const MealDashboard = () => {
     try {
       await deleteMeal(id);
       setMeals(meals.filter((m) => m.id !== id));
-    } catch (err) {
-      console.error('Error al eliminar comida:', err);
+    } catch (err: any) {
+      console.error('Error al eliminar comida:', err.response?.data || err.message);
     }
   };
 
