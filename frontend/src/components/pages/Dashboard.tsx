@@ -14,11 +14,14 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Grid,
+  Paper,
+  Divider,
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon } from '@mui/icons-material';
 import { healthService } from '../../services/api';
 import { WeightLog, WeeklySummary, WeeklyNote } from '../../types/health';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
 const Dashboard = () => {
   const [weight, setWeight] = useState('');
@@ -108,9 +111,18 @@ const Dashboard = () => {
     );
   }
 
+  if (!weeklySummary) {
+    return (
+      <Box sx={{ mt: 4, mx: 2 }}>
+        <Alert severity="info">No hay datos disponibles para mostrar</Alert>
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
+      {/* Top Section: Weight Logging and Weekly Summary */}
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, mb: 3 }}>
         {/* Weight Logging Section */}
         <Box sx={{ width: { xs: '100%', md: '33%' } }}>
           <Card>
@@ -148,47 +160,157 @@ const Dashboard = () => {
               <Typography variant="h6" gutterBottom>
                 Resumen Semanal
               </Typography>
-              {weeklySummary && (
-                <Stack spacing={2}>
-                  <Box>
-                    <Typography variant="subtitle1">
-                      Período: {weeklySummary.week_start_date} - {weeklySummary.week_end_date}
-                    </Typography>
-                    <Typography>
-                      Cambio de peso: {weeklySummary.weight_data.weight_change} kg
-                    </Typography>
-                  </Box>
+              <Stack spacing={2}>
+                <Box>
+                  <Typography variant="subtitle1">
+                    Período: {weeklySummary.week_start_date} - {weeklySummary.week_end_date}
+                  </Typography>
+                  <Typography>
+                    Cambio de peso: {weeklySummary.weight_data.weight_change} kg
+                  </Typography>
+                </Box>
 
-                  {/* Weight Chart */}
-                  <Box sx={{ height: 300 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={weeklySummary.weight_data.weight_logs}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis />
-                        <Tooltip />
-                        <Line type="monotone" dataKey="weight" stroke="#8884d8" />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </Box>
+                {/* Weight Chart */}
+                <Box sx={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={weeklySummary.weight_data.weight_logs}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="weight" stroke="#8884d8" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
 
-                  {/* Weekly Note */}
-                  <Box>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <Typography variant="subtitle1">Nota Semanal:</Typography>
-                      <IconButton onClick={() => setIsNoteDialogOpen(true)}>
-                        <EditIcon />
-                      </IconButton>
-                    </Stack>
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                      {weeklySummary.notes || 'No hay notas para esta semana'}
-                    </Typography>
-                  </Box>
-                </Stack>
-              )}
+                {/* Weekly Note */}
+                <Box>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Typography variant="subtitle1">Nota Semanal:</Typography>
+                    <IconButton onClick={() => setIsNoteDialogOpen(true)}>
+                      <EditIcon />
+                    </IconButton>
+                  </Stack>
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    {weeklySummary.notes || 'No hay notas para esta semana'}
+                  </Typography>
+                </Box>
+              </Stack>
             </CardContent>
           </Card>
         </Box>
+      </Box>
+
+      {/* Bottom Section: Meal Summary */}
+      <Box>
+        <Typography variant="h6" gutterBottom>
+          Resumen de Comidas
+        </Typography>
+        <Stack spacing={2}>
+          {/* Top Row: Calorie Summary and Meal Distribution */}
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
+            {/* Calorie Summary */}
+            <Box sx={{ width: { xs: '100%', md: '50%' } }}>
+              <Paper sx={{ p: 2 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Calorías Totales: {weeklySummary.calorie_data.total_calories.toFixed(0)} kcal
+                </Typography>
+                <Typography variant="body2">
+                  Promedio diario: {weeklySummary.calorie_data.average_daily_calories.toFixed(0)} kcal
+                </Typography>
+                <Typography variant="body2">
+                  Días registrados: {weeklySummary.calorie_data.days_logged}
+                </Typography>
+              </Paper>
+            </Box>
+
+            {/* Meal Distribution */}
+            <Box sx={{ width: { xs: '100%', md: '50%' } }}>
+              <Paper sx={{ p: 2 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Distribución de Comidas
+                </Typography>
+                <Box sx={{ height: 200 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={Object.entries(weeklySummary.meal_trends.meal_distribution).map(([key, value]) => ({
+                          name: key.charAt(0).toUpperCase() + key.slice(1),
+                          value: value
+                        }))}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        label
+                      >
+                        {Object.entries(weeklySummary.meal_trends.meal_distribution).map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={['#0088FE', '#00C49F', '#FFBB28', '#FF8042'][index % 4]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Box>
+              </Paper>
+            </Box>
+          </Box>
+
+          {/* Daily Calorie Breakdown */}
+          <Box>
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                Desglose Diario de Calorías
+              </Typography>
+              <Box sx={{ height: 200 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={weeklySummary.calorie_data.daily_breakdown}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="calories" fill="#8884d8" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
+            </Paper>
+          </Box>
+
+          {/* Bottom Row: Favorite Foods and Meal Times */}
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
+            {/* Favorite Foods */}
+            <Box sx={{ width: { xs: '100%', md: '50%' } }}>
+              <Paper sx={{ p: 2 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Comidas Favoritas
+                </Typography>
+                <Stack spacing={1}>
+                  {weeklySummary.meal_trends.favorite_foods.map((food, index) => (
+                    <Typography key={index} variant="body2">
+                      {index + 1}. {food}
+                    </Typography>
+                  ))}
+                </Stack>
+              </Paper>
+            </Box>
+
+            {/* Meal Times */}
+            <Box sx={{ width: { xs: '100%', md: '50%' } }}>
+              <Paper sx={{ p: 2 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Horario de Comidas
+                </Typography>
+                <Typography variant="body2">
+                  Hora más frecuente: {weeklySummary.meal_trends.most_frequent_meal_time || 'No disponible'}
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  Total de comidas: {weeklySummary.meal_trends.total_meals}
+                </Typography>
+              </Paper>
+            </Box>
+          </Box>
+        </Stack>
       </Box>
 
       {/* Weekly Note Dialog */}
