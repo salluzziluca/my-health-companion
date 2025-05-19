@@ -1,6 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, Avatar, TextField, Button, Stack, MenuItem, CircularProgress } from '@mui/material';
 import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
+
+interface JwtPayload {
+  sub: string;
+  user_type?: string;
+  type?: string;
+  role?: string;
+  exp: number;
+  [key: string]: any;
+}
 
 const MyProfile = () => {
   const [profile, setProfile] = useState({
@@ -12,12 +22,40 @@ const MyProfile = () => {
 
   const [loading, setLoading] = useState(true); // Estado de carga
   const [profileExists, setProfileExists] = useState(true); // Para verificar si el perfil existe
+  const [userRole, setUserRole] = useState<string | null>(null); // Estado para el rol del usuario
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
   };
 
+  // Verificar el rol del usuario desde el token
+  const checkUserRole = () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = jwtDecode<JwtPayload>(token);
+        const role = decoded.role || decoded.user_type || decoded.type;
+        setUserRole(role || null);
+
+        // Si es profesional, no intentamos cargar el perfil
+        if (role === 'professional') {
+          setLoading(false);
+          setProfileExists(false);
+          return true; // Es profesional
+        }
+      } catch (error) {
+        console.error('Error decodificando token', error);
+      }
+    }
+    return false; // No es profesional o hubo un error
+  };
+
   const fetchProfile = async () => {
+    // Primero verificamos si es un profesional
+    if (checkUserRole()) {
+      return; // Si es profesional, salimos de la función
+    }
+
     try {
       const token = localStorage.getItem('token');
       const { data } = await axios.get('http://localhost:8000/patients/me', {
@@ -27,7 +65,7 @@ const MyProfile = () => {
       });
 
       // Verificar si el perfil existe
-      if (data) {
+      if (data && data.weight !== undefined && data.height !== undefined) {
         setProfile({
           weight: data.weight ? data.weight.toString() : '',
           height: data.height ? data.height.toString() : '',
@@ -35,7 +73,7 @@ const MyProfile = () => {
           gender: data.gender || '',
         });
       } else {
-        // Si el perfil no existe, mostrar una indicación
+        // Si el perfil no existe, mostrar una indicación (o no mostrar nada)
         setProfileExists(false);
       }
     } catch (error) {
@@ -50,23 +88,19 @@ const MyProfile = () => {
     try {
       const token = localStorage.getItem('token');
       const payload = {
-        weight: profile.weight ? parseFloat(profile.weight) : null,
-        height: profile.height ? parseFloat(profile.height) : null,
-        birth_date: profile.birth_date || null,
-        gender: profile.gender || null,
+        weight: parseFloat(profile.weight),
+        height: parseFloat(profile.height),
+        birth_date: profile.birth_date,
+        gender: profile.gender,
       };
-
       await axios.patch('http://localhost:8000/patients/me', payload, {
         headers: {
           Authorization: token ? `Bearer ${token}` : '',
         },
       });
-
       alert('Perfil actualizado correctamente');
-      fetchProfile(); // Refrescar los datos después de la actualización
     } catch (error) {
       console.error('Error al actualizar perfil', error);
-      alert('Error al actualizar el perfil');
     }
   };
 
@@ -83,7 +117,18 @@ const MyProfile = () => {
     );
   }
 
-  // Si no existe el perfil, no mostrar nada o mostrar un mensaje adecuado
+  // Si es un profesional, mostrar un mensaje especial
+  if (userRole === 'professional') {
+    return (
+      <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4, p: 2 }}>
+        <Typography variant="h5" align="center">
+          Esta sección está disponible solo para pacientes. Como profesional, no tiene un perfil de salud.
+        </Typography>
+      </Box>
+    );
+  }
+
+  // Si no existe el perfil, mostrar un mensaje adecuado
   if (!profileExists) {
     return (
       <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4, p: 2 }}>
@@ -105,8 +150,6 @@ const MyProfile = () => {
           value={profile.weight}
           onChange={handleChange}
           fullWidth
-          type="number"
-          inputProps={{ min: 0, step: 0.1 }}
         />
         <TextField
           label="Altura (cm)"
@@ -114,8 +157,6 @@ const MyProfile = () => {
           value={profile.height}
           onChange={handleChange}
           fullWidth
-          type="number"
-          inputProps={{ min: 0, step: 0.1 }}
         />
         <TextField
           label="Fecha de Nacimiento"
@@ -137,7 +178,6 @@ const MyProfile = () => {
           <MenuItem value="male">Masculino</MenuItem>
           <MenuItem value="female">Femenino</MenuItem>
           <MenuItem value="other">Otro</MenuItem>
-          <MenuItem value="prefer not to say">Prefiero no decirlo</MenuItem>
         </TextField>
         <Button variant="contained" color="primary" onClick={handleSave}>
           Guardar Cambios
