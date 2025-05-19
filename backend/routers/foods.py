@@ -18,6 +18,18 @@ router_foods = APIRouter(
 )
 
 @router_foods.get("/", response_model=List[FoodRead])
+def get_all_foods(
+    *,
+    session: Session = Depends(get_session),
+):
+    """Obtener todas las comidas precargadas"""
+    foods = session.exec(
+        select(Food).where(Food.patient_id == None)
+    ).all()
+    
+    return foods
+
+@router_foods.get("/custom", response_model=List[FoodRead])
 def get_custom_foods(
     session: Session = Depends(get_session),
     current_patient: Patient = Depends(get_current_patient),
