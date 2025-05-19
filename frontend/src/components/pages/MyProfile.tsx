@@ -1,33 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, Avatar, TextField, Button, Stack, MenuItem, CircularProgress } from '@mui/material';
-import { jwtDecode } from 'jwt-decode';
 import axios from 'axios';
-
-interface JwtPayload {
-  sub: string;
-  user_type?: string;
-  type?: string;
-  role?: string;
-  exp: number;
-  [key: string]: any;
-}
-
-// Función para obtener el tipo de usuario del token
-const getUserTypeFromToken = (): string | null => {
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) return null;
-
-    const decoded = jwtDecode<JwtPayload>(token);
-    console.log('Token decodificado en MyProfile:', decoded);
-
-    // Intentamos diferentes campos que podrían contener el tipo de usuario
-    return decoded.user_type || decoded.type || decoded.role || null;
-  } catch (error) {
-    console.error('Error decodificando el token:', error);
-    return null;
-  }
-};
 
 const MyProfile = () => {
   const [profile, setProfile] = useState({
@@ -37,9 +10,8 @@ const MyProfile = () => {
     gender: '',
   });
 
-  const [loading, setLoading] = useState(true);
-  const [profileExists, setProfileExists] = useState(true);
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true); // Estado de carga
+  const [profileExists, setProfileExists] = useState(true); // Para verificar si el perfil existe
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
@@ -48,28 +20,20 @@ const MyProfile = () => {
   const fetchProfile = async () => {
     try {
       const token = localStorage.getItem('token');
-      const userType = getUserTypeFromToken();
-      console.log('Tipo de usuario en MyProfile:', userType);
-
-      // El endpoint para obtener el perfil puede variar según el tipo de usuario
-      // Si es necesario, ajusta la URL según tu API
-      const { data } = await axios.get('http://localhost:8000/profiles/me', {
+      const { data } = await axios.get('http://localhost:8000/patients/me', {
         headers: {
           Authorization: token ? `Bearer ${token}` : '',
         },
       });
 
-      console.log('Datos del perfil recibidos:', data);
-
       // Verificar si el perfil existe
-      if (data && data.weight !== undefined && data.height !== undefined) {
+      if (data) {
         setProfile({
           weight: data.weight ? data.weight.toString() : '',
           height: data.height ? data.height.toString() : '',
           birth_date: data.birth_date || '',
           gender: data.gender || '',
         });
-        setProfileExists(true);
       } else {
         // Si el perfil no existe, mostrar una indicación
         setProfileExists(false);
@@ -77,9 +41,8 @@ const MyProfile = () => {
     } catch (error) {
       console.error('Error fetching profile', error);
       setProfileExists(false); // Si ocurre un error, asumimos que no hay perfil
-      setError('Error al cargar el perfil. Por favor, intenta de nuevo.');
     } finally {
-      setLoading(false);
+      setLoading(false); // Se detiene el loading después de la petición
     }
   };
 
@@ -87,24 +50,23 @@ const MyProfile = () => {
     try {
       const token = localStorage.getItem('token');
       const payload = {
-        weight: parseFloat(profile.weight),
-        height: parseFloat(profile.height),
-        birth_date: profile.birth_date,
-        gender: profile.gender,
+        weight: profile.weight ? parseFloat(profile.weight) : null,
+        height: profile.height ? parseFloat(profile.height) : null,
+        birth_date: profile.birth_date || null,
+        gender: profile.gender || null,
       };
 
-      console.log('Enviando payload de actualización del perfil:', payload);
-
-      await axios.patch('http://localhost:8000/profiles/me', payload, {
+      await axios.patch('http://localhost:8000/patients/me', payload, {
         headers: {
           Authorization: token ? `Bearer ${token}` : '',
         },
       });
 
       alert('Perfil actualizado correctamente');
+      fetchProfile(); // Refrescar los datos después de la actualización
     } catch (error) {
       console.error('Error al actualizar perfil', error);
-      setError('Error al actualizar el perfil. Por favor, intenta de nuevo.');
+      alert('Error al actualizar el perfil');
     }
   };
 
@@ -112,6 +74,7 @@ const MyProfile = () => {
     fetchProfile();
   }, []);
 
+  // Si la carga está en progreso, mostrar un CircularProgress
   if (loading) {
     return (
       <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4, p: 2, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -120,16 +83,7 @@ const MyProfile = () => {
     );
   }
 
-  if (error) {
-    return (
-      <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4, p: 2 }}>
-        <Typography variant="h5" align="center" color="error">
-          {error}
-        </Typography>
-      </Box>
-    );
-  }
-
+  // Si no existe el perfil, no mostrar nada o mostrar un mensaje adecuado
   if (!profileExists) {
     return (
       <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4, p: 2 }}>
@@ -152,6 +106,7 @@ const MyProfile = () => {
           onChange={handleChange}
           fullWidth
           type="number"
+          inputProps={{ min: 0, step: 0.1 }}
         />
         <TextField
           label="Altura (cm)"
@@ -160,6 +115,7 @@ const MyProfile = () => {
           onChange={handleChange}
           fullWidth
           type="number"
+          inputProps={{ min: 0, step: 0.1 }}
         />
         <TextField
           label="Fecha de Nacimiento"
