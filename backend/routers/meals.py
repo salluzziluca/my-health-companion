@@ -114,7 +114,7 @@ def update_meal(
 
     # Si se actualiza la cantidad de gramos, recalcular las calorías
     if "grams" in meal_data:
-        food = search_food_by_name(session=session, food_name=meal.meal_name)
+        food = search_food_by_name(session=session, food_name=meal.meal_name, current_patient=current_patient)
         
         adjusted_calories = calculate_meal_calories(
             session=session,
@@ -156,13 +156,13 @@ def delete_meal(
 def search_food_by_name(
     session: Session,
     food_name: str,
-    current_patient: Optional[Patient] = None,
+    current_patient: Patient,
 ):
     """Buscar comida por nombre"""
     food = session.exec(
         select(Food).where(
             (Food.food_name == food_name) &
-            ((Food.patient_id == current_patient.id) | (Food.patient_id == None))
+            ((Food.patient_id == None) | (Food.patient_id == current_patient.id))
         )
     ).first()
     
