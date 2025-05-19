@@ -1,23 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, TextField, Autocomplete
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  Autocomplete,
+  MenuItem
 } from '@mui/material';
 import { NewMeal } from '../types/Meal';
+import { getAllFoods } from '../services/foods';
 
-type Meal = {
+interface FoodOption {
+  id: number;
   name: string;
-  calories: number;
-};
-
-const mockFoodList = [
-  { name: 'Manzana', calories: 95 },
-  { name: 'Banana', calories: 105 },
-  { name: 'Arroz', calories: 200 },
-  { name: 'Pollo', calories: 250 },
-  { name: 'Ensalada', calories: 80 }
-  // Este array debería venir de una API en el futuro
-];
+}
 
 interface Props {
   open: boolean;
@@ -25,42 +23,86 @@ interface Props {
   onAdd: (meal: NewMeal) => void;
 }
 
+const mealTypes = ['desayuno', 'almuerzo', 'cena', 'snack'];
+
 const AddMealModal: React.FC<Props> = ({ open, onClose, onAdd }) => {
-  const [selectedFood, setSelectedFood] = useState<{ name: string; calories: number } | null>(null);
-  const [customCalories, setCustomCalories] = useState('');
+  const [foods, setFoods] = useState<FoodOption[]>([]);
+  const [selectedFood, setSelectedFood] = useState<FoodOption | null>(null);
+  const [grams, setGrams] = useState('');
+  const [mealType, setMealType] = useState('');
+
+  useEffect(() => {
+    getAllFoods()
+      .then(setFoods)
+      .catch((err) => console.error('Error cargando foods:', err));
+  }, []);
 
   const handleAdd = () => {
-    if (selectedFood) {
-      const calories = customCalories ? parseInt(customCalories) : selectedFood.calories;
-      onAdd({ name: selectedFood.name, calories });
-      onClose();
-      setSelectedFood(null);
-      setCustomCalories('');
-    }
+    if (!selectedFood || !grams || !mealType) return;
+
+    const newMeal: NewMeal = {
+      food_id: selectedFood.id,
+      grams: parseInt(grams),
+      meal_type: mealType,
+    };
+
+    onAdd(newMeal);
+    handleClose();
+  };
+
+  const handleClose = () => {
+    onClose();
+    setSelectedFood(null);
+    setGrams('');
+    setMealType('');
   };
 
   return (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog open={open} onClose={handleClose}>
       <DialogTitle>Agregar Comida</DialogTitle>
       <DialogContent>
         <Autocomplete
-          options={mockFoodList}
+          options={foods}
           getOptionLabel={(option) => option.name}
+          value={selectedFood}
           onChange={(event, newValue) => setSelectedFood(newValue)}
-          renderInput={(params) => <TextField {...params} label="Buscar alimento" margin="normal" />}
+          renderInput={(params) => (
+            <TextField {...params} label="Buscar alimento" margin="normal" />
+          )}
         />
+
         <TextField
-          label="Calorías (opcional)"
+          label="Gramos"
           type="number"
           margin="normal"
           fullWidth
-          value={customCalories}
-          onChange={(e) => setCustomCalories(e.target.value)}
+          value={grams}
+          onChange={(e) => setGrams(e.target.value)}
         />
+
+        <TextField
+          select
+          label="Tipo de comida"
+          margin="normal"
+          fullWidth
+          value={mealType}
+          onChange={(e) => setMealType(e.target.value)}
+        >
+          {mealTypes.map((type) => (
+            <MenuItem key={type} value={type}>
+              {type.charAt(0).toUpperCase() + type.slice(1)}
+            </MenuItem>
+          ))}
+        </TextField>
       </DialogContent>
+
       <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
-        <Button onClick={handleAdd} variant="contained" disabled={!selectedFood}>
+        <Button onClick={handleClose}>Cancelar</Button>
+        <Button
+          onClick={handleAdd}
+          variant="contained"
+          disabled={!selectedFood || !grams || !mealType}
+        >
           Agregar
         </Button>
       </DialogActions>
