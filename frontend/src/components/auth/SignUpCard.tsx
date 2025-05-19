@@ -14,7 +14,7 @@ import Select, { SelectChangeEvent } from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import { GoogleIcon, FacebookIcon, MyHealtCompanionIcon } from '../CustomIcons';
 import { authService } from '../../services/api';
-import { RegisterData } from '../../types/auth';
+import { RegisterData, Role } from '../../types/auth';
 import axios from 'axios';
 import { appColors } from '../../App';
 
@@ -115,12 +115,13 @@ export default function SignUpCard() {
     const [lastNameError, setLastNameError] = React.useState(false);
     const [lastNameErrorMessage, setLastNameErrorMessage] = React.useState('');
     const [loading, setLoading] = React.useState(false);
-    const [formData, setFormData] = React.useState<RegisterData>({
+    const [formData, setFormData] = React.useState<RegisterData & { specialization?: string }>({
         email: '',
         password: '',
         first_name: '',
         last_name: '',
-        role: 'user'
+        role: 'patient',
+        specialization: 'nutritionist'
     });
 
     const handleTextFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -230,7 +231,14 @@ export default function SignUpCard() {
         setLastNameErrorMessage('');
 
         try {
-            await authService.register(formData);
+            if (formData.role === 'patient') {
+                await authService.registerPatient(formData);
+            } else {
+                await authService.registerProfessional({
+                    ...formData,
+                    specialization: formData.specialization || 'nutritionist'
+                });
+            }
             navigate('/login');
         } catch (err) {
             if (axios.isAxiosError(err)) {
@@ -374,10 +382,27 @@ export default function SignUpCard() {
                         onChange={handleSelectChange}
                         variant="outlined"
                     >
-                        <MenuItem value="user">User</MenuItem>
-                        <MenuItem value="nutritionist">Nutritionist</MenuItem>
+                        <MenuItem value="patient">Patient</MenuItem>
+                        <MenuItem value="professional">Professional (Nutritionist/Trainer)</MenuItem>
                     </Select>
                 </FormControl>
+
+                {formData.role === 'professional' && (
+                    <FormControl fullWidth>
+                        <FormLabel htmlFor="specialization">Specialization</FormLabel>
+                        <Select
+                            id="specialization"
+                            name="specialization"
+                            value={formData.specialization || 'nutritionist'}
+                            onChange={handleSelectChange}
+                            variant="outlined"
+                        >
+                            <MenuItem value="nutritionist">Nutritionist</MenuItem>
+                            <MenuItem value="personal trainer">Personal Trainer</MenuItem>
+                        </Select>
+                    </FormControl>
+                )}
+
                 <Button
                     type="submit"
                     fullWidth
