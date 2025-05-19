@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/api';
-import { RegisterData } from '../../types/auth';
+import { RegisterData, Role, Specialization } from '../../types/auth';
 import axios from 'axios';
 import AuthLayout from './AuthLayout';
 
@@ -28,7 +28,8 @@ const RegisterForm: React.FC = () => {
         password: '',
         first_name: '',
         last_name: '',
-        role: 'user'
+        role: 'patient',
+        specialization: 'nutritionist'
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent) => {
@@ -45,7 +46,11 @@ const RegisterForm: React.FC = () => {
         setLoading(true);
 
         try {
-            await authService.register(formData);
+            if (formData.role === 'patient') {
+                await authService.registerPatient(formData);
+            } else {
+                await authService.registerProfessional(formData);
+            }
             navigate('/login');
         } catch (err) {
             if (axios.isAxiosError(err)) {
@@ -145,10 +150,28 @@ const RegisterForm: React.FC = () => {
                         onChange={handleChange}
                         variant="outlined"
                     >
-                        <MenuItem value="user">User</MenuItem>
-                        <MenuItem value="nutritionist">Nutritionist</MenuItem>
+                        <MenuItem value="patient">Patient</MenuItem>
+                        <MenuItem value="professional">Professional (Nutritionist/Trainer)</MenuItem>
                     </Select>
                 </FormControl>
+
+                {formData.role === 'professional' && (
+                    <FormControl fullWidth>
+                        <FormLabel htmlFor="specialization">Specialization</FormLabel>
+                        <Select
+                            id="specialization"
+                            name="specialization"
+                            value={formData.specialization || 'nutritionist'}
+                            label="Specialization"
+                            onChange={handleChange}
+                            variant="outlined"
+                        >
+                            <MenuItem value="nutritionist">Nutritionist</MenuItem>
+                            <MenuItem value="personal trainer">Personal Trainer</MenuItem>
+                        </Select>
+                    </FormControl>
+                )}
+
                 <Button
                     type="submit"
                     fullWidth
