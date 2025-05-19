@@ -1,7 +1,7 @@
 from typing import Optional, List
 from sqlmodel import Field, SQLModel, Relationship
 from pydantic import field_validator
-from models.ingredient_food import IngredientFood 
+from models.ingredient_food import IngredientFood, IngredientFoodCreate, IngredientFoodRead
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -35,12 +35,15 @@ class Food(FoodBase, table=True):
 
 
 class FoodCreate(FoodBase):
-    patient_id: Optional[int] = None
+    pass
 
 
 class FoodRead(FoodBase):
     id: int
     patient_id: Optional[int] = None
+
+class FoodReadWithIngredients(FoodRead):
+    ingredients: List[IngredientFoodRead] = []
 
 
 class FoodUpdate(SQLModel):

@@ -90,6 +90,36 @@ my-health-companion/
 
 -   DELETE `/professionals/unassign-patient/{patient_id}`: Desasignar paciente
 
+### Meals
+
+-   GET `/meals`: Listar platos del paciente actual
+
+-   POST `/meals`: Crear un nuevo plato
+
+-   GET `/meals/{meal_id}`: Obtener información de un plato específico
+
+-   PATCH `/meals/{meal_id}`: Actualizar información de un plato
+
+-   DELETE `/meals/{meal_id}`: Eliminar un plato
+
+### Foods
+
+-   GET `/foods`: Listar todas las comidas precargadas
+
+-   GET `/foods/custom`: Listar comidas personalizadas del paciente actual
+
+-   POST `/foods`: Crear una nueva comida personalizada (sin ingredientes)
+
+-   GET `/{food_id}/ingredients`: Listar ingredientes (por IDs) de una comida personalizada
+
+-   POST `/{food_id}/ingredients`: Agregar ingredientes a una comida personalizada
+
+### Ingredients
+
+-  GET `/ingredients`: Listar ingredientes disponibles
+
+-  GET `/ingredients/{ingredient_id}`: Obtener información de un ingrediente específico
+
 ## Notas para Desarrolladores
 
 -   El backend usa SQLite como base de datos
