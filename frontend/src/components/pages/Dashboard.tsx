@@ -52,7 +52,22 @@ const Dashboard = () => {
     if (!weight) return;
 
     try {
+      // Registrar el nuevo peso
       await healthService.logWeight(parseFloat(weight));
+
+      // Actualizar el perfil con el nuevo peso
+      const token = localStorage.getItem('token');
+      await fetch('http://localhost:8000/patients/me', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify({
+          weight: parseFloat(weight)
+        }),
+      });
+
       setWeight('');
       fetchWeeklySummary(); // Refresh the summary
     } catch (err) {
