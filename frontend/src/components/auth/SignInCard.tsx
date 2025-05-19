@@ -172,7 +172,6 @@ export default function SignInCard() {
         try {
             const response = await authService.login(formData);
             localStorage.setItem('token', response.access_token);
-            localStorage.setItem('role', response.role);
             navigate('/dashboard');
         } catch (err) {
             setEmailError(true);

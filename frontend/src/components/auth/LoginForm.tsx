@@ -42,7 +42,6 @@ const LoginForm: React.FC = () => {
         try {
             const response = await authService.login(formData);
             localStorage.setItem('token', response.access_token);
-            localStorage.setItem('role', response.role);
             navigate('/dashboard');
         } catch (err) {
             setError('Invalid email or password');
