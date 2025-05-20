@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { WeightLog, WeeklySummary, WeeklyNote } from '../types/health';
 import { LoginCredentials, RegisterData, AuthResponse, User, Role, Specialization } from '../types/auth';
 import { jwtDecode } from 'jwt-decode';
 
@@ -187,6 +188,48 @@ export const professionalService = {
         const response = await api.delete(`/professionals/unassign-patient/${patientId}`);
         return response.data;
     }
+};
+
+export const healthService = {
+    // Weight Logs
+    async logWeight(weight: number): Promise<WeightLog> {
+        const response = await api.post<WeightLog>('/patients/weight', { weight });
+        return response.data;
+    },
+
+    async getWeightHistory(): Promise<WeightLog[]> {
+        const response = await api.get<WeightLog[]>('/patients/weight-history');
+        return response.data;
+    },
+
+    // Weekly Summaries
+    async getWeeklySummary(weekStartDate?: string): Promise<WeeklySummary> {
+        const url = weekStartDate
+            ? `/patients/weekly-summary?week_start_date=${weekStartDate}`
+            : '/patients/weekly-summary';
+        const response = await api.get<WeeklySummary>(url);
+        return response.data;
+    },
+
+    async getWeeklySummaryHistory(): Promise<WeeklySummary[]> {
+        const response = await api.get<WeeklySummary[]>('/patients/weekly-summary/history');
+        return response.data;
+    },
+
+    // Weekly Notes
+    async createOrUpdateWeeklyNote(note: WeeklyNote): Promise<WeeklyNote> {
+        const response = await api.post<WeeklyNote>('/patients/weekly-notes', note);
+        return response.data;
+    },
+
+    async getWeeklyNote(weekStartDate: string): Promise<WeeklyNote> {
+        const response = await api.get<WeeklyNote>(`/patients/weekly-notes/${weekStartDate}`);
+        return response.data;
+    },
+
+    async deleteWeeklyNote(weekStartDate: string): Promise<void> {
+        await api.delete(`/patients/weekly-notes/${weekStartDate}`);
+    },
 };
 
 export default api; 
