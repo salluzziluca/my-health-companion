@@ -14,6 +14,9 @@ from models.meals import Meal
 from routers.auth import router_auth
 from routers.patients import router_patients
 from routers.professionals import router_professionals
+from routers.meals import router_meals
+from routers.foods import router_foods
+from routers.ingredients import router_ingredients
 from routers.weight_logs import router_weight_logs
 from routers.weekly_summaries import router_weekly_summaries
 from routers.weekly_notes import router_weekly_notes
@@ -30,9 +33,9 @@ create_db_and_tables()
 app.include_router(router_auth)
 app.include_router(router_patients)
 app.include_router(router_professionals)
-app.include_router(router_weight_logs)
-app.include_router(router_weekly_summaries)
-app.include_router(router_weekly_notes)
+app.include_router(router_meals)
+app.include_router(router_foods)
+app.include_router(router_ingredients)
 
 
 @app.get("/")

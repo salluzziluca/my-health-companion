@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 class IngredientBase(SQLModel):
     name: str
     category: str
-    unit: str
+    grams: float
     calories_kcal: float
     protein_g: float
     fat_g: float
@@ -55,7 +55,7 @@ class IngredientRead(IngredientBase):
 class IngredientUpdate(SQLModel):
     name: Optional[str] = None
     category: Optional[str] = None
-    unit: Optional[str] = None
+    grams: Optional[float] = None
     calories_kcal: Optional[float] = None
     protein_g: Optional[float] = None
     fat_g: Optional[float] = None
