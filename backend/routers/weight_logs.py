@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlmodel import Session, select, func
 from typing import List, Optional
 from datetime import date
 
 from config.database import get_session
 from models.weight_logs import WeightLog, WeightLogCreate, WeightLogRead
+from models.patients import Patient
 from utils.security import get_current_patient
 
 router_weight_logs = APIRouter(
@@ -20,14 +21,20 @@ def create_weight_log(
     current_patient = Depends(get_current_patient),
     weight_log: WeightLogCreate,
 ):
-    """Registrar nuevo peso del paciente"""
+    """Registrar nuevo peso del paciente y actualizar el peso actual del paciente"""
     db_weight_log = WeightLog(
         **weight_log.model_dump(),
         patient_id=current_patient.id
     )
     session.add(db_weight_log)
+    
+    # Actualizar el campo weight del paciente con el último peso registrado
+    current_patient.weight = weight_log.weight
+    session.add(current_patient)
+    
     session.commit()
     session.refresh(db_weight_log)
+    
     return db_weight_log
 
 
