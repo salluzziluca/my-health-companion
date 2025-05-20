@@ -17,6 +17,7 @@ import { authService } from '../../services/api';
 import { RegisterData, Role } from '../../types/auth';
 import axios from 'axios';
 import { appColors } from '../../App';
+import LinearProgress from '@mui/material/LinearProgress';
 
 const Card = styled(MuiCard)(({ theme }) => ({
     display: 'flex',
@@ -115,6 +116,7 @@ export default function SignUpCard() {
     const [lastNameError, setLastNameError] = React.useState(false);
     const [lastNameErrorMessage, setLastNameErrorMessage] = React.useState('');
     const [loading, setLoading] = React.useState(false);
+    const [passwordStrength, setPasswordStrength] = React.useState(0);
     const [formData, setFormData] = React.useState<RegisterData & { specialization?: string }>({
         email: '',
         password: '',
@@ -124,12 +126,38 @@ export default function SignUpCard() {
         specialization: 'nutritionist'
     });
 
+    const calculatePasswordStrength = (password: string) => {
+        let strength = 0;
+
+        // Length check
+        if (password.length >= 8) strength += 20;
+        if (password.length >= 12) strength += 10;
+
+        // Character type checks
+        if (/[A-Z]/.test(password)) strength += 20; // Uppercase
+        if (/[a-z]/.test(password)) strength += 20; // Lowercase
+        if (/[0-9]/.test(password)) strength += 20; // Numbers
+        if (/[^A-Za-z0-9]/.test(password)) strength += 20; // Special characters
+
+        return Math.min(strength, 100);
+    };
+
+    const getPasswordStrengthColor = (strength: number) => {
+        if (strength < 40) return 'error';
+        if (strength < 70) return 'warning';
+        return 'success';
+    };
+
     const handleTextFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({
             ...prev,
             [name]: value
         }));
+
+        if (name === 'password') {
+            setPasswordStrength(calculatePasswordStrength(value));
+        }
     };
 
     const handleSelectChange = (e: SelectChangeEvent) => {
@@ -342,6 +370,18 @@ export default function SignUpCard() {
                         value={formData.password}
                         onChange={handleTextFieldChange}
                     />
+                    <Box sx={{ mt: 1 }}>
+                        <LinearProgress
+                            variant="determinate"
+                            value={passwordStrength}
+                            color={getPasswordStrengthColor(passwordStrength)}
+                            sx={{ height: 8, borderRadius: 4 }}
+                        />
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                            {passwordStrength < 40 ? 'Weak' :
+                                passwordStrength < 70 ? 'Medium' : 'Strong'} password
+                        </Typography>
+                    </Box>
                 </FormControl>
                 <FormControl>
                     <FormLabel htmlFor="first_name">First Name</FormLabel>
