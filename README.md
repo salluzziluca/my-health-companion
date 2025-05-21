@@ -45,9 +45,10 @@ Si van a http://localhost:8000/docs van a ver la una documentacion interactiva d
 
 ```
 my-health-companion/
-├── backend/           # Servidor FastAPI
+├── backend/          # Servidor FastAPI
 │   ├── config/       # Configuraciones
 │   ├── models/       # Modelos de datos
+│   ├── schemas/      # Esquemas de datos
 │   ├── routers/      # Rutas de la API
 │   └── utils/        # Utilidades
 ├── frontend/         # Aplicación React
