@@ -32,6 +32,7 @@ const Dashboard = () => {
   const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [weightError, setWeightError] = useState<string | null>(null);
 
   const fetchWeeklySummary = async () => {
     try {
@@ -54,6 +55,7 @@ const Dashboard = () => {
 
   const handleWeightSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setWeightError(null);
     if (!weight) return;
 
     try {
@@ -75,9 +77,25 @@ const Dashboard = () => {
 
       setWeight('');
       fetchWeeklySummary(); // Refresh the summary
-    } catch (err) {
-      setError('Error al registrar el peso');
-      console.error(err);
+    } catch (err: any) {
+      // Intentar extraer el mensaje del backend
+      let msg = 'Error al registrar el peso';
+      if (err?.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        if (Array.isArray(detail) && detail[0]?.msg) {
+          msg = detail[0].msg;
+        } else if (typeof detail === 'string') {
+          msg = detail;
+        }
+        // Limpiar detalles técnicos si aparecen en el mensaje
+        if (typeof msg === 'string') {
+          msg = msg.replace(/\[type=.*?\]/gi, '').replace(/value_error:?\w*/gi, '').trim();
+          msg = msg.replace(/^Value error,\s*/i, '');
+        }
+      } else if (err?.message && err.message.includes('peso')) {
+        msg = err.message;
+      }
+      setWeightError(msg);
     }
   };
 
@@ -138,8 +156,10 @@ const Dashboard = () => {
                     label="Peso (kg)"
                     type="number"
                     value={weight}
-                    onChange={(e) => setWeight(e.target.value)}
+                    onChange={(e) => { setWeight(e.target.value); setWeightError(null); }}
                     fullWidth
+                    error={!!weightError}
+                    helperText={weightError}
                   />
                   <Button
                     type="submit"
