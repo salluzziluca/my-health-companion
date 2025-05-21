@@ -29,6 +29,11 @@ const MyProfile = () => {
   const [profileExists, setProfileExists] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState({
+    height: '',
+    birth_date: '',
+    gender: ''
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
@@ -168,13 +173,34 @@ const MyProfile = () => {
   const handleSave = async () => {
     try {
       setError(null);
+      setFieldErrors({
+        height: '',
+        birth_date: '',
+        gender: ''
+      });
+      
+      // Validación local de la altura
+      const heightValue = parseFloat(profile.height);
+      if (isNaN(heightValue)) {
+        setFieldErrors(prev => ({ ...prev, height: 'La altura debe ser un número válido' }));
+        return;
+      }
+      if (heightValue <= 0) {
+        setFieldErrors(prev => ({ ...prev, height: 'La altura debe ser un valor positivo' }));
+        return;
+      }
+      if (heightValue >= 1000) {
+        setFieldErrors(prev => ({ ...prev, height: 'La altura no puede exceder los 3 dígitos' }));
+        return;
+      }
+      
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('No hay token de autenticación');
       }
 
       const payload = {
-        height: parseFloat(profile.height) || 0,
+        height: heightValue,
         birth_date: profile.birth_date || null,
         gender: profile.gender || null,
       };
@@ -191,16 +217,37 @@ const MyProfile = () => {
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 422 && errorData.detail) {
+          // Manejar errores de validación
+          const validationErrors = errorData.detail;
+          if (Array.isArray(validationErrors)) {
+            const newFieldErrors = {
+              height: '',
+              birth_date: '',
+              gender: ''
+            };
+            
+            validationErrors.forEach((error: any) => {
+              const field = error.loc[1]; // Obtener el nombre del campo del error
+              const errorMessage = error.msg;
+              if (field in newFieldErrors) {
+                newFieldErrors[field as keyof typeof newFieldErrors] = errorMessage;
+              }
+            });
+            
+            setFieldErrors(newFieldErrors);
+            return;
+          }
+        }
         throw new Error(`Error al guardar el perfil: ${response.status}`);
       }
 
       setProfileExists(true);
       await fetchProfile();
-      alert('Perfil actualizado correctamente');
     } catch (error) {
       console.error('Error al actualizar perfil:', error);
       setError(error instanceof Error ? error.message : 'Error al actualizar el perfil');
-      alert('Error al actualizar el perfil');
     }
   };
 
@@ -255,6 +302,8 @@ const MyProfile = () => {
                 value={profile.height}
                 onChange={handleChange}
                 fullWidth
+                error={!!fieldErrors.height}
+                helperText={fieldErrors.height}
               />
               <TextField
                 label="Fecha de Nacimiento"
@@ -264,6 +313,8 @@ const MyProfile = () => {
                 onChange={handleChange}
                 InputLabelProps={{ shrink: true }}
                 fullWidth
+                error={!!fieldErrors.birth_date}
+                helperText={fieldErrors.birth_date}
               />
               <TextField
                 label="Género"
@@ -272,6 +323,8 @@ const MyProfile = () => {
                 onChange={handleChange}
                 select
                 fullWidth
+                error={!!fieldErrors.gender}
+                helperText={fieldErrors.gender}
               >
                 <MenuItem value="male">Masculino</MenuItem>
                 <MenuItem value="female">Femenino</MenuItem>
@@ -312,6 +365,8 @@ const MyProfile = () => {
                 value={profile.height}
                 onChange={handleChange}
                 fullWidth
+                error={!!fieldErrors.height}
+                helperText={fieldErrors.height}
               />
               <TextField
                 label="Fecha de Nacimiento"
@@ -321,6 +376,8 @@ const MyProfile = () => {
                 onChange={handleChange}
                 InputLabelProps={{ shrink: true }}
                 fullWidth
+                error={!!fieldErrors.birth_date}
+                helperText={fieldErrors.birth_date}
               />
               <TextField
                 label="Género"
@@ -329,6 +386,8 @@ const MyProfile = () => {
                 onChange={handleChange}
                 select
                 fullWidth
+                error={!!fieldErrors.gender}
+                helperText={fieldErrors.gender}
               >
                 <MenuItem value="male">Masculino</MenuItem>
                 <MenuItem value="female">Femenino</MenuItem>
