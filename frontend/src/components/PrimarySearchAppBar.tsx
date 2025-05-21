@@ -17,7 +17,7 @@ import MailIcon from '@mui/icons-material/Mail';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import MoreIcon from '@mui/icons-material/MoreVert';
 import HomeIcon from '@mui/icons-material/Home';
-import ColorModeToggle from './auth/ColorModeToggle';
+import NavbarColorModeToggle from './NavbarColorModeToggle';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -213,7 +213,7 @@ export default function PrimarySearchAppBar() {
                 <NotificationsIcon />
               </Badge>
             </IconButton>
-            <ColorModeToggle />
+            <NavbarColorModeToggle />
             <IconButton
               size="large"
               edge="end"
