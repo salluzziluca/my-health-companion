@@ -46,6 +46,11 @@ const MyAccount = () => {
     last_name: '',
     specialization: '',
   });
+  const [fieldErrors, setFieldErrors] = useState({
+    first_name: '',
+    last_name: '',
+    specialization: ''
+  });
 
   const fetchAccount = async () => {
     try {
@@ -118,6 +123,40 @@ const MyAccount = () => {
 
   const handleSave = async () => {
     try {
+      setError('');
+      setFieldErrors({
+        first_name: '',
+        last_name: '',
+        specialization: ''
+      });
+
+      // Validación local de nombre y apellido
+      if (!editData.first_name) {
+        setFieldErrors(prev => ({ ...prev, first_name: 'El nombre es requerido' }));
+        return;
+      }
+      if (editData.first_name.length > 40) {
+        setFieldErrors(prev => ({ ...prev, first_name: 'El nombre no puede exceder los 40 caracteres' }));
+        return;
+      }
+      if (!/^[a-zA-Z]+$/.test(editData.first_name)) {
+        setFieldErrors(prev => ({ ...prev, first_name: 'El nombre debe contener solo letras' }));
+        return;
+      }
+
+      if (!editData.last_name) {
+        setFieldErrors(prev => ({ ...prev, last_name: 'El apellido es requerido' }));
+        return;
+      }
+      if (editData.last_name.length > 40) {
+        setFieldErrors(prev => ({ ...prev, last_name: 'El apellido no puede exceder los 40 caracteres' }));
+        return;
+      }
+      if (!/^[a-zA-Z]+$/.test(editData.last_name)) {
+        setFieldErrors(prev => ({ ...prev, last_name: 'El apellido debe contener solo letras' }));
+        return;
+      }
+
       const token = localStorage.getItem('token');
       const userType = getUserTypeFromToken();
 
@@ -133,11 +172,41 @@ const MyAccount = () => {
       console.log('Usando endpoint para actualizar cuenta:', endpoint);
       console.log('Datos a actualizar:', editData);
 
-      await axios.patch(`http://localhost:8000${endpoint}`, editData, {
+      const response = await fetch(`http://localhost:8000${endpoint}`, {
+        method: 'PATCH',
         headers: {
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
+        body: JSON.stringify(editData),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 422 && errorData.detail) {
+          // Manejar errores de validación
+          const validationErrors = errorData.detail;
+          if (Array.isArray(validationErrors)) {
+            const newFieldErrors = {
+              first_name: '',
+              last_name: '',
+              specialization: ''
+            };
+            
+            validationErrors.forEach((error: any) => {
+              const field = error.loc[1]; // Obtener el nombre del campo del error
+              const errorMessage = error.msg;
+              if (field in newFieldErrors) {
+                newFieldErrors[field as keyof typeof newFieldErrors] = errorMessage;
+              }
+            });
+            
+            setFieldErrors(newFieldErrors);
+            return;
+          }
+        }
+        throw new Error('Error al actualizar la información de la cuenta');
+      }
 
       // Actualizar los datos en el estado
       setAccount({
@@ -148,7 +217,6 @@ const MyAccount = () => {
       });
 
       setIsEditing(false);
-      alert('Información de la cuenta actualizada correctamente');
     } catch (error) {
       console.error('Error updating account', error);
       setError('Error al actualizar la información de la cuenta. Por favor, intenta de nuevo.');
@@ -190,6 +258,8 @@ const MyAccount = () => {
           onChange={handleChange}
           fullWidth
           disabled={!isEditing}
+          error={!!fieldErrors.first_name}
+          helperText={fieldErrors.first_name}
         />
 
         <TextField
@@ -199,6 +269,8 @@ const MyAccount = () => {
           onChange={handleChange}
           fullWidth
           disabled={!isEditing}
+          error={!!fieldErrors.last_name}
+          helperText={fieldErrors.last_name}
         />
 
         <TextField
