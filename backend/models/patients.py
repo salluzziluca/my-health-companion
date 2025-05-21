@@ -9,6 +9,8 @@ if TYPE_CHECKING:
     from models.foods import Food
     from models.meals import Meal
     from models.professionals import Professional
+    from models.weight_logs import WeightLog
+    from models.weekly_notes import WeeklyNote
 
 class PatientBase(SQLModel):
     email: EmailStr
@@ -82,7 +84,8 @@ class Patient(PatientBase, table=True):
     # Relaciones one-to-many
     custom_foods: List["Food"] = Relationship(back_populates="patient")
     meals: List["Meal"] = Relationship(back_populates="patient")
-    
+    weight_logs: List["WeightLog"] = Relationship(back_populates="patient")
+    weekly_notes: List["WeeklyNote"] = Relationship(back_populates="patient")
 
 
 class PatientCreate(PatientBase):

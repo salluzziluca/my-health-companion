@@ -12,6 +12,12 @@ import { styled, useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
+import LinearProgress from '@mui/material/LinearProgress';
+import Tooltip from '@mui/material/Tooltip';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import IconButton from '@mui/material/IconButton';
 import { GoogleIcon, FacebookIcon, MyHealtCompanionIcon } from '../CustomIcons';
 import { authService } from '../../services/api';
 import { RegisterData, Role } from '../../types/auth';
@@ -115,6 +121,13 @@ export default function SignUpCard() {
     const [lastNameError, setLastNameError] = React.useState(false);
     const [lastNameErrorMessage, setLastNameErrorMessage] = React.useState('');
     const [loading, setLoading] = React.useState(false);
+    const [passwordStrength, setPasswordStrength] = React.useState(0);
+    const [passwordRequirements, setPasswordRequirements] = React.useState({
+        length: false,
+        uppercase: false,
+        number: false,
+        special: false
+    });
     const [formData, setFormData] = React.useState<RegisterData & { specialization?: string }>({
         email: '',
         password: '',
@@ -123,6 +136,89 @@ export default function SignUpCard() {
         role: 'patient',
         specialization: 'nutritionist'
     });
+    const [showPassword, setShowPassword] = React.useState(false);
+
+    const calculatePasswordStrength = (password: string) => {
+        let strength = 0;
+        const requirements = {
+            length: password.length >= 8,
+            uppercase: /[A-Z]/.test(password),
+            number: /[0-9]/.test(password),
+            special: /[^A-Za-z0-9]/.test(password)
+        };
+
+        setPasswordRequirements(requirements);
+
+        // Length check
+        if (requirements.length) strength += 20;
+        if (password.length >= 12) strength += 10;
+
+        // Character type checks
+        if (requirements.uppercase) strength += 20;
+        if (/[a-z]/.test(password)) strength += 20;
+        if (requirements.number) strength += 20;
+        if (requirements.special) strength += 20;
+
+        return Math.min(strength, 100);
+    };
+
+    const getPasswordStrengthColor = (strength: number) => {
+        if (strength < 40) return 'error';
+        if (strength < 70) return 'warning';
+        return 'success';
+    };
+
+    const handleClickShowPassword = () => {
+        setShowPassword(!showPassword);
+    };
+
+    const getPasswordRequirementsText = () => {
+        return (
+            <Box sx={{ p: 0.5 }}>
+                <Typography variant="caption" sx={{ display: 'block', mb: 0.5, fontWeight: 500 }}>
+                    Password Requirements:
+                </Typography>
+                <Box component="ul" sx={{ m: 0, p: 0, pl: 1.5, listStyle: 'none' }}>
+                    <Box component="li" sx={{
+                        color: passwordRequirements.length ? '#2e7d32' : '#666',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        fontSize: '0.75rem'
+                    }}>
+                        {passwordRequirements.length ? '✓' : '○'} At least 8 characters
+                    </Box>
+                    <Box component="li" sx={{
+                        color: passwordRequirements.uppercase ? '#2e7d32' : '#666',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        fontSize: '0.75rem'
+                    }}>
+                        {passwordRequirements.uppercase ? '✓' : '○'} One uppercase letter
+                    </Box>
+                    <Box component="li" sx={{
+                        color: passwordRequirements.number ? '#2e7d32' : '#666',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        fontSize: '0.75rem'
+                    }}>
+                        {passwordRequirements.number ? '✓' : '○'} One number
+                    </Box>
+                    <Box component="li" sx={{
+                        color: passwordRequirements.special ? '#2e7d32' : '#666',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        fontSize: '0.75rem'
+                    }}>
+                        {passwordRequirements.special ? '✓' : '○'} One special character
+                    </Box>
+                </Box>
+            </Box>
+        );
+    };
 
     const handleTextFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -130,6 +226,10 @@ export default function SignUpCard() {
             ...prev,
             [name]: value
         }));
+
+        if (name === 'password') {
+            setPasswordStrength(calculatePasswordStrength(value));
+        }
     };
 
     const handleSelectChange = (e: SelectChangeEvent) => {
@@ -332,7 +432,7 @@ export default function SignUpCard() {
                         helperText={passwordErrorMessage}
                         name="password"
                         placeholder="••••••"
-                        type="password"
+                        type={showPassword ? 'text' : 'password'}
                         id="password"
                         autoComplete="new-password"
                         required
@@ -341,7 +441,58 @@ export default function SignUpCard() {
                         color={passwordError ? 'error' : 'primary'}
                         value={formData.password}
                         onChange={handleTextFieldChange}
+                        InputProps={{
+                            endAdornment: (
+                                <IconButton
+                                    aria-label="toggle password visibility"
+                                    onClick={handleClickShowPassword}
+                                    edge="end"
+                                    size="small"
+                                >
+                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                </IconButton>
+                            ),
+                        }}
                     />
+                    <Box sx={{ mt: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <LinearProgress
+                                variant="determinate"
+                                value={passwordStrength}
+                                color={getPasswordStrengthColor(passwordStrength)}
+                                sx={{ height: 8, borderRadius: 4, flexGrow: 1 }}
+                            />
+                            <Tooltip
+                                title={getPasswordRequirementsText()}
+                                arrow
+                                placement="top"
+                                componentsProps={{
+                                    tooltip: {
+                                        sx: {
+                                            bgcolor: 'background.paper',
+                                            color: 'text.primary',
+                                            border: '1px solid',
+                                            borderColor: 'divider',
+                                            boxShadow: 1,
+                                            p: 0
+                                        }
+                                    }
+                                }}
+                            >
+                                <InfoOutlinedIcon
+                                    sx={{
+                                        fontSize: '1rem',
+                                        color: 'text.secondary',
+                                        cursor: 'help'
+                                    }}
+                                />
+                            </Tooltip>
+                        </Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                            {passwordStrength < 40 ? 'Weak' :
+                                passwordStrength < 70 ? 'Medium' : 'Strong'} password
+                        </Typography>
+                    </Box>
                 </FormControl>
                 <FormControl>
                     <FormLabel htmlFor="first_name">First Name</FormLabel>

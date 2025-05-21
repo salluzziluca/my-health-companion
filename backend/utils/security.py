@@ -12,7 +12,7 @@ from models.professionals import Professional
 
 SECRET_KEY = "YOUR_SECRET_KEY"  # TODO poner una clave
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 300
 
 # Hashing de contraseñas
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

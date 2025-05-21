@@ -45,9 +45,10 @@ Si van a http://localhost:8000/docs van a ver la una documentacion interactiva d
 
 ```
 my-health-companion/
-├── backend/           # Servidor FastAPI
+├── backend/          # Servidor FastAPI
 │   ├── config/       # Configuraciones
 │   ├── models/       # Modelos de datos
+│   ├── schemas/      # Esquemas de datos
 │   ├── routers/      # Rutas de la API
 │   └── utils/        # Utilidades
 ├── frontend/         # Aplicación React
@@ -62,33 +63,40 @@ my-health-companion/
 
 ### Autenticación
 
--   POST `/register/patient`: Registro de pacientes
-
--   POST `/register/professional`: Registro de nutricionistas/ entrenadores
-
--   POST `/token`: Login y obtención de token
+-   **POST** `/register/patient`: Registro de pacientes
+-   **POST** `/register/professional`: Registro de profesionales (nutricionistas/entrenadores)
+-   **POST** `/token`: Login y obtención de token de acceso
 
 ### Pacientes
 
--   GET `/patients/me`: Información del paciente actual
-
--   PATCH `/patients/me`: Actualizar información del paciente
-
--   GET `/patients/my-professional`: Obtener profesional asignado
+-   **GET** `/patients/me`: Obtener información del paciente actual
+-   **PATCH** `/patients/me`: Actualizar información del paciente
+-   **GET** `/patients/my-professional`: Obtener profesional asignado
 
 ### Profesionales
 
--   GET `/professionals/me`: Información del profesional actual
+-   **GET** `/professionals/me`: Obtener información del profesional actual
+-   **PATCH** `/professionals/me`: Actualizar información del profesional
+-   **GET** `/professionals/my-patients`: Listar pacientes asignados
+-   **GET** `/professionals/patient/{patient_id}`: Ver información de un paciente específico
+-   **POST** `/professionals/assign-patient/{patient_id}`: Asignar paciente al profesional
+-   **DELETE** `/professionals/unassign-patient/{patient_id}`: Desasignar paciente
 
--   PATCH `/professionals/me`: Actualizar información del profesional
+### Registros de peso (Weight Logs)
 
--   GET `/professionals/my-patients`: Listar pacientes asignados
+-   **POST** `/patients/weight`: Crear registro de peso
+-   **GET** `/patients/weight-history`: Obtener historial de peso
 
--   GET `/professionals/patient/{patient_id}`: Ver información de paciente específico
+### Resúmenes semanales (Weekly Summaries)
 
--   POST `/professionals/assign-patient/{patient_id}`: Asignar paciente al profesional
+-   **GET** `/patients/weekly-summary`: Obtener resumen semanal actual
+-   **GET** `/patients/weekly-summary/history`: Obtener historial de resúmenes semanales
 
--   DELETE `/professionals/unassign-patient/{patient_id}`: Desasignar paciente
+### Notas semanales (Weekly Notes)
+
+-   **POST** `/patients/weekly-notes`: Crear o actualizar nota semanal
+-   **GET** `/patients/weekly-notes/{week_start_date}`: Obtener nota semanal por fecha
+-   **DELETE** `/patients/weekly-notes/{week_start_date}`: Eliminar nota semanal
 
 ### Meals
 
