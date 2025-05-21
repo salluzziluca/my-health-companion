@@ -15,7 +15,7 @@ const MealCard: React.FC<Props> = ({ meal, onDelete, onEdit }) => {
     <Card variant="outlined">
       <CardContent>
         <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Typography>{meal.meal_name} — {meal.calories} cal</Typography>
+          <Typography>{meal.meal_name} — {Math.round(meal.calories)} cal</Typography>
           <Stack direction="row" spacing={1}>
             <IconButton onClick={() => onEdit(meal)} color="primary">
               <EditIcon />
