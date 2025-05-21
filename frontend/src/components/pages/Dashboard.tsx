@@ -259,21 +259,32 @@ const Dashboard = () => {
 
           {/* Daily Calorie Breakdown */}
           <Box>
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="subtitle1" gutterBottom>
+            <Paper sx={{ p: 3, borderRadius: 4, boxShadow: 2, bgcolor: 'background.paper' }}>
+              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
                 Desglose Diario de Calorías
               </Typography>
-              <Box sx={{ height: 200 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={weeklySummary.calorie_data.daily_breakdown}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="calories" fill="#8884d8" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Box>
+              {weeklySummary.calorie_data.daily_breakdown.length === 1 ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 120 }}>
+                  <Typography variant="h4" color="primary" sx={{ fontWeight: 700 }}>
+                    {Math.round(weeklySummary.calorie_data.daily_breakdown[0].calories)} kcal
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: 'text.secondary', mt: 1 }}>
+                    Solo hay un día registrado.<br />¡Agrega más comidas para ver tu progreso semanal!
+                  </Typography>
+                </Box>
+              ) : (
+                <Box sx={{ height: 200 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={weeklySummary.calorie_data.daily_breakdown}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="calories" fill="#8884d8" radius={[8, 8, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Box>
+              )}
             </Paper>
           </Box>
 
