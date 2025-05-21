@@ -66,6 +66,13 @@ class PatientBase(SQLModel):
             raise ValueError('Valor de género desconocido. Debe ser "male", "female", "other" o "prefer not to say"')
         return value
 
+    @field_validator('birth_date')
+    @classmethod
+    def validate_birth_date(cls, value):
+        if value is not None and value > date.today():
+            raise ValueError('La fecha de nacimiento no puede ser mayor a hoy')
+        return value
+
 
 class Patient(PatientBase, table=True):
     __tablename__ = "patients"
@@ -155,4 +162,11 @@ class PatientUpdate(SQLModel):
     def validate_gender(cls, value):
         if value is not None and value not in ["male", "female", "other", "prefer not to say"]:
             raise ValueError('Valor de género no válido')
+        return value
+
+    @field_validator('birth_date')
+    @classmethod
+    def validate_birth_date(cls, value):
+        if value is not None and value > date.today():
+            raise ValueError('La fecha de nacimiento no puede ser mayor a hoy')
         return value

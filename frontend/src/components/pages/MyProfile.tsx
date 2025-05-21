@@ -15,6 +15,11 @@ interface JwtPayload {
   [key: string]: any;
 }
 
+// Función utilitaria para limpiar mensajes de error
+function cleanErrorMessage(msg: string): string {
+  return msg.replace(/\s*Value error,?\s*/gi, '').trim();
+}
+
 const MyProfile = () => {
   const location = useLocation();
   const [profile, setProfile] = useState({
@@ -178,7 +183,7 @@ const MyProfile = () => {
         birth_date: '',
         gender: ''
       });
-      
+
       // Validación local de la altura
       const heightValue = parseFloat(profile.height);
       if (isNaN(heightValue)) {
@@ -193,7 +198,18 @@ const MyProfile = () => {
         setFieldErrors(prev => ({ ...prev, height: 'La altura no puede exceder los 3 dígitos' }));
         return;
       }
-      
+
+      // Validación local de la fecha de nacimiento
+      if (profile.birth_date) {
+        const birthDateValue = new Date(profile.birth_date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (birthDateValue > today) {
+          setFieldErrors(prev => ({ ...prev, birth_date: 'La fecha de nacimiento no puede ser mayor a hoy' }));
+          return;
+        }
+      }
+
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('No hay token de autenticación');
@@ -227,20 +243,28 @@ const MyProfile = () => {
               birth_date: '',
               gender: ''
             };
-            
+
             validationErrors.forEach((error: any) => {
               const field = error.loc[1]; // Obtener el nombre del campo del error
-              const errorMessage = error.msg;
+              let errorMessage = error.msg;
+              if (typeof errorMessage === 'string') {
+                errorMessage = cleanErrorMessage(errorMessage);
+              }
               if (field in newFieldErrors) {
                 newFieldErrors[field as keyof typeof newFieldErrors] = errorMessage;
               }
             });
-            
+
             setFieldErrors(newFieldErrors);
             return;
           }
         }
-        throw new Error(`Error al guardar el perfil: ${response.status}`);
+        // Si el error no es de validación de campos, limpiar el mensaje general también
+        let errorMsg = `Error al guardar el perfil: ${response.status}`;
+        if (errorData.detail && typeof errorData.detail === 'string') {
+          errorMsg = cleanErrorMessage(errorData.detail);
+        }
+        throw new Error(errorMsg);
       }
 
       setProfileExists(true);
