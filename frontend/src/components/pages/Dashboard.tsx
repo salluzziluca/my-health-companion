@@ -18,12 +18,14 @@ import {
   Paper,
   Divider,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon } from '@mui/icons-material';
+import { Add as AddIcon, Edit as EditIcon, Restaurant as RestaurantIcon } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { healthService } from '../../services/api';
 import { WeightLog, WeeklySummary, WeeklyNote } from '../../types/health';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [weight, setWeight] = useState('');
   const [weeklySummary, setWeeklySummary] = useState<WeeklySummary | null>(null);
   const [weeklyNote, setWeeklyNote] = useState('');
@@ -157,9 +159,7 @@ const Dashboard = () => {
         <Box sx={{ width: { xs: '100%', md: '67%' } }}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Resumen Semanal
-              </Typography>
+
               <Stack spacing={2}>
                 <Box>
                   <Typography variant="subtitle1">
@@ -203,9 +203,11 @@ const Dashboard = () => {
 
       {/* Bottom Section: Meal Summary */}
       <Box>
-        <Typography variant="h6" gutterBottom>
-          Resumen de Comidas
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h6" sx={{ flex: 1 }}>
+            Resumen de Comidas
+          </Typography>
+        </Box>
         <Stack spacing={2}>
           {/* Top Row: Calorie Summary and Meal Distribution */}
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
@@ -222,6 +224,17 @@ const Dashboard = () => {
                   Días registrados: {weeklySummary.calorie_data.days_logged}
                 </Typography>
               </Paper>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<RestaurantIcon />}
+                onClick={() => navigate('/meals')}
+                size="large"
+                fullWidth
+                sx={{ mt: 3 }}
+              >
+                Gestionar Comidas
+              </Button>
             </Box>
 
             {/* Meal Distribution */}
