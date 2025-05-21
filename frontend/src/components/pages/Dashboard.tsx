@@ -18,10 +18,11 @@ import {
   Paper,
   Divider,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon } from '@mui/icons-material';
+import { Add as AddIcon, Edit as EditIcon, Restaurant as RestaurantIcon } from '@mui/icons-material';
 import { healthService } from '../../services/api';
 import { WeightLog, WeeklySummary, WeeklyNote } from '../../types/health';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const [weight, setWeight] = useState('');
@@ -30,6 +31,7 @@ const Dashboard = () => {
   const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const fetchWeeklySummary = async () => {
     try {
@@ -127,9 +129,12 @@ const Dashboard = () => {
         <Box sx={{ width: { xs: '100%', md: '33%' } }}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Registrar Peso
-              </Typography>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h6">
+                  Registrar Peso
+                </Typography>
+
+              </Stack>
               <form onSubmit={handleWeightSubmit}>
                 <Stack spacing={2}>
                   <TextField
@@ -201,6 +206,8 @@ const Dashboard = () => {
         </Box>
       </Box>
 
+
+
       {/* Bottom Section: Meal Summary */}
       <Box>
         <Typography variant="h6" gutterBottom>
@@ -222,6 +229,23 @@ const Dashboard = () => {
                   Días registrados: {weeklySummary.calorie_data.days_logged}
                 </Typography>
               </Paper>
+              {/* Meals Navigation Button - now between top row and daily breakdown */}
+              <Box sx={{ my: 4, display: 'flex', justifyContent: 'center' }}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  startIcon={<RestaurantIcon sx={{ fontSize: 30 }} />}
+                  onClick={() => navigate('/meals')}
+                  sx={{
+                    py: 2,
+                    px: 4,
+                    fontSize: '1.2rem',
+                    minWidth: '300px'
+                  }}
+                >
+                  Gestionar Mis Comidas
+                </Button>
+              </Box>
             </Box>
 
             {/* Meal Distribution */}
