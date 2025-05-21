@@ -1,6 +1,6 @@
-import React, { createContext, useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material';
+import { ThemeProvider as MUIThemeProvider, createTheme } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
 import SignInSide from './components/auth/SignInSide';
 import SignUpSide from './components/auth/SignUpSide';
@@ -9,12 +9,7 @@ import MyProfile from './components/pages/MyProfile';
 import MyAccount from './components/pages/MyAccount';
 import Layout from './components/pages/Layout';
 import MealDashboard from './components/MealDashboard';
-
-
-// Create a theme context
-export const ColorModeContext = createContext({
-  toggleColorMode: () => { }
-});
+import { useThemeContext } from './theme/ThemeContext';
 
 // Centralized color configuration
 export const appColors = {
@@ -53,35 +48,24 @@ export const appColors = {
 const themeTransitionDuration = 800; // milliseconds
 
 function App() {
-  const [mode, setMode] = useState<'light' | 'dark'>('light');
+  const { darkMode } = useThemeContext();
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Apply global transition styles when theme is changing
   useEffect(() => {
     if (isTransitioning) {
-      // Use an effect cleanup to remove the transitioning class
       const timer = setTimeout(() => {
         setIsTransitioning(false);
-      }, themeTransitionDuration + 100); // add a little buffer
+      }, themeTransitionDuration + 100);
       return () => clearTimeout(timer);
     }
   }, [isTransitioning]);
-
-  const colorMode = useMemo(
-    () => ({
-      toggleColorMode: () => {
-        setIsTransitioning(true);
-        setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
-      },
-    }),
-    [],
-  );
 
   const theme = useMemo(
     () =>
       createTheme({
         palette: {
-          mode,
+          mode: darkMode ? 'dark' : 'light',
           primary: {
             main: appColors.primary,
             dark: appColors.primaryDark,
@@ -93,11 +77,11 @@ function App() {
             light: appColors.secondaryLight,
           },
           background: {
-            default: mode === 'light' ? appColors.lightBackground : appColors.darkBackground,
-            paper: mode === 'light' ? appColors.lightPaper : appColors.darkPaper,
+            default: darkMode ? appColors.darkBackground : appColors.lightBackground,
+            paper: darkMode ? appColors.darkPaper : appColors.lightPaper,
           },
           action: {
-            hover: mode === 'light' ? `rgba(98, 0, 234, 0.08)` : 'rgba(255, 255, 255, 0.08)',
+            hover: darkMode ? `rgba(98, 0, 234, 0.08)` : 'rgba(255, 255, 255, 0.08)',
           },
         },
         components: {
@@ -121,17 +105,17 @@ function App() {
                 textTransform: 'none',
               },
               outlined: {
-                borderColor: mode === 'light' ? 'rgba(0, 0, 0, 0.23)' : 'rgba(255, 255, 255, 0.5)',
+                borderColor: darkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.23)',
               },
             },
           },
           MuiLink: {
             styleOverrides: {
               root: {
-                color: mode === 'light' ? appColors.lightLink : appColors.darkLink,
-                fontWeight: mode === 'dark' ? 500 : 400,
+                color: darkMode ? appColors.darkLink : appColors.lightLink,
+                fontWeight: darkMode ? 500 : 400,
                 '&:hover': {
-                  color: mode === 'light' ? appColors.primaryDark : '#fff',
+                  color: darkMode ? appColors.primaryDark : appColors.primary,
                 },
               },
             },
@@ -140,37 +124,35 @@ function App() {
             styleOverrides: {
               root: {
                 '&::before, &::after': {
-                  borderColor: mode === 'light' ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.3)',
+                  borderColor: darkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.12)',
                 },
-                color: mode === 'light' ? 'rgba(0, 0, 0, 0.6)' : 'rgba(255, 255, 255, 0.7)',
+                color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
               },
             },
           },
         },
       }),
-    [mode, isTransitioning],
+    [darkMode, isTransitioning]
   );
 
   return (
-    <ColorModeContext.Provider value={colorMode}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Router>
-          <Routes>
-            <Route path="/login" element={<SignInSide />} />
-            <Route path="/register" element={<SignUpSide />} />
-            <Route path="/" element={<Navigate to="/login" replace />} />
-            <Route path="/" element={<Layout />}>
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="myprofile" element={<MyProfile />} />
-              <Route path="myaccount" element={<MyAccount />} />
-              <Route path="meals" element={<MealDashboard />} />
-            </Route>
-            <Route path="*" element={<Navigate to="/login" replace />} /> {/* Esta línea */}
-          </Routes>
-        </Router>
-      </ThemeProvider>
-    </ColorModeContext.Provider>
+    <MUIThemeProvider theme={theme}>
+      <CssBaseline />
+      <Router>
+        <Routes>
+          <Route path="/login" element={<SignInSide />} />
+          <Route path="/register" element={<SignUpSide />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<Layout />}>
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="myprofile" element={<MyProfile />} />
+            <Route path="myaccount" element={<MyAccount />} />
+            <Route path="meals" element={<MealDashboard />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </Router>
+    </MUIThemeProvider>
   );
 }
 
