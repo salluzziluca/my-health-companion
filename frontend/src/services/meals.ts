@@ -24,3 +24,4 @@ export const updateMeal = async (mealId: number, updates: any) => {
 export const deleteMeal = async (mealId: number) => {
   await api.delete(`/meals/${mealId}`);
 };
+

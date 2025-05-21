@@ -4,21 +4,21 @@ import AddMealModal from './AddMealModal';
 import MealCard from './MealCard';
 import AlertBanner from './AlertBanner';
 import { Meal, NewMeal } from '../types/Meal';
-import { getMeals, deleteMeal, createMeal } from '../services/meals';
+import { getMeals, deleteMeal, createMeal, updateMeal } from '../services/meals';
 
 const MealDashboard = () => {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [mealToEdit, setMealToEdit] = useState<Meal | undefined>(undefined);
+
 
   const totalCalories = meals.reduce((acc, m) => acc + m.calories, 0);
-  const userTargetCalories = 2000; // TODO: reemplazar con dato real del usuario
+  const userTargetCalories = 2000;
 
   useEffect(() => {
     getMeals()
       .then(setMeals)
-      .catch((err) => {
-        console.error('Error al obtener las comidas:', err.response?.data || err.message);
-      });
+      .catch((err) => console.error('Error al obtener las comidas:', err.response?.data || err.message));
   }, []);
 
   const handleAddMeal = async (newMeal: NewMeal) => {
@@ -27,6 +27,15 @@ const MealDashboard = () => {
       setMeals([...meals, created]);
     } catch (err: any) {
       console.error('Error al crear comida:', err.response?.data || err.message);
+    }
+  };
+
+  const handleEditMeal = async (mealId: number, updatedMeal: NewMeal) => {
+    try {
+      const updated = await updateMeal(mealId, updatedMeal);
+      setMeals(meals.map((m) => (m.id === mealId ? updated : m)));
+    } catch (err: any) {
+      console.error('Error al editar comida:', err.response?.data || err.message);
     }
   };
 
@@ -51,7 +60,15 @@ const MealDashboard = () => {
 
       <Stack spacing={2}>
         {meals.map((meal) => (
-          <MealCard key={meal.id} meal={meal} onDelete={handleDeleteMeal} />
+          <MealCard
+            key={meal.id}
+            meal={meal}
+            onDelete={handleDeleteMeal}
+            onEdit={(meal) => {
+              setMealToEdit(meal);
+              setShowModal(true);
+            }}
+          />
         ))}
       </Stack>
 
@@ -64,7 +81,16 @@ const MealDashboard = () => {
         Agregar nueva comida
       </Button>
 
-      <AddMealModal open={showModal} onClose={() => setShowModal(false)} onAdd={handleAddMeal} />
+      <AddMealModal
+        open={showModal}
+        onClose={() => {
+          setShowModal(false);
+          setMealToEdit(undefined); // ✅ en lugar de null
+        }}
+        onAdd={handleAddMeal}
+        onEdit={handleEditMeal}
+        initialMeal={mealToEdit}
+      />
     </Box>
   );
 };
