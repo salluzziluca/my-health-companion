@@ -42,7 +42,6 @@ const LoginForm: React.FC = () => {
         try {
             const response = await authService.login(formData);
             localStorage.setItem('token', response.access_token);
-            localStorage.setItem('role', response.role);
             navigate('/dashboard');
         } catch (err) {
             setError('Invalid email or password');
@@ -76,6 +75,8 @@ const LoginForm: React.FC = () => {
                         required
                         fullWidth
                         variant="outlined"
+                        value={formData.username}
+                        onChange={handleChange}
                     />
                 </FormControl>
                 <FormControl>
@@ -86,6 +87,7 @@ const LoginForm: React.FC = () => {
                             type="button"
                             variant="body2"
                             sx={{ alignSelf: 'baseline' }}
+                            onClick={() => navigate('/forgot-password')}
                         >
                             Forgot your password?
                         </Link>
@@ -99,6 +101,8 @@ const LoginForm: React.FC = () => {
                         required
                         fullWidth
                         variant="outlined"
+                        value={formData.password}
+                        onChange={handleChange}
                     />
                 </FormControl>
                 <FormControlLabel

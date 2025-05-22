@@ -20,7 +20,7 @@ export const ColorModeContext = createContext({
 export const appColors = {
   // Primary brand colors
   primary: '#023047',
-  primaryDark: '#3700b3',
+  primaryDark: '#023047',
   primaryLight: '#b388ff',
 
   // Secondary colors

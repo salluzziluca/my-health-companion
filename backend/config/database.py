@@ -1,6 +1,14 @@
 import os
-
 from sqlmodel import Session, SQLModel, create_engine
+
+from models.patients import Patient
+from models.professionals import Professional
+from models.foods import Food
+from models.ingredients import Ingredient
+from models.ingredient_food import IngredientFood
+from models.meals import Meal
+from models.weekly_notes import WeeklyNote
+from models.weight_logs import WeightLog
 
 sqlite_file_name = "../health_app.sqlite"
 base_dir = os.path.dirname(os.path.realpath(__file__))
