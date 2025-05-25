@@ -72,6 +72,8 @@ my-health-companion/
 -   **GET** `/patients/me`: Obtener información del paciente actual
 -   **PATCH** `/patients/me`: Actualizar información del paciente
 -   **GET** `/patients/my-professional`: Obtener profesional asignado
+-   **POST** `/patients/assign-professional/{uuid_code}`: Enlazar al paciente con un profesional mediante un codigo UUID
+-   **DELETE** `/patients/unassign-professional`: Desvincular al paciente de su profesional
 
 ### Profesionales
 
@@ -81,6 +83,7 @@ my-health-companion/
 -   **GET** `/professionals/patient/{patient_id}`: Ver información de un paciente específico
 -   **POST** `/professionals/assign-patient/{patient_id}`: Asignar paciente al profesional
 -   **DELETE** `/professionals/unassign-patient/{patient_id}`: Desasignar paciente
+-   **GET** `/professionals/me/uuid`: Obtener el UUID del profesional actual
 
 ### Registros de peso (Weight Logs)
 
@@ -100,33 +103,24 @@ my-health-companion/
 
 ### Meals
 
--   GET `/meals`: Listar platos del paciente actual
-
--   POST `/meals`: Crear un nuevo plato
-
--   GET `/meals/{meal_id}`: Obtener información de un plato específico
-
--   PATCH `/meals/{meal_id}`: Actualizar información de un plato
-
--   DELETE `/meals/{meal_id}`: Eliminar un plato
+-   **GET** `/meals`: Listar platos del paciente actual
+-   **POST** `/meals`: Crear un nuevo plato
+-   **GET** `/meals/{meal_id}`: Obtener información de un plato específico
+-   **PATCH** `/meals/{meal_id}`: Actualizar información de un plato
+-   **DELETE** `/meals/{meal_id}`: Eliminar un plato
 
 ### Foods
 
--   GET `/foods`: Listar todas las comidas precargadas
-
--   GET `/foods/custom`: Listar comidas personalizadas del paciente actual
-
--   POST `/foods`: Crear una nueva comida personalizada (sin ingredientes)
-
--   GET `/{food_id}/ingredients`: Listar ingredientes (por IDs) de una comida personalizada
-
--   POST `/{food_id}/ingredients`: Agregar ingredientes a una comida personalizada
+-   **GET** `/foods`: Listar todas las comidas precargadas
+-   **GET** `/foods/custom`: Listar comidas personalizadas del paciente actual
+-   **POST** `/foods`: Crear una nueva comida personalizada (sin ingredientes)
+-   **GET** `/{food_id}/ingredients`: Listar ingredientes (por IDs) de una comida personalizada
+-   **POST** `/{food_id}/ingredients`: Agregar ingredientes a una comida personalizada
 
 ### Ingredients
 
--  GET `/ingredients`: Listar ingredientes disponibles
-
--  GET `/ingredients/{ingredient_id}`: Obtener información de un ingrediente específico
+-  **GET** `/ingredients`: Listar ingredientes disponibles
+-  **GET** `/ingredients/{ingredient_id}`: Obtener información de un ingrediente específico
 
 ## Notas para Desarrolladores
 
