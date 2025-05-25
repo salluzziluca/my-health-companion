@@ -62,6 +62,14 @@ def update_current_professional(
     return current_professional
 
 
+@router_professionals.get("/me/uuid", response_model=str)
+def get_current_professional_uuid(
+    current_professional: Professional = Depends(get_current_professional)
+):
+    """Obtener el UUID del profesional actual"""
+    return current_professional.uuid_code
+
+
 @router_professionals.get("/my-patients", response_model=List[PatientRead])
 def get_patients_for_professional(
     *,

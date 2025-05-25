@@ -6,6 +6,7 @@ from config.database import get_session
 from models.patients import Patient, PatientRead, PatientUpdate
 from models.professionals import ProfessionalRead
 from utils.security import get_current_patient, get_password_hash
+from models.professionals import Professional, ProfessionalRead
 
 router_patients = APIRouter(
     prefix="/patients",
@@ -91,5 +92,61 @@ def get_my_professional(
     
     return professional
 
-# Importaciones que faltaban
-from models.professionals import Professional, ProfessionalRead
+
+@router_patients.post("/assign-professional/{uuid_code}", response_model=PatientRead)
+def assign_professional_to_patient(
+    *,
+    session: Session = Depends(get_session),
+    current_patient: Patient = Depends(get_current_patient),
+    uuid_code: str,
+):
+    """Enlazar un paciente con un profesional"""
+    # Verificar si el paciente ya tiene un profesional asignado
+    if current_patient.professional_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ya tiene un profesional asignado",
+        )
+    
+    # Buscar el profesional por uuid_code
+    professional = session.exec(
+        select(Professional).where(Professional.uuid_code == uuid_code)
+    ).first()
+    
+    if not professional:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profesional no encontrado",
+        )
+    
+    # Asignar el profesional al paciente
+    current_patient.professional_id = professional.id
+    
+    session.add(current_patient)
+    session.commit()
+    session.refresh(current_patient)
+    
+    return current_patient
+
+
+@router_patients.delete("/unassign-professional", response_model=PatientRead)
+def unassign_professional(
+    *,
+    session: Session = Depends(get_session),
+    current_patient: Patient = Depends(get_current_patient),
+):
+    """Desvincular un paciente de su profesional asignado"""
+    if not current_patient.professional_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No tiene un profesional asignado",
+        )
+    
+    # Desvincular el profesional del paciente
+    current_patient.professional_id = None
+    
+    session.add(current_patient)
+    session.commit()
+    session.refresh(current_patient)
+    
+    return current_patient
