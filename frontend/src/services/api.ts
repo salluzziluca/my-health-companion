@@ -184,7 +184,7 @@ export const professionalService = {
         return response.data;
     },
 
-    unassignPatient: async (patientId: string) => {
+    unassignPatient: async (patientId: number) => {
         const response = await api.delete(`/professionals/unassign-patient/${patientId}`);
         return response.data;
     }
@@ -229,6 +229,25 @@ export const healthService = {
 
     async deleteWeeklyNote(weekStartDate: string): Promise<void> {
         await api.delete(`/patients/weekly-notes/${weekStartDate}`);
+    },
+
+    unassignProfessional: async () => {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No hay token de autenticación');
+
+        const response = await fetch('http://localhost:8000/patients/unassign-professional', {
+            method: 'DELETE',
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Error al desvincular del profesional');
+        }
+
+        return response.json();
     },
 };
 
