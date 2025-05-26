@@ -9,6 +9,7 @@ import MyProfile from './components/pages/MyProfile';
 import MyAccount from './components/pages/MyAccount';
 import Layout from './components/pages/Layout';
 import MealDashboard from './components/MealDashboard';
+import NutricionistaDashboard from './components/pages/NutricionistaDashboard';
 
 
 // Create a theme context
@@ -165,8 +166,9 @@ function App() {
               <Route path="myprofile" element={<MyProfile />} />
               <Route path="myaccount" element={<MyAccount />} />
               <Route path="meals" element={<MealDashboard />} />
+              <Route path="nutricionista" element={<NutricionistaDashboard />} /> {/* Nueva ruta */}
             </Route>
-            <Route path="*" element={<Navigate to="/login" replace />} /> {/* Esta línea */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </Router>
       </ThemeProvider>
