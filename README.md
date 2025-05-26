@@ -85,17 +85,17 @@ my-health-companion/
 -   **DELETE** `/professionals/unassign-patient/{patient_id}`: Desasignar paciente
 -   **GET** `/professionals/me/uuid`: Obtener el UUID del profesional actual
 
-### Registros de peso (Weight Logs)
+### Weight Logs
 
 -   **POST** `/patients/weight`: Crear registro de peso
 -   **GET** `/patients/weight-history`: Obtener historial de peso
 
-### Resúmenes semanales (Weekly Summaries)
+### Weekly Summaries
 
 -   **GET** `/patients/weekly-summary`: Obtener resumen semanal actual
 -   **GET** `/patients/weekly-summary/history`: Obtener historial de resúmenes semanales
 
-### Notas semanales (Weekly Notes)
+### Weekly Notes
 
 -   **POST** `/patients/weekly-notes`: Crear o actualizar nota semanal
 -   **GET** `/patients/weekly-notes/{week_start_date}`: Obtener nota semanal por fecha
@@ -119,8 +119,16 @@ my-health-companion/
 
 ### Ingredients
 
--  **GET** `/ingredients`: Listar ingredientes disponibles
--  **GET** `/ingredients/{ingredient_id}`: Obtener información de un ingrediente específico
+-   **GET** `/ingredients`: Listar ingredientes disponibles
+-   **GET** `/ingredients/{ingredient_id}`: Obtener información de un ingrediente específico
+
+### Weekly Diets
+
+-   **POST** `/weekly-diets/`: Crear dieta semanal
+-   **POST** `/weekly-diets/{weekly_diet_id}/meals`: Agregar plato a dieta semanal
+-   **GET** `/weekly-diets/{weekly_diet_id}/meals`: Obtener platos de dieta semanal con estado
+-   **DELETE** `/weekly-diets/{weekly_diet_id}/meals/{meal_id}`: Eliminar plato de dieta semanal
+-   **DELETE** `/weekly-diets/{weekly_diet_id}`: Eliminar dieta semanal
 
 ## Notas para Desarrolladores
 
@@ -164,6 +172,10 @@ Cualquier cosa en `backend\routers` están los endpoints.
 ## Contribución
 
 1. Crear una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+2. Commit de tus cambios (`git commit -m 'Add some AmazingFeature'`)
+3. Push a la rama (`git push origin feature/AmazingFeature`)
+4. Abrir un Pull Request
+
 2. Commit de tus cambios (`git commit -m 'Add some AmazingFeature'`)
 3. Push a la rama (`git push origin feature/AmazingFeature`)
 4. Abrir un Pull Request
