@@ -36,6 +36,7 @@ const MyAccount = () => {
     last_name: '',
     role: '',
     specialization: '',
+    uuid: ''
   });
 
   const [loading, setLoading] = useState(true);
@@ -78,12 +79,24 @@ const MyAccount = () => {
 
       console.log('Datos de cuenta recibidos:', data);
 
+      // Si es profesional, obtener el UUID
+      let uuid = '';
+      if (userType === 'professional') {
+        const uuidResponse = await axios.get('http://localhost:8000/professionals/me/uuid', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        uuid = uuidResponse.data; // El UUID viene directamente en la respuesta
+      }
+
       setAccount({
         email: data.email || '',
         first_name: data.first_name || '',
         last_name: data.last_name || '',
         role: userType || '',
         specialization: data.specialization || '',
+        uuid: uuid
       });
 
       setEditData({
@@ -288,6 +301,40 @@ const MyAccount = () => {
           fullWidth
           disabled
         />
+
+        {account.role === 'professional' && account.uuid && (
+          <Box sx={{ width: '100%', mt: 2 }}>
+            <Typography variant="subtitle1" gutterBottom>
+              Código de Vinculación
+            </Typography>
+            <Box sx={{ 
+              p: 2, 
+              bgcolor: 'background.paper', 
+              borderRadius: 1,
+              border: '1px solid',
+              borderColor: 'divider',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>
+                {account.uuid}
+              </Typography>
+              <Button
+                size="small"
+                onClick={() => {
+                  navigator.clipboard.writeText(account.uuid);
+                  // Aquí podrías agregar un snackbar o alerta para confirmar la copia
+                }}
+              >
+                Copiar
+              </Button>
+            </Box>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              Comparte este código con tus pacientes para que puedan vincularse a tu cuenta
+            </Typography>
+          </Box>
+        )}
 
         {account.role === 'professional' && (
           <TextField
