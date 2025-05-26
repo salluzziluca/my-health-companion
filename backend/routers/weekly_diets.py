@@ -10,7 +10,7 @@ from models.foods import Food
 
 router_weekly_diets = APIRouter(prefix="/weekly-diets", tags=["Weekly Diets"])
 
-#Crear dieta semanal
+# Crear dieta semanal
 @router_weekly_diets.post("/", response_model=WeeklyDiets)
 def create_weekly_diet(
     week_start_date: date,
@@ -33,8 +33,8 @@ def create_weekly_diet(
         week_start_date=week_start_date,
         patient_id=patient_id,
         professional_id=professional_id,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow()
+        created_at=datetime.now(),
+        updated_at=datetime.now()
     )
     session.add(new_diet)
     session.commit()

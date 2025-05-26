@@ -10,12 +10,12 @@ class DayOfWeek(str, Enum):
     viernes = "viernes"
     sabado = "sábado"
     domingo = "domingo"
-
+    
 class MealOfDay(str, Enum):
-    desayuno = "desayuno"
-    almuerzo = "almuerzo"
-    merienda = "merienda"
-    cena = "cena"
+    breakfast = "breakfast"
+    lunch = "lunch"
+    snack = "snack"
+    dinner = "dinner"
 
 
 class WeeklyDietMeals(SQLModel, table=True):
@@ -28,4 +28,4 @@ class WeeklyDietMeals(SQLModel, table=True):
     food_id: int = Field(foreign_key="foods.id")
     weekly_diet_id: int = Field(foreign_key="weeklydiets.id")
 
-    weekly_diet: "WeeklyDiets" = Relationship(back_populates="meals")
+    weekly_diet: "WeeklyDiets" = Relationship(back_populates="meals") # type: ignore
