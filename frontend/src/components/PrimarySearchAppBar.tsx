@@ -17,6 +17,7 @@ import MailIcon from '@mui/icons-material/Mail';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import MoreIcon from '@mui/icons-material/MoreVert';
 import HomeIcon from '@mui/icons-material/Home';
+import RestaurantIcon from '@mui/icons-material/Restaurant';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -95,6 +96,11 @@ export default function PrimarySearchAppBar() {
     navigate('/myaccount'); // navegamos a /profile
   };
 
+  const handleGoToWeeklyDiet = () => {
+    handleMenuClose();
+    navigate('/weekly-diet');
+  };
+
   const menuId = 'primary-search-account-menu';
   const renderMenu = (
     <Menu
@@ -114,6 +120,7 @@ export default function PrimarySearchAppBar() {
     >
       <MenuItem onClick={handleGoToProfile}>Profile</MenuItem>
       <MenuItem onClick={handleGoToAccount}>My account</MenuItem>
+      <MenuItem onClick={handleGoToWeeklyDiet}>Mi Dieta Semanal</MenuItem>
     </Menu>
   );
 
@@ -134,6 +141,12 @@ export default function PrimarySearchAppBar() {
       open={isMobileMenuOpen}
       onClose={handleMobileMenuClose}
     >
+      <MenuItem onClick={handleGoToWeeklyDiet}>
+        <IconButton size="large" color="inherit">
+          <RestaurantIcon />
+        </IconButton>
+        <p>Mi Dieta</p>
+      </MenuItem>
       <MenuItem>
         <IconButton size="large" aria-label="show 4 new mails" color="inherit">
           <Badge badgeContent={4} color="error">
@@ -199,6 +212,14 @@ export default function PrimarySearchAppBar() {
           </Typography>
           <Box sx={{ flexGrow: 1 }} />
           <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
+            <IconButton
+              size="large"
+              color="inherit"
+              onClick={handleGoToWeeklyDiet}
+              sx={{ mr: 1 }}
+            >
+              <RestaurantIcon />
+            </IconButton>
             <IconButton size="large" aria-label="show 4 new mails" color="inherit">
               <Badge badgeContent={4} color="error">
                 <MailIcon />

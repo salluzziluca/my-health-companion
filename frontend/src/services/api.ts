@@ -251,4 +251,72 @@ export const healthService = {
     },
 };
 
+// Weekly Diet API functions
+export const createWeeklyDiet = async (data: {
+    week_start_date: string;
+    patient_id: number;
+    professional_id: number;
+}) => {
+    const response = await fetch(`/api/weekly-diets/?week_start_date=${data.week_start_date}&patient_id=${data.patient_id}&professional_id=${data.professional_id}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+    if (!response.ok) throw new Error('Error creating weekly diet');
+    return response.json();
+};
+
+export const addMealToDiet = async (weeklyDietId: number, data: {
+    meal_name: string;
+    day_of_week: string;
+    meal_of_the_day: string;
+    food_id: number;
+}) => {
+    const response = await fetch(`/api/weekly-diets/${weeklyDietId}/meals`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Error adding meal to diet');
+    return response.json();
+};
+
+export const getWeeklyDietMeals = async (weeklyDietId: number, completed?: boolean) => {
+    const url = completed !== undefined
+        ? `/api/weekly-diets/${weeklyDietId}/meals?completed=${completed}`
+        : `/api/weekly-diets/${weeklyDietId}/meals`;
+
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Error fetching weekly diet meals');
+    return response.json();
+};
+
+export const markMealAsCompleted = async (mealId: number, completed: boolean) => {
+    const response = await fetch(`/api/weekly-diets/meals/${mealId}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ completed }),
+    });
+    if (!response.ok) throw new Error('Error updating meal status');
+    return response.json();
+};
+
+export const deleteWeeklyDiet = async (weeklyDietId: number) => {
+    const response = await fetch(`/api/weekly-diets/${weeklyDietId}`, {
+        method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Error deleting weekly diet');
+    return response.json();
+};
+
+export const getCurrentWeeklyDiet = async () => {
+    const response = await api.get('/patients/current-weekly-diet');
+    return response.data;
+};
+
 export default api; 
