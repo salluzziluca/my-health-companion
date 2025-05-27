@@ -127,6 +127,7 @@ my-health-companion/
 -   **POST** `/weekly-diets/`: Crear dieta semanal
 -   **POST** `/weekly-diets/{weekly_diet_id}/meals`: Agregar plato a dieta semanal
 -   **PATCH** `/weekly-diets/{weekly_diet_id}/meals/{meal_id}/complete`: Marcar plato como completado y agregarlo a las comidas del paciente
+-   **PATCH** `/weekly-diets/{weekly_diet_id}/meals/{meal_id}/uncomplete`: Desmarcar plato como completado y eliminar de las comidas del paciente
 -   **GET** `/weekly-diets/patient/{patient_id}`: Obtener todas las dietas semanales de un paciente
 -   **GET** `/weekly-diets/professional/{professional_id}`: Obtener todas las dietas semanales de un profesional
 -   **GET** `/weekly-diets/{weekly_diet_id}/meals`: Obtener platos de dieta semanal con estado
