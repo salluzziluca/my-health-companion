@@ -126,6 +126,9 @@ my-health-companion/
 
 -   **POST** `/weekly-diets/`: Crear dieta semanal
 -   **POST** `/weekly-diets/{weekly_diet_id}/meals`: Agregar plato a dieta semanal
+-   **PATCH** `/weekly-diets/{weekly_diet_id}/meals/{meal_id}/complete`: Marcar plato como completado y agregarlo a las comidas del paciente
+-   **GET** `/weekly-diets/patient/{patient_id}`: Obtener todas las dietas semanales de un paciente
+-   **GET** `/weekly-diets/professional/{professional_id}`: Obtener todas las dietas semanales de un profesional
 -   **GET** `/weekly-diets/{weekly_diet_id}/meals`: Obtener platos de dieta semanal con estado
 -   **DELETE** `/weekly-diets/{weekly_diet_id}/meals/{meal_id}`: Eliminar plato de dieta semanal
 -   **DELETE** `/weekly-diets/{weekly_diet_id}`: Eliminar dieta semanal
@@ -176,6 +179,6 @@ Cualquier cosa en `backend\routers` están los endpoints.
 3. Push a la rama (`git push origin feature/AmazingFeature`)
 4. Abrir un Pull Request
 
-2. Commit de tus cambios (`git commit -m 'Add some AmazingFeature'`)
-3. Push a la rama (`git push origin feature/AmazingFeature`)
-4. Abrir un Pull Request
+5. Commit de tus cambios (`git commit -m 'Add some AmazingFeature'`)
+6. Push a la rama (`git push origin feature/AmazingFeature`)
+7. Abrir un Pull Request

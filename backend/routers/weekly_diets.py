@@ -75,6 +75,47 @@ def add_meal_to_weekly_diet(
     session.refresh(meal)
     return meal
 
+
+# Obtener todas las dietas semanales de un paciente
+@router_weekly_diets.get("/patient/{patient_id}")
+def get_patient_weekly_diets(
+    patient_id: int,
+    session: Session = Depends(get_session)
+):
+    from models.patients import Patient
+    
+    # Verificar que el paciente existe
+    patient = session.get(Patient, patient_id)
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    
+    # Obtener todas las dietas semanales del paciente
+    weekly_diets = session.exec(
+        select(WeeklyDiets).where(WeeklyDiets.patient_id == patient_id)
+    ).all()
+    
+    return weekly_diets
+
+# Obtener todas las dietas semanales de un profesional
+@router_weekly_diets.get("/professional/{professional_id}")
+def get_professional_weekly_diets(
+    professional_id: int,
+    session: Session = Depends(get_session)
+):
+    from models.professionals import Professional
+    
+    # Verificar que el profesional existe
+    professional = session.get(Professional, professional_id)
+    if not professional:
+        raise HTTPException(status_code=404, detail="Professional not found")
+    
+    # Obtener todas las dietas semanales creadas por el profesional
+    weekly_diets = session.exec(
+        select(WeeklyDiets).where(WeeklyDiets.professional_id == professional_id)
+    ).all()
+    
+    return weekly_diets
+
 #Para ver las comidas de la dieta semanal específica, con opción de pedirle completadas en true o false
 @router_weekly_diets.get("/{weekly_diet_id}/meals")
 def get_weekly_diet_meals_with_status(
@@ -128,3 +169,56 @@ def delete_weekly_diet(
     session.delete(diet)
     session.commit()
     return
+# Marcar una comida como completada y agregarla a las meals del paciente
+@router_weekly_diets.patch("/{weekly_diet_id}/meals/{meal_id}/complete")
+def complete_weekly_diet_meal(
+    weekly_diet_id: int,
+    meal_id: int,
+    grams: float,
+    session: Session = Depends(get_session)
+):
+    from models.meals import Meal
+    from utils.calories import calculate_meal_calories
+    
+    # Verificar que existe la comida en la dieta semanal
+    weekly_meal = session.get(WeeklyDietMeals, meal_id)
+    if not weekly_meal or weekly_meal.weekly_diet_id != weekly_diet_id:
+        raise HTTPException(status_code=404, detail="Meal not found in the specified weekly diet")
+    
+    # Verificar que la dieta semanal existe y obtener el patient_id
+    weekly_diet = session.get(WeeklyDiets, weekly_diet_id)
+    if not weekly_diet:
+        raise HTTPException(status_code=404, detail="Weekly diet not found")
+    
+    # Obtener información del food para calcular calorías
+    food = session.get(Food, weekly_meal.food_id)
+    if not food:
+        raise HTTPException(status_code=404, detail="Food not found")
+    
+    # Calcular calorías basado en los gramos usando la función existente
+    calories = calculate_meal_calories(
+        session=session,
+        food_id=weekly_meal.food_id,
+        meal_grams=grams
+    )
+    
+    # Crear nueva meal en la tabla meals
+    new_meal = Meal(
+        meal_name=weekly_meal.meal_name,
+        grams=grams,
+        meal_of_the_day=weekly_meal.meal_of_the_day.value,
+        timestamp=datetime.now(),
+        food_id=weekly_meal.food_id,
+        patient_id=weekly_diet.patient_id,
+        calories=calories
+    )
+    
+    # Marcar la comida de la dieta semanal como completada
+    weekly_meal.completed = True
+    
+    session.add(new_meal)
+    session.commit()
+    session.refresh(new_meal)
+    session.refresh(weekly_meal)
+    
+    return {"message": "Meal completed successfully", "meal": new_meal, "weekly_meal": weekly_meal}
