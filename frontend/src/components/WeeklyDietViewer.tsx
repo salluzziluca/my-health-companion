@@ -80,7 +80,7 @@ const WeeklyDietViewer: React.FC<WeeklyDietViewerProps> = ({ weeklyDietId }) => 
 
     const handleMealCompletion = async (mealId: number, completed: boolean) => {
         try {
-            await markMealAsCompleted(mealId, completed);
+            await markMealAsCompleted(mealId, completed, weeklyDietId, 100);
             setMeals(meals.map(meal =>
                 meal.id === mealId ? { ...meal, completed } : meal
             ));
@@ -163,32 +163,39 @@ const WeeklyDietViewer: React.FC<WeeklyDietViewerProps> = ({ weeklyDietId }) => 
                                         bgcolor: meal.completed ? 'action.hover' : 'transparent',
                                         borderRadius: 1,
                                         mb: 1,
-                                        cursor: 'pointer',
-                                        '&:hover': {
-                                            bgcolor: 'action.hover',
-                                        },
+                                        p: 0,
+                                        display: 'flex',
+                                        alignItems: 'center',
                                     }}
-                                    onClick={() => handleMealClick(meal)}
                                 >
-                                    <Box sx={{ width: '100%' }}>
+                                    <Box
+                                        sx={{ p: 1 }}
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <Checkbox
+                                            checked={meal.completed}
+                                            onChange={(e) => {
+                                                handleMealCompletion(meal.id, e.target.checked);
+                                            }}
+                                            color="primary"
+                                        />
+                                    </Box>
+                                    <Box
+                                        sx={{
+                                            flex: 1,
+                                            p: 1,
+                                            cursor: 'pointer',
+                                            '&:hover': {
+                                                bgcolor: 'action.hover',
+                                            },
+                                            borderRadius: 1,
+                                        }}
+                                        onClick={() => handleMealClick(meal)}
+                                    >
                                         <Stack direction="row" alignItems="center" spacing={2}>
-                                            <FormControlLabel
-                                                control={
-                                                    <Checkbox
-                                                        checked={meal.completed}
-                                                        onChange={(e) => {
-                                                            e.stopPropagation();
-                                                            handleMealCompletion(meal.id, e.target.checked);
-                                                        }}
-                                                        color="primary"
-                                                    />
-                                                }
-                                                label={
-                                                    <Typography variant="body1">
-                                                        {meal.meal_name}
-                                                    </Typography>
-                                                }
-                                            />
+                                            <Typography variant="body1">
+                                                {meal.meal_name}
+                                            </Typography>
                                             <Chip
                                                 label={mealTypeLabels[meal.meal_of_the_day]}
                                                 size="small"
