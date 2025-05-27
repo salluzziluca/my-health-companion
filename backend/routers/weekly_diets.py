@@ -7,6 +7,8 @@ from config.database import get_session
 from models.weekly_diets import WeeklyDiets
 from models.weekly_diet_meals import WeeklyDietMeals, DayOfWeek, MealOfDay
 from models.foods import Food
+from models.meals import Meal
+from utils.calories import calculate_meal_calories
 
 router_weekly_diets = APIRouter(prefix="/weekly-diets", tags=["Weekly Diets"])
 
@@ -179,9 +181,6 @@ def complete_weekly_diet_meal(
     grams: float,
     session: Session = Depends(get_session)
 ):
-    from models.meals import Meal
-    from utils.calories import calculate_meal_calories
-    
     # Verificar que existe la comida en la dieta semanal
     weekly_meal = session.get(WeeklyDietMeals, meal_id)
     if not weekly_meal or weekly_meal.weekly_diet_id != weekly_diet_id:
@@ -232,8 +231,6 @@ def uncomplete_weekly_diet_meal(
     meal_id: int,
     session: Session = Depends(get_session)
 ):
-    from models.meals import Meal
-    
     # Verificar que existe la comida en la dieta semanal
     weekly_meal = session.get(WeeklyDietMeals, meal_id)
     if not weekly_meal or weekly_meal.weekly_diet_id != weekly_diet_id:

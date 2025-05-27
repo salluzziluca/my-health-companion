@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Card, Form, Select, DatePicker, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import dayjs from 'dayjs';
-import { createWeeklyDiet, addMealToDiet } from '../services/api';
+import { createWeeklyDiet } from '../services/api';
 
 const { Option } = Select;
 
@@ -72,7 +71,7 @@ const WeeklyDietCreator: React.FC<WeeklyDietCreatorProps> = ({
                 >
                     <DatePicker
                         format="YYYY-MM-DD"
-                        disabledDate={(current) => {
+                        disabledDate={(current: { day: () => number; }) => {
                             // Only allow selecting Mondays
                             return current && current.day() !== 1;
                         }}
