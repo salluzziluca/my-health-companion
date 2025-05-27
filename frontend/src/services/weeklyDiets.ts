@@ -19,6 +19,28 @@ export interface WeeklyDietMeal {
     weekly_diet_id: number;
 }
 
+export interface Ingredient {
+    id: number;
+    name: string;
+    calories_per_100g: number;
+    protein_per_100g: number;
+    carbs_per_100g: number;
+    fat_per_100g: number;
+}
+
+export interface FoodIngredient {
+    id: number;
+    ingredient_id: number;
+    grams: number;
+}
+
+export interface FoodWithIngredients {
+    id: number;
+    food_name: string;
+    patient_id: number | null;
+    ingredients: FoodIngredient[];
+}
+
 export const getCurrentWeeklyDiet = async (): Promise<WeeklyDiet> => {
     // Primero obtenemos el ID del paciente actual
     const patientResponse = await api.get('/patients/me');
@@ -42,5 +64,15 @@ export const getWeeklyDietMeals = async (weeklyDietId: number): Promise<WeeklyDi
 
 export const markMealAsCompleted = async (mealId: number, completed: boolean): Promise<WeeklyDietMeal> => {
     const response = await api.patch(`/weekly-diets/meals/${mealId}`, { completed });
+    return response.data;
+};
+
+export const getIngredientDetails = async (ingredientId: number): Promise<Ingredient> => {
+    const response = await api.get(`/ingredients/${ingredientId}`);
+    return response.data;
+};
+
+export const getFoodIngredients = async (foodId: number): Promise<FoodWithIngredients> => {
+    const response = await api.get(`/foods/${foodId}/ingredients`);
     return response.data;
 }; 
