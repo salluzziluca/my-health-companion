@@ -1,7 +1,7 @@
 import sqlite3
 
 # Conexión a la base de datos
-conn = sqlite3.connect('health_app.sqlite')
+conn = sqlite3.connect('backend\health_app.sqlite')
 cursor = conn.cursor()
 
 cursor.executescript('''
