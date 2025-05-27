@@ -72,6 +72,8 @@ my-health-companion/
 -   **GET** `/patients/me`: Obtener información del paciente actual
 -   **PATCH** `/patients/me`: Actualizar información del paciente
 -   **GET** `/patients/my-professional`: Obtener profesional asignado
+-   **POST** `/patients/assign-professional/{uuid_code}`: Enlazar al paciente con un profesional mediante un codigo UUID
+-   **DELETE** `/patients/unassign-professional`: Desvincular al paciente de su profesional
 
 ### Profesionales
 
@@ -81,18 +83,19 @@ my-health-companion/
 -   **GET** `/professionals/patient/{patient_id}`: Ver información de un paciente específico
 -   **POST** `/professionals/assign-patient/{patient_id}`: Asignar paciente al profesional
 -   **DELETE** `/professionals/unassign-patient/{patient_id}`: Desasignar paciente
+-   **GET** `/professionals/me/uuid`: Obtener el UUID del profesional actual
 
-### Registros de peso (Weight Logs)
+### Weight Logs
 
 -   **POST** `/patients/weight`: Crear registro de peso
 -   **GET** `/patients/weight-history`: Obtener historial de peso
 
-### Resúmenes semanales (Weekly Summaries)
+### Weekly Summaries
 
 -   **GET** `/patients/weekly-summary`: Obtener resumen semanal actual
 -   **GET** `/patients/weekly-summary/history`: Obtener historial de resúmenes semanales
 
-### Notas semanales (Weekly Notes)
+### Weekly Notes
 
 -   **POST** `/patients/weekly-notes`: Crear o actualizar nota semanal
 -   **GET** `/patients/weekly-notes/{week_start_date}`: Obtener nota semanal por fecha
@@ -100,33 +103,36 @@ my-health-companion/
 
 ### Meals
 
--   GET `/meals`: Listar platos del paciente actual
-
--   POST `/meals`: Crear un nuevo plato
-
--   GET `/meals/{meal_id}`: Obtener información de un plato específico
-
--   PATCH `/meals/{meal_id}`: Actualizar información de un plato
-
--   DELETE `/meals/{meal_id}`: Eliminar un plato
+-   **GET** `/meals`: Listar platos del paciente actual
+-   **POST** `/meals`: Crear un nuevo plato
+-   **GET** `/meals/{meal_id}`: Obtener información de un plato específico
+-   **PATCH** `/meals/{meal_id}`: Actualizar información de un plato
+-   **DELETE** `/meals/{meal_id}`: Eliminar un plato
 
 ### Foods
 
--   GET `/foods`: Listar todas las comidas precargadas
-
--   GET `/foods/custom`: Listar comidas personalizadas del paciente actual
-
--   POST `/foods`: Crear una nueva comida personalizada (sin ingredientes)
-
--   GET `/{food_id}/ingredients`: Listar ingredientes (por IDs) de una comida personalizada
-
--   POST `/{food_id}/ingredients`: Agregar ingredientes a una comida personalizada
+-   **GET** `/foods`: Listar todas las comidas precargadas
+-   **GET** `/foods/custom`: Listar comidas personalizadas del paciente actual
+-   **POST** `/foods`: Crear una nueva comida personalizada (sin ingredientes)
+-   **GET** `/{food_id}/ingredients`: Listar ingredientes (por IDs) de una comida personalizada
+-   **POST** `/{food_id}/ingredients`: Agregar ingredientes a una comida personalizada
 
 ### Ingredients
 
--  GET `/ingredients`: Listar ingredientes disponibles
+-   **GET** `/ingredients`: Listar ingredientes disponibles
+-   **GET** `/ingredients/{ingredient_id}`: Obtener información de un ingrediente específico
 
--  GET `/ingredients/{ingredient_id}`: Obtener información de un ingrediente específico
+### Weekly Diets
+
+-   **POST** `/weekly-diets/`: Crear dieta semanal
+-   **POST** `/weekly-diets/{weekly_diet_id}/meals`: Agregar plato a dieta semanal
+-   **PATCH** `/weekly-diets/{weekly_diet_id}/meals/{meal_id}/complete`: Marcar plato como completado y agregarlo a las comidas del paciente
+-   **PATCH** `/weekly-diets/{weekly_diet_id}/meals/{meal_id}/uncomplete`: Desmarcar plato como completado y eliminar de las comidas del paciente
+-   **GET** `/weekly-diets/patient/{patient_id}`: Obtener todas las dietas semanales de un paciente
+-   **GET** `/weekly-diets/professional/{professional_id}`: Obtener todas las dietas semanales de un profesional
+-   **GET** `/weekly-diets/{weekly_diet_id}/meals`: Obtener platos de dieta semanal con estado
+-   **DELETE** `/weekly-diets/{weekly_diet_id}/meals/{meal_id}`: Eliminar plato de dieta semanal
+-   **DELETE** `/weekly-diets/{weekly_diet_id}`: Eliminar dieta semanal
 
 ## Notas para Desarrolladores
 
@@ -173,3 +179,7 @@ Cualquier cosa en `backend\routers` están los endpoints.
 2. Commit de tus cambios (`git commit -m 'Add some AmazingFeature'`)
 3. Push a la rama (`git push origin feature/AmazingFeature`)
 4. Abrir un Pull Request
+
+5. Commit de tus cambios (`git commit -m 'Add some AmazingFeature'`)
+6. Push a la rama (`git push origin feature/AmazingFeature`)
+7. Abrir un Pull Request
