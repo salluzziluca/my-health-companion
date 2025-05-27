@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
 from typing import List, Optional
 from datetime import datetime, date
@@ -172,56 +172,60 @@ def delete_weekly_diet(
     session.commit()
     return
 
-
 # Marcar una comida como completada y agregarla a las meals del paciente
 @router_weekly_diets.patch("/{weekly_diet_id}/meals/{meal_id}/complete")
 def complete_weekly_diet_meal(
     weekly_diet_id: int,
     meal_id: int,
     grams: float,
+    timestamp: datetime = Query(default_factory=datetime.now),
     session: Session = Depends(get_session)
 ):
     # Verificar que existe la comida en la dieta semanal
     weekly_meal = session.get(WeeklyDietMeals, meal_id)
     if not weekly_meal or weekly_meal.weekly_diet_id != weekly_diet_id:
         raise HTTPException(status_code=404, detail="Meal not found in the specified weekly diet")
-    
+
+    # Verificar si ya está completada
+    if weekly_meal.completed:
+        raise HTTPException(status_code=400, detail="Meal is already marked as completed")
+
     # Verificar que la dieta semanal existe y obtener el patient_id
     weekly_diet = session.get(WeeklyDiets, weekly_diet_id)
     if not weekly_diet:
         raise HTTPException(status_code=404, detail="Weekly diet not found")
-    
+
     # Obtener información del food para calcular calorías
     food = session.get(Food, weekly_meal.food_id)
     if not food:
         raise HTTPException(status_code=404, detail="Food not found")
-    
+
     # Calcular calorías basado en los gramos usando la función existente
     calories = calculate_meal_calories(
         session=session,
         food_id=weekly_meal.food_id,
         meal_grams=grams
     )
-    
+
     # Crear nueva meal en la tabla meals
     new_meal = Meal(
         meal_name=weekly_meal.meal_name,
         grams=grams,
         meal_of_the_day=weekly_meal.meal_of_the_day.value,
-        timestamp=datetime.now(),
+        timestamp=timestamp,
         food_id=weekly_meal.food_id,
         patient_id=weekly_diet.patient_id,
         calories=calories
     )
-    
+
     # Marcar la comida de la dieta semanal como completada
     weekly_meal.completed = True
-    
+
     session.add(new_meal)
     session.commit()
     session.refresh(new_meal)
     session.refresh(weekly_meal)
-    
+
     return {"message": "Meal completed successfully", "meal": new_meal, "weekly_meal": weekly_meal}
 
 # Endpoint para desmarcar una comida como completada y eliminar el registro de meals
