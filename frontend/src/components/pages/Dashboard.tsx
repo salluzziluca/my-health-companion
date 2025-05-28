@@ -216,6 +216,16 @@ const Dashboard = () => {
         <Typography variant="h4" gutterBottom>
           Mis Pacientes
         </Typography>
+
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<RestaurantIcon />}
+          onClick={() => navigate('/nutricionista')}
+          sx={{ mt: 2, mb: 3 }}
+        >
+          Gestionar Dietas de Pacientes
+        </Button>
         
         {patients.length === 0 ? (
           <Alert severity="info">

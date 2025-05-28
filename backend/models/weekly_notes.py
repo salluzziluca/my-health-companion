@@ -40,7 +40,8 @@ class WeeklyNote(WeeklyNoteBase, table=True):
 
 
 class WeeklyNoteCreate(WeeklyNoteBase):
-    pass  # patient_id se obtiene del token
+    patient_id: int  # 👈 Agregá este campo
+
 
 
 class WeeklyNoteRead(WeeklyNoteBase):

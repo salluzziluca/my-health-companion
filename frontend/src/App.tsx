@@ -11,6 +11,7 @@ import Layout from './components/pages/Layout';
 import MealDashboard from './components/MealDashboard';
 import PatientDetails from './components/pages/PatientDetails';
 import WeeklyDietPage from './components/pages/WeeklyDietPage';
+import NutricionistaDashboard from './components/pages/NutricionistaDashboard';
 
 
 // Create a theme context
@@ -244,6 +245,7 @@ function App() {
               <Route path="meals" element={<MealDashboard />} />
               <Route path="patient/:id" element={<PatientDetails />} />
               <Route path="weekly-diet" element={<WeeklyDietPage />} />
+              <Route path="nutricionista" element={<NutricionistaDashboard />} />
             </Route>
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
