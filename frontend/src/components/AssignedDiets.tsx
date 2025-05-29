@@ -1,93 +1,298 @@
 // src/components/AssignedDiets.tsx
 import React, { useEffect, useState } from 'react';
-import {
-  Box, Typography, List, ListItem, ListItemText, IconButton, Dialog,
-  DialogTitle, DialogContent, DialogContentText, DialogActions, Button
+import { 
+  Box, 
+  Typography, 
+  List, 
+  ListItem, 
+  ListItemText, 
+  IconButton,
+  Paper,
+  Chip,
+  useTheme,
+  Divider,
+  Collapse,
+  ListItemSecondaryAction,
+  Avatar,
+  Snackbar,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+import RestaurantIcon from '@mui/icons-material/Restaurant';
+import { format, parseISO, addDays } from 'date-fns';
+import { es } from 'date-fns/locale';
 import axios from '../services/axiosConfig';
 
-interface WeeklyDiet {
+interface Diet {
   id: number;
-  patient_id: string;
   start_date: string;
-  professional_id: string;
+  end_date: string;
+  total_calories: number;
+  status: string;
+  meals: Array<{
+    id: number;
+    meal_type: string;
+    completed: boolean;
+  }>;
 }
 
-interface Props {
+interface DietasAsignadasProps {
   professionalId: string;
   patientId: string;
   onSelectDiet: (dietId: number | null) => void;
-  triggerRefresh?: boolean; // 🆕 nuevo prop opcional para forzar refresco externo
+  triggerRefresh: boolean;
 }
 
-const DietasAsignadas: React.FC<Props> = ({ professionalId, patientId, onSelectDiet, triggerRefresh }) => {
-  const [diets, setDiets] = useState<WeeklyDiet[]>([]);
-  const [openDialog, setOpenDialog] = useState(false);
+const DietasAsignadas: React.FC<DietasAsignadasProps> = ({
+  professionalId,
+  patientId,
+  onSelectDiet,
+  triggerRefresh
+}) => {
+  const [diets, setDiets] = useState<Diet[]>([]);
+  const [expandedDiet, setExpandedDiet] = useState<number | null>(null);
+  const theme = useTheme();
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [dietToDelete, setDietToDelete] = useState<number | null>(null);
 
-  const fetchDiets = () => {
-    axios.get(`/weekly-diets/professional/${professionalId}`)
-      .then(res => {
-        const filtered = res.data.filter(
-          (diet: WeeklyDiet) => diet.patient_id === patientId
-        );
-        setDiets(filtered);
-      })
-      .catch(err => console.error('Error al cargar dietas asignadas', err));
-  };
-
   useEffect(() => {
-    fetchDiets();
-  }, [professionalId, patientId, triggerRefresh]); // 🆕 ahora también escucha el trigger externo
+    const fetchDiets = async () => {
+      try {
+        const response = await axios.get(`/weekly-diets/patient/${patientId}`);
+        console.log('Respuesta de dietas:', response.data);
+        // Transformar los datos al formato esperado por el componente
+        const transformedDiets = response.data.map((diet: any) => ({
+          id: diet.id,
+          start_date: diet.week_start_date,
+          end_date: diet.week_start_date, // Se calcula en el frontend
+          total_calories: 0, // Se calcula en el backend
+          status: 'active',
+          meals: [] // Se obtienen en otra llamada
+        }));
+        setDiets(transformedDiets);
 
-  const handleConfirmDelete = async () => {
-    if (!dietToDelete) return;
+        // Obtener las comidas para cada dieta
+        for (const diet of transformedDiets) {
+          try {
+            const mealsResponse = await axios.get(`/weekly-diets/${diet.id}/meals`);
+            const meals = mealsResponse.data.map((meal: any) => ({
+              id: meal.id,
+              meal_type: meal.meal_of_the_day,
+              completed: meal.completed
+            }));
+            setDiets(prevDiets => 
+              prevDiets.map(d => 
+                d.id === diet.id ? { ...d, meals } : d
+              )
+            );
+          } catch (error) {
+            console.error(`Error al obtener comidas para la dieta ${diet.id}:`, error);
+          }
+        }
+      } catch (error) {
+        console.error('Error al obtener las dietas:', error);
+      }
+    };
+
+    fetchDiets();
+  }, [professionalId, patientId, triggerRefresh]);
+
+  const formatDietDate = (dateStr: string) => {
     try {
-      await axios.delete(`/weekly-diets/${dietToDelete}`);
-      setDiets(prev => prev.filter(d => d.id !== dietToDelete));
-      setOpenDialog(false);
-      setDietToDelete(null);
-      onSelectDiet(null); // 🆕 Resetea el seguimiento si se está mostrando la dieta borrada
-    } catch (err) {
-      console.error('Error al eliminar dieta', err);
-      alert('No se pudo eliminar la dieta.');
+      const date = parseISO(dateStr);
+      const endDate = addDays(date, 6);
+      return {
+        start: format(date, "d 'de' MMMM", { locale: es }),
+        end: format(endDate, "d 'de' MMMM", { locale: es }),
+        year: format(date, 'yyyy', { locale: es })
+      };
+    } catch (error) {
+      console.error('Error al formatear fecha:', error);
+      return {
+        start: 'Fecha no disponible',
+        end: 'Fecha no disponible',
+        year: ''
+      };
     }
   };
 
+  const handleDietClick = (dietId: number) => {
+    if (expandedDiet === dietId) {
+      setExpandedDiet(null);
+      onSelectDiet(null);
+    } else {
+      setExpandedDiet(dietId);
+      onSelectDiet(dietId);
+    }
+  };
+
+  const handleDeleteDiet = async () => {
+    if (!dietToDelete) return;
+    try {
+      await axios.delete(`/diets/${dietToDelete}`);
+      setDiets(diets.filter(diet => diet.id !== dietToDelete));
+      setSnackbar({ open: true, message: 'Dieta eliminada correctamente', severity: 'success' });
+    } catch (error) {
+      console.error('Error al eliminar la dieta:', error);
+      setSnackbar({ open: true, message: 'Error al eliminar la dieta', severity: 'error' });
+    } finally {
+      setDialogOpen(false);
+      setDietToDelete(null);
+    }
+  };
+
+  const getMealTypeLabel = (type: string) => {
+    const types: { [key: string]: string } = {
+      'breakfast': 'Desayuno',
+      'lunch': 'Almuerzo',
+      'dinner': 'Cena',
+      'snack': 'Merienda'
+    };
+    return types[type] || type;
+  };
+
+  const getStatusColor = (status: string) => {
+    const colors: { [key: string]: string } = {
+      'active': 'success',
+      'completed': 'info',
+      'pending': 'warning'
+    };
+    return colors[status] || 'default';
+  };
+
+  if (diets.length === 0) {
+    return (
+      <Box sx={{ py: 2 }}>
+        <Typography color="text.secondary">
+          No hay dietas asignadas para este paciente.
+        </Typography>
+      </Box>
+    );
+  }
+
   return (
     <Box>
-      <Typography variant="h6">Dietas creadas para el paciente</Typography>
-      <List>
-        {diets.map(diet => (
-          <ListItem
-            key={diet.id}
-            secondaryAction={
-              <IconButton edge="end" onClick={() => {
-                setDietToDelete(diet.id);
-                setOpenDialog(true);
-              }}>
-                <DeleteIcon color="error" />
-              </IconButton>
-            }
-            component="button"
-            onClick={() => onSelectDiet(diet.id)}
-          >
-            <ListItemText primary={`Dieta del ${new Date(diet.start_date).toLocaleDateString()}`} />
-          </ListItem>
-        ))}
-      </List>
+      <Typography variant="subtitle1" sx={{ mb: 2, color: 'text.secondary' }}>
+        Dietas asignadas
+      </Typography>
+      <List sx={{ py: 0 }}>
+        {diets.map((diet, index) => {
+          const dates = formatDietDate(diet.start_date);
+          const completedMeals = diet.meals.filter(meal => meal.completed).length;
+          const totalMeals = diet.meals.length;
+          const completionPercentage = totalMeals > 0 ? (completedMeals / totalMeals) * 100 : 0;
 
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+          return (
+            <React.Fragment key={diet.id}>
+              <Paper
+                elevation={1}
+                sx={{
+                  mb: 2,
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    boxShadow: theme.shadows[4],
+                    transform: 'translateY(-2px)'
+                  }
+                }}
+              >
+                <ListItem
+                  component="div"
+                  onClick={() => handleDietClick(diet.id)}
+                  sx={{
+                    py: 2,
+                    px: 2,
+                    cursor: 'pointer',
+                    backgroundColor: expandedDiet === diet.id ? 
+                      theme.palette.primary.light + '20' : 
+                      theme.palette.background.paper
+                  }}
+                >
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <RestaurantIcon sx={{ color: 'primary.main' }} />
+                        <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
+                          Dieta de la semana {dates.start} - {dates.end} {dates.year}
+                        </Typography>
+                      </Box>
+                    }
+                    secondary={
+                      <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Chip
+                          label={`${Math.round(completionPercentage)}% completado`}
+                          size="small"
+                          color={completionPercentage === 100 ? 'success' : 'primary'}
+                          sx={{ borderRadius: 1 }}
+                        />
+                      </Box>
+                    }
+                  />
+                  <ListItemSecondaryAction>
+                    <IconButton
+                      edge="end"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDietToDelete(diet.id);
+                        setDialogOpen(true);
+                      }}
+                      sx={{ mr: 1 }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                    {expandedDiet === diet.id ? <ExpandLess /> : <ExpandMore />}
+                  </ListItemSecondaryAction>
+                </ListItem>
+              </Paper>
+              {index < diets.length - 1 && (
+                <Divider variant="inset" component="li" sx={{ my: 0.5 }} />
+              )}
+            </React.Fragment>
+          );
+        })}
+      </List>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+          variant="filled"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+      >
         <DialogTitle>Eliminar dieta</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            ¿Estás seguro que querés eliminar esta dieta? Esta acción no se puede deshacer.
+            ¿Estás seguro de que querés eliminar esta dieta?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancelar</Button>
-          <Button onClick={handleConfirmDelete} color="error" variant="contained">Eliminar</Button>
+          <Button onClick={() => setDialogOpen(false)} color="primary">
+            Cancelar
+          </Button>
+          <Button onClick={handleDeleteDiet} color="error" variant="contained">
+            Eliminar
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>
