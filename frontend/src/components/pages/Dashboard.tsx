@@ -17,12 +17,34 @@ import {
   Grid,
   Paper,
   Divider,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemAvatar,
+  Avatar,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Restaurant as RestaurantIcon } from '@mui/icons-material';
+import { Add as AddIcon, Edit as EditIcon, Restaurant as RestaurantIcon, Person as PersonIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { healthService } from '../../services/api';
+import { healthService, professionalService } from '../../services/api';
 import { WeightLog, WeeklySummary, WeeklyNote } from '../../types/health';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { jwtDecode } from 'jwt-decode';
+
+interface JwtPayload {
+  sub: string;
+  user_type?: string;
+  type?: string;
+  role?: string;
+  exp: number;
+  [key: string]: any;
+}
+
+interface Patient {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+}
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -33,6 +55,37 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [weightError, setWeightError] = useState<string | null>(null);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
+
+  // Función para obtener el tipo de usuario del token
+  const getUserTypeFromToken = (): string | null => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return null;
+
+      const decoded = jwtDecode<JwtPayload>(token);
+      return decoded.user_type || decoded.type || decoded.role || null;
+    } catch (error) {
+      console.error('Error decodificando el token:', error);
+      return null;
+    }
+  };
+
+  const fetchPatients = async () => {
+    try {
+      setLoading(true);
+      const patientsList = await professionalService.getMyPatients();
+      setPatients(patientsList);
+    } catch (err) {
+      console.error('Error fetching patients:', err);
+      setError('Error al cargar la lista de pacientes');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchWeeklySummary = async () => {
     try {
@@ -50,7 +103,14 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    fetchWeeklySummary();
+    const role = getUserTypeFromToken();
+    setUserRole(role);
+
+    if (role === 'professional') {
+      fetchPatients();
+    } else {
+      fetchWeeklySummary();
+    }
   }, []);
 
   const handleWeightSubmit = async (e: React.FormEvent) => {
@@ -115,6 +175,25 @@ const Dashboard = () => {
     }
   };
 
+  const handleDeletePatient = async (patient: Patient) => {
+    setPatientToDelete(patient);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeletePatient = async () => {
+    if (!patientToDelete) return;
+
+    try {
+      await professionalService.unassignPatient(patientToDelete.id);
+      setPatients(patients.filter(p => p.id !== patientToDelete.id));
+      setDeleteDialogOpen(false);
+      setPatientToDelete(null);
+    } catch (err) {
+      console.error('Error al eliminar paciente:', err);
+      setError('Error al eliminar el paciente');
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -127,6 +206,83 @@ const Dashboard = () => {
     return (
       <Box sx={{ mt: 4, mx: 2 }}>
         <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
+
+  if (userRole === 'professional') {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h4" gutterBottom>
+          Mis Pacientes
+        </Typography>
+
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<RestaurantIcon />}
+          onClick={() => navigate('/nutricionista')}
+          sx={{ mt: 2, mb: 3 }}
+        >
+          Gestionar Dietas de Pacientes
+        </Button>
+        
+        {patients.length === 0 ? (
+          <Alert severity="info">
+            No tienes pacientes asignados. Comparte tu código de vinculación con tus pacientes para que puedan unirse.
+          </Alert>
+        ) : (
+          <List>
+            {patients.map((patient) => (
+              <Card key={patient.id} sx={{ mb: 2 }}>
+                <ListItem>
+                  <ListItemAvatar>
+                    <Avatar>
+                      <PersonIcon />
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={`${patient.first_name} ${patient.last_name}`}
+                    secondary={patient.email}
+                  />
+                  <Button
+                    variant="outlined"
+                    onClick={() => navigate(`/patient/${patient.id}`)}
+                    sx={{ mr: 1 }}
+                  >
+                    Ver Detalles
+                  </Button>
+                  <IconButton 
+                    color="error" 
+                    onClick={() => handleDeletePatient(patient)}
+                    sx={{ '&:hover': { backgroundColor: 'rgba(211, 47, 47, 0.04)' } }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </ListItem>
+              </Card>
+            ))}
+          </List>
+        )}
+
+        {/* Diálogo de confirmación para eliminar paciente */}
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={() => setDeleteDialogOpen(false)}
+        >
+          <DialogTitle>Confirmar eliminación</DialogTitle>
+          <DialogContent>
+            <Typography>
+              ¿Estás seguro que deseas eliminar a {patientToDelete?.first_name} {patientToDelete?.last_name} de tu lista de pacientes?
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={confirmDeletePatient} color="error" variant="contained">
+              Eliminar
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     );
   }

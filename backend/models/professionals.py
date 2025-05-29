@@ -2,6 +2,7 @@ from typing import Optional, List
 from pydantic import EmailStr, field_validator
 from sqlmodel import Field, SQLModel, Relationship
 import re
+import uuid
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -42,6 +43,7 @@ class Professional(ProfessionalBase, table=True):
     __tablename__ = "professionals"
     
     id: Optional[int] = Field(default=None, primary_key=True)
+    uuid_code: str = Field(default_factory=lambda: str(uuid.uuid4()), unique=True, index=True)
     password_hash: str
     
     # Relación one-to-many: un profesional puede tener muchos pacientes

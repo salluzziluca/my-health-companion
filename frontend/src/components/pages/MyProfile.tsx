@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Avatar, TextField, Button, Stack, MenuItem, CircularProgress, Card, CardContent, Alert } from '@mui/material';
+import { Box, Typography, Avatar, TextField, Button, Stack, MenuItem, CircularProgress, Card, CardContent, Alert, Dialog, DialogTitle, DialogContent, DialogActions, IconButton } from '@mui/material';
 import { jwtDecode } from 'jwt-decode';
 import { healthService } from '../../services/api';
 import { WeightHistory } from '../../types/health';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useLocation } from 'react-router-dom';
+import { Delete as DeleteIcon } from '@mui/icons-material';
 
 interface JwtPayload {
   sub: string;
@@ -39,6 +40,13 @@ const MyProfile = () => {
     birth_date: '',
     gender: ''
   });
+  const [professionalCode, setProfessionalCode] = useState('');
+  const [professionalInfo, setProfessionalInfo] = useState<{
+    first_name: string;
+    last_name: string;
+    specialization: string;
+  } | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
@@ -109,6 +117,29 @@ const MyProfile = () => {
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('No hay token de autenticación');
+      }
+
+      // Obtener información del profesional asignado
+      try {
+        const professionalResponse = await fetch('http://localhost:8000/patients/my-professional', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        
+        if (professionalResponse.ok) {
+          const professionalData = await professionalResponse.json();
+          setProfessionalInfo({
+            first_name: professionalData.first_name,
+            last_name: professionalData.last_name,
+            specialization: professionalData.specialization
+          });
+        } else {
+          setProfessionalInfo(null);
+        }
+      } catch (error) {
+        console.error('Error fetching professional data:', error);
+        setProfessionalInfo(null);
       }
 
       const response = await fetch('http://localhost:8000/patients/me', {
@@ -275,6 +306,48 @@ const MyProfile = () => {
     }
   };
 
+  const handleAssignProfessional = async () => {
+    try {
+      setError(null);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No hay token de autenticación');
+      }
+
+      const response = await fetch(`http://localhost:8000/patients/assign-professional/${professionalCode}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Error al vincular con el profesional');
+      }
+
+      // Recargar el perfil para actualizar la información
+      await fetchProfile();
+      setProfessionalCode('');
+    } catch (error) {
+      console.error('Error assigning professional:', error);
+      setError(error instanceof Error ? error.message : 'Error al vincular con el profesional');
+    }
+  };
+
+  const handleUnassignProfessional = async () => {
+    try {
+      await healthService.unassignProfessional();
+      setProfessionalInfo(null);
+      setDeleteDialogOpen(false);
+      // Recargar el perfil para asegurar que todo está actualizado
+      await fetchProfile();
+    } catch (err) {
+      console.error('Error al eliminar profesional:', err);
+      setError('Error al eliminar el profesional');
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4, p: 2, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -424,6 +497,58 @@ const MyProfile = () => {
           </CardContent>
         </Card>
 
+        {!professionalInfo && (
+          <Card>
+            <CardContent>
+              <Stack spacing={3} alignItems="center">
+                <Typography variant="h6">Vincular Profesional</Typography>
+                <TextField
+                  label="Código del Profesional"
+                  value={professionalCode}
+                  onChange={(e) => setProfessionalCode(e.target.value)}
+                  fullWidth
+                  placeholder="Ingresa el código de vinculación"
+                />
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleAssignProfessional}
+                  disabled={!professionalCode}
+                >
+                  Vincular Profesional
+                </Button>
+              </Stack>
+            </CardContent>
+          </Card>
+        )}
+
+        {professionalInfo && (
+          <Card>
+            <CardContent>
+              <Stack spacing={2}>
+                <Typography variant="h6">Profesional Asignado</Typography>
+                <Box>
+                  <Typography variant="subtitle1">
+                    {professionalInfo.first_name} {professionalInfo.last_name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {professionalInfo.specialization === 'nutritionist' ? 'Nutricionista' : 'Entrenador Personal'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <IconButton 
+                    color="error" 
+                    onClick={() => setDeleteDialogOpen(true)}
+                    sx={{ '&:hover': { backgroundColor: 'rgba(211, 47, 47, 0.04)' } }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Weight History Chart */}
         {weightHistory.length > 0 && (
           <Card>
@@ -446,6 +571,25 @@ const MyProfile = () => {
           </Card>
         )}
       </Stack>
+
+      {/* Diálogo de confirmación para eliminar profesional */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>Confirmar eliminación</DialogTitle>
+        <DialogContent>
+          <Typography>
+            ¿Estás seguro que deseas eliminar a tu profesional asignado?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
+          <Button onClick={handleUnassignProfessional} color="error" variant="contained">
+            Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

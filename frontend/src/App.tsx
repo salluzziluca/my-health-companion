@@ -9,6 +9,9 @@ import MyProfile from './components/pages/MyProfile';
 import MyAccount from './components/pages/MyAccount';
 import Layout from './components/pages/Layout';
 import MealDashboard from './components/MealDashboard';
+import PatientDetails from './components/pages/PatientDetails';
+import WeeklyDietPage from './components/pages/WeeklyDietPage';
+import NutricionistaDashboard from './components/pages/NutricionistaDashboard';
 
 
 // Create a theme context
@@ -19,34 +22,36 @@ export const ColorModeContext = createContext({
 // Centralized color configuration
 export const appColors = {
   // Primary brand colors
-  primary: '#023047',
-  primaryDark: '#023047',
-  primaryLight: '#b388ff',
+  primary: '#2A7138',
+  primaryDark: '#022b3a',
+  primaryLight: '#bfdbf7',
 
   // Secondary colors
-  secondary: '#00bcd4', // Teal
-  secondaryDark: '#008ba3',
-  secondaryLight: '#62efff',
+  secondary: '#e1e5f2',
 
   // Background colors
-  lightBackground: '#f0f2f5', // Softer blue-gray
-  darkBackground: '#121212',
-  lightPaper: 'rgba(255, 255, 255, 0.9)', // Changed from pure white to slightly transparent white
-  darkPaper: 'rgba(18, 18, 18, 0.8)',
+  lightBackground: '#ffffff',
+  darkBackground: 'rgba(0, 0, 0, 0.6)',
+  lightPaper: '#ffffff',
+  darkPaper: 'rgba(0, 0, 0, 0.6)',
 
   // Link colors
-  lightLink: '#023047',
-  darkLink: '#90caf9',
+  lightLink: '#2A7138',
+  darkLink: '#bfdbf7',
+
+  // Accent colors (Asparagus)
+  accentLight: '#a5ce78',
+  accentDark: '#293c16',
 
   // Social media colors
   googleBlue: '#4285F4',
   facebookBlue: '#3b5998',
 
   // Gradient colors
-  lightGradientStart: 'hsl(210, 50%, 95%)', // Softer blue tone
-  lightGradientEnd: 'hsl(0, 0%, 98%)', // Very light gray
-  darkGradientStart: '#023047',
-  darkGradientEnd: '#000',
+  lightGradientStart: '#ffffff', // White
+  lightGradientEnd: '#ffffff', // White
+  darkGradientStart: '#2A7138',
+  darkGradientEnd: 'hsl(0, 3.40%, 5.70%)',
 };
 
 // Transition duration for theme changes
@@ -89,8 +94,6 @@ function App() {
           },
           secondary: {
             main: appColors.secondary,
-            dark: appColors.secondaryDark,
-            light: appColors.secondaryLight,
           },
           background: {
             default: mode === 'light' ? appColors.lightBackground : appColors.darkBackground,
@@ -112,6 +115,51 @@ function App() {
                 transition: isTransitioning
                   ? `background-color ${themeTransitionDuration}ms ease-out, color ${themeTransitionDuration}ms ease-out, border-color ${themeTransitionDuration}ms ease-out, box-shadow ${themeTransitionDuration}ms ease-out`
                   : undefined,
+              },
+            },
+          },
+          MuiTextField: {
+            styleOverrides: {
+              root: {
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: mode === 'light' ? 'rgba(0, 0, 0, 0.23)' : 'rgba(255, 255, 255, 0.5)',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: mode === 'light' ? 'rgba(0, 0, 0, 0.23)' : 'rgba(255, 255, 255, 0.5)',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: appColors.primary + ' !important',
+                  },
+                  '&.Mui-focused': {
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: appColors.primary + ' !important',
+                    },
+                  },
+                  '& input:-webkit-autofill': {
+                    WebkitBoxShadow: `0 0 0 100px ${mode === 'dark' ? appColors.darkBackground : '#fff'} inset !important`,
+                    WebkitTextFillColor: mode === 'dark' ? '#fff' : '#000 !important',
+                    transition: 'background-color 5000s ease-in-out 0s !important',
+                  },
+                  '& input:-webkit-autofill:hover': {
+                    WebkitBoxShadow: `0 0 0 100px ${mode === 'dark' ? appColors.darkBackground : '#fff'} inset !important`,
+                  },
+                  '& input:-webkit-autofill:focus': {
+                    WebkitBoxShadow: `0 0 0 100px ${mode === 'dark' ? appColors.darkBackground : '#fff'} inset !important`,
+                  },
+                  '& input:-webkit-autofill:active': {
+                    WebkitBoxShadow: `0 0 0 100px ${mode === 'dark' ? appColors.darkBackground : '#fff'} inset !important`,
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: mode === 'light' ? 'rgba(0, 0, 0, 0.6)' : 'rgba(255, 255, 255, 0.7)',
+                  '&.Mui-focused': {
+                    color: appColors.primary + ' !important',
+                  },
+                },
+                '& .MuiInputBase-input': {
+                  color: mode === 'light' ? 'rgba(0, 0, 0, 0.87)' : 'rgba(255, 255, 255, 0.87)',
+                },
               },
             },
           },
@@ -146,6 +194,36 @@ function App() {
               },
             },
           },
+          MuiAutocomplete: {
+            styleOverrides: {
+              root: {
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: mode === 'light' ? 'rgba(0, 0, 0, 0.23)' : 'rgba(255, 255, 255, 0.5)',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: mode === 'light' ? 'rgba(0, 0, 0, 0.23)' : 'rgba(255, 255, 255, 0.5)',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: appColors.primary,
+                  },
+                },
+              },
+              paper: {
+                backgroundColor: mode === 'dark' ? appColors.darkBackground : appColors.lightPaper,
+              },
+              option: {
+                '&[aria-selected="true"]': {
+                  backgroundColor: mode === 'dark' ? appColors.primaryDark : appColors.primary,
+                  color: '#fff',
+                },
+                '&.Mui-focused': {
+                  backgroundColor: mode === 'dark' ? appColors.primaryDark : appColors.primaryLight,
+                  color: '#fff',
+                },
+              },
+            },
+          },
         },
       }),
     [mode, isTransitioning],
@@ -165,8 +243,11 @@ function App() {
               <Route path="myprofile" element={<MyProfile />} />
               <Route path="myaccount" element={<MyAccount />} />
               <Route path="meals" element={<MealDashboard />} />
+              <Route path="patient/:id" element={<PatientDetails />} />
+              <Route path="weekly-diet" element={<WeeklyDietPage />} />
+              <Route path="nutricionista" element={<NutricionistaDashboard />} />
             </Route>
-            <Route path="*" element={<Navigate to="/login" replace />} /> {/* Esta línea */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </Router>
       </ThemeProvider>
@@ -175,3 +256,4 @@ function App() {
 }
 
 export default App;
+

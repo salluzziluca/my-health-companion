@@ -115,3 +115,10 @@ async def get_current_professional(
         )
     
     return user
+
+
+async def get_current_user_universal(
+    current_user_info = Depends(get_current_user_type_and_model)
+) -> Union[Patient, Professional]:
+    _, user = current_user_info
+    return user
