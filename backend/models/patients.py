@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from models.professionals import Professional
     from models.weight_logs import WeightLog
     from models.weekly_notes import WeeklyNote
+    from models.goals import Goal
 
 class PatientBase(SQLModel):
     email: EmailStr
@@ -93,6 +94,7 @@ class Patient(PatientBase, table=True):
     meals: List["Meal"] = Relationship(back_populates="patient")
     weight_logs: List["WeightLog"] = Relationship(back_populates="patient")
     weekly_notes: List["WeeklyNote"] = Relationship(back_populates="patient")
+    goals: List["Goal"] = Relationship(back_populates="patient")
 
 
 class PatientCreate(PatientBase):
