@@ -134,6 +134,17 @@ my-health-companion/
 -   **DELETE** `/weekly-diets/{weekly_diet_id}/meals/{meal_id}`: Eliminar plato de dieta semanal
 -   **DELETE** `/weekly-diets/{weekly_diet_id}`: Eliminar dieta semanal
 
+### Goals
+
+-   **POST** `/goals/`: Crear un nuevo objetivo para un paciente (solo profesionales)
+-   **GET** `/goals/patient/{patient_id}`: Obtener objetivos de un paciente (solo profesionales)
+-   **GET** `/goals/my-goals`: Obtener mis objetivos (solo pacientes)
+-   **GET** `/goals/my-goals/active`: Obtener mis objetivos activos (solo pacientes)
+-   **GET** `/goals/my-goals/progress`: Obtener el progreso de mis objetivos activos (solo pacientes)
+-   **PUT** `/goals/{goal_id}`: Actualizar un objetivo (solo profesionales)
+-   **DELETE** `/goals/{goal_id}`: Eliminar un objetivo (solo profesionales)
+-   **POST** `/goals/{goal_id}/complete`: Marcar un objetivo como completado (solo profesionales)
+
 ## Notas para Desarrolladores
 
 -   El backend usa SQLite como base de datos
