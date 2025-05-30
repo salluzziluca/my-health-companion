@@ -10,8 +10,8 @@ class GoalProgress(SQLModel):
     goal: GoalRead
     current_weight: Optional[float] = None
     current_daily_calories: Optional[int] = None
-    weight_progress_percentage: Optional[float] = None
-    calories_progress_percentage: Optional[float] = None
+    weight_progress_difference: Optional[float] = None  
+    calories_progress_difference: Optional[float] = None  
     is_weight_achieved: Optional[bool] = None
     is_calories_achieved: Optional[bool] = None
     is_fully_achieved: bool = False
