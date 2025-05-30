@@ -14,6 +14,13 @@ class MealBase(SQLModel):
     grams: float
     meal_of_the_day: str  # breakfast, lunch, dinner, snack, etc.
     timestamp: datetime
+
+    @field_validator('timestamp')
+    @classmethod
+    def validate_not_future(cls, value):
+        if value > datetime.now():
+            raise ValueError('La fecha no puede ser mayor a la actual')
+        return value
     
     @field_validator('meal_name')
     @classmethod
