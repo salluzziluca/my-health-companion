@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Button, Stack, Divider, TextField, IconButton } from '@mui/material';
+import { Box, Typography, Button, Stack, Divider, TextField, IconButton, Paper, Fade, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 import AddMealModal from './AddMealModal';
 import MealCard from './MealCard';
 import AlertBanner from './AlertBanner';
@@ -8,14 +8,13 @@ import { getMeals, deleteMeal, createMeal, updateMeal } from '../services/meals'
 import { useGoalNotifications } from './GoalNotifications';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
+import AddIcon from '@mui/icons-material/Add';
 
 // Objetivos simulados (esto vendría del backend en el futuro)
 const GOALS = {
   mealsPerDay: 5,
   caloriesPerDay: 2000,
-  streakDays: 3,
-  targetWeight: 75, // Peso objetivo en kg
-  weightTolerance: 0.5 // Tolerancia en kg para considerar que se alcanzó el objetivo
+  streakDays: 3
 };
 
 const MealDashboard = () => {
@@ -23,9 +22,6 @@ const MealDashboard = () => {
   const [showModal, setShowModal] = useState(false);
   const [mealToEdit, setMealToEdit] = useState<Meal | undefined>(undefined);
   const { showGoalNotification, hasShownNotification } = useGoalNotifications();
-  const [currentWeight, setCurrentWeight] = useState(76.5);
-  const [isEditingWeight, setIsEditingWeight] = useState(false);
-  const [tempWeight, setTempWeight] = useState(currentWeight);
 
   const totalCalories = meals.reduce((acc, m) => acc + m.calories, 0);
   const userTargetCalories = GOALS.caloriesPerDay;
@@ -46,19 +42,6 @@ const MealDashboard = () => {
         !hasShownNotification(caloriesGoalKey)) {
       showGoalNotification('calories', `¡Excelente! Mantuviste tus calorías dentro del rango objetivo.`, caloriesGoalKey);
     }
-
-    // Verificar objetivo de peso
-    const weightGoalKey = `weight_${currentWeight}`;
-    if (Math.abs(currentWeight - GOALS.targetWeight) <= GOALS.weightTolerance && 
-        !hasShownNotification(weightGoalKey)) {
-      showGoalNotification('weight', `¡Felicitaciones! ¡Alcanzaste tu peso objetivo de ${GOALS.targetWeight} kg!`, weightGoalKey);
-    }
-  };
-
-  const handleWeightChange = () => {
-    setCurrentWeight(tempWeight);
-    setIsEditingWeight(false);
-    checkGoals(meals); // Verificar objetivos con el nuevo peso
   };
 
   useEffect(() => {
@@ -92,79 +75,68 @@ const MealDashboard = () => {
     }
   };
 
-  const handleDeleteMeal = async (id: number) => {
-    try {
-      await deleteMeal(id);
-      const updatedMeals = meals.filter((m) => m.id !== id);
-      setMeals(updatedMeals);
-      checkGoals(updatedMeals);
-    } catch (err: any) {
-      console.error('Error al eliminar comida:', err.response?.data || err.message);
-    }
+  const handleDeleteClick = (id: number) => {
+    setMealToEdit(undefined);
   };
 
   return (
     <Box p={4}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">
-          Tus comidas de hoy
-        </Typography>
-        
-        {/* Control temporal de peso */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {isEditingWeight ? (
-            <>
-              <TextField
-                type="number"
-                size="small"
-                value={tempWeight}
-                onChange={(e) => setTempWeight(Number(e.target.value))}
-                inputProps={{ step: 0.1 }}
-                sx={{ width: '100px' }}
-              />
-              <IconButton onClick={handleWeightChange} color="primary">
-                <SaveIcon />
-              </IconButton>
-            </>
-          ) : (
-            <>
-              <Typography variant="body1">
-                Peso actual: {currentWeight} kg
-              </Typography>
-              <IconButton onClick={() => setIsEditingWeight(true)} size="small">
-                <EditIcon />
-              </IconButton>
-            </>
-          )}
-        </Box>
-      </Box>
+      <Typography variant="h4" gutterBottom>
+        Tus comidas de hoy
+      </Typography>
 
       <AlertBanner totalCalories={totalCalories} userTarget={userTargetCalories} />
-
-      <Divider sx={{ my: 2 }} />
-
-      <Stack spacing={2}>
-        {meals.map((meal) => (
-          <MealCard
-            key={meal.id}
-            meal={meal}
-            onDelete={handleDeleteMeal}
-            onEdit={(meal) => {
-              setMealToEdit(meal);
-              setShowModal(true);
-            }}
-          />
-        ))}
-      </Stack>
 
       <Button
         variant="contained"
         color="primary"
-        sx={{ mt: 4 }}
-        onClick={() => setShowModal(true)}
+        onClick={() => { setShowModal(true); setMealToEdit(undefined); }}
+        sx={{
+          borderRadius: 1,
+          fontWeight: 500,
+          boxShadow: 'none',
+          mb: 3,
+          width: '100%',
+          maxWidth: '100%',
+          mx: 'auto',
+          display: 'block',
+          height: 36,
+          minHeight: 0,
+          py: 0,
+          fontSize: '1rem',
+          letterSpacing: 0.2,
+          backgroundColor: 'primary.main',
+          color: 'white',
+          '&:hover': {
+            backgroundColor: 'primary.dark',
+            color: 'white',
+          }
+        }}
       >
-        Agregar nueva comida
+        + Agregar Comida
       </Button>
+
+      <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: (theme) => `1px solid ${theme.palette.divider}`, background: 'white', mb: 3 }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>Listado de comidas</Typography>
+        <Divider sx={{ mb: 2 }} />
+        <Stack spacing={2}>
+          {meals.length === 0 ? (
+            <Typography variant="body2" color="text.secondary" align="center">No has registrado comidas hoy.</Typography>
+          ) : (
+            meals.map((meal) => (
+              <Fade in key={meal.id}>
+                <Box>
+                  <MealCard
+                    meal={meal}
+                    onEdit={() => { setShowModal(true); setMealToEdit(meal); }}
+                    onDelete={() => handleDeleteClick(meal.id)}
+                  />
+                </Box>
+              </Fade>
+            ))
+          )}
+        </Stack>
+      </Paper>
 
       <AddMealModal
         open={showModal}
