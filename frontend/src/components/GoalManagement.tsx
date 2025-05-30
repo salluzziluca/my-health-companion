@@ -210,17 +210,25 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId }) => {
     const calculateWeightProgress = (goalProgress: GoalProgress): number => {
         if (!goalProgress.goal.target_weight || !goalProgress.current_weight) return 0;
 
+        // weight_progress_difference = current_weight - target_weight
+        // Si es positivo: está por encima del objetivo
+        // Si es negativo: está por debajo del objetivo
+
+        // Para calcular el progreso necesitamos conocer el peso inicial
+        // Sin el peso inicial, no podemos calcular un porcentaje de progreso real
+        // Por ahora, usaremos un enfoque simplificado basado en qué tan cerca está del objetivo
+
         if (goalProgress.weight_progress_difference !== null && goalProgress.weight_progress_difference !== undefined) {
-            const currentWeight = goalProgress.current_weight;
-            const targetWeight = goalProgress.goal.target_weight;
-            const startWeight = currentWeight - goalProgress.weight_progress_difference;
-            const totalWeightToChange = Math.abs(targetWeight - startWeight);
-            const weightChanged = Math.abs(currentWeight - startWeight);
+            const difference = Math.abs(goalProgress.weight_progress_difference);
 
-            if (totalWeightToChange === 0) return 100;
+            // Si la diferencia es muy pequeña (dentro de 0.5kg), consideramos que está cerca del 100%
+            if (difference <= 0.5) {
+                return 100;
+            }
 
-            const progress = Math.min((weightChanged / totalWeightToChange) * 100, 100);
-            return Math.round(progress);
+            // Sin conocer el peso inicial, no podemos calcular un progreso real
+            // Retornamos 0 para evitar mostrar porcentajes incorrectos
+            return 0;
         }
 
         return 0;
@@ -347,12 +355,22 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId }) => {
                                                         Días restantes: <strong>{progress.days_remaining}</strong>
                                                     </Typography>
                                                 )}
-                                                {/* Mostrar porcentajes de progreso */}
+                                                {/* Mostrar información de progreso más útil */}
                                                 {(goal.goal_type === 'weight' || goal.goal_type === 'both') && progress.current_weight && (
                                                     <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
-                                                        Progreso de peso: <span style={{ color: getProgressColor(calculateWeightProgress(progress), progress.is_weight_achieved || false) === 'success' ? '#4caf50' : '#ff9800' }}>
-                                                            {calculateWeightProgress(progress)}%
-                                                        </span>
+                                                        {progress.is_weight_achieved ? (
+                                                            <span style={{ color: '#4caf50' }}>✓ Meta de peso alcanzada</span>
+                                                        ) : progress.weight_progress_difference !== null && progress.weight_progress_difference !== undefined ? (
+                                                            Math.abs(progress.weight_progress_difference) <= 0.5 ? (
+                                                                <span style={{ color: '#ff9800' }}>Meta de peso casi alcanzada (diferencia: {Math.abs(progress.weight_progress_difference).toFixed(1)}kg)</span>
+                                                            ) : (
+                                                                <span style={{ color: '#1976d2' }}>
+                                                                    Progreso de peso: faltan {Math.abs(progress.weight_progress_difference).toFixed(1)}kg
+                                                                </span>
+                                                            )
+                                                        ) : (
+                                                            <span style={{ color: '#757575' }}>Progreso de peso: datos insuficientes</span>
+                                                        )}
                                                     </Typography>
                                                 )}
                                                 {(goal.goal_type === 'calories' || goal.goal_type === 'both') && progress.current_daily_calories && (

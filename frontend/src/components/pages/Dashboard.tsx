@@ -246,20 +246,27 @@ const Dashboard = () => {
   const calculateWeightProgress = (goalProgress: GoalProgress): number => {
     if (!goalProgress.goal.target_weight || !goalProgress.current_weight) return 0;
 
-    const targetWeight = goalProgress.goal.target_weight;
-    const currentWeight = goalProgress.current_weight;
+    // weight_progress_difference = current_weight - target_weight
+    // Si es positivo: está por encima del objetivo
+    // Si es negativo: está por debajo del objetivo
 
-    // Necesitamos saber el peso inicial para calcular correctamente el progreso
-    // Por ahora, usaremos una aproximación basada en la diferencia actual
+    // Para calcular el progreso necesitamos conocer el peso inicial
+    // Sin el peso inicial, no podemos calcular un porcentaje de progreso real
+    // Por ahora, usaremos un enfoque simplificado basado en qué tan cerca está del objetivo
+
     if (goalProgress.weight_progress_difference !== null && goalProgress.weight_progress_difference !== undefined) {
-      const startWeight = currentWeight - goalProgress.weight_progress_difference;
-      const totalWeightToChange = Math.abs(targetWeight - startWeight);
-      const weightChanged = Math.abs(currentWeight - startWeight);
+      const targetWeight = goalProgress.goal.target_weight;
+      const currentWeight = goalProgress.current_weight;
+      const difference = Math.abs(goalProgress.weight_progress_difference);
 
-      if (totalWeightToChange === 0) return 100;
+      // Si la diferencia es muy pequeña (dentro de 0.5kg), consideramos que está cerca del 100%
+      if (difference <= 0.5) {
+        return 100;
+      }
 
-      const progress = Math.min((weightChanged / totalWeightToChange) * 100, 100);
-      return Math.round(progress);
+      // Sin conocer el peso inicial, no podemos calcular un progreso real
+      // Retornamos 0 para evitar mostrar porcentajes incorrectos
+      return 0;
     }
 
     return 0;
@@ -507,17 +514,27 @@ const Dashboard = () => {
           <Chip label={`Cambio: ${weeklySummary.weight_data.weight_change} kg`} color={weeklySummary.weight_data.weight_change >= 0 ? 'success' : 'error'} size="small" sx={{ borderRadius: 1, fontWeight: 600 }} />
           {weightGoals.map((goalProgress) => {
             const progress = calculateWeightProgress(goalProgress);
+            const difference = goalProgress.weight_progress_difference;
+
             return goalProgress.goal.target_weight && (
               <Chip
                 key={`weight-goal-chip-${goalProgress.goal.id}`}
                 label={
                   goalProgress.is_weight_achieved
-                    ? `✓ Meta alcanzada (100%)`
-                    : progress > 0
-                      ? `Meta: ${goalProgress.goal.target_weight}kg (${progress}%)`
+                    ? `✓ Meta alcanzada`
+                    : difference !== null && difference !== undefined
+                      ? Math.abs(difference) <= 0.5
+                        ? `Meta: ${goalProgress.goal.target_weight}kg (casi alcanzada)`
+                        : `Meta: ${goalProgress.goal.target_weight}kg (faltan ${Math.abs(difference).toFixed(1)}kg)`
                       : `Meta: ${goalProgress.goal.target_weight}kg`
                 }
-                color={getProgressColor(progress, goalProgress.is_weight_achieved || false) as any}
+                color={
+                  goalProgress.is_weight_achieved
+                    ? 'success'
+                    : difference !== null && difference !== undefined && Math.abs(difference) <= 0.5
+                      ? 'warning'
+                      : 'default'
+                }
                 size="small"
                 sx={{ borderRadius: 1, fontWeight: 600 }}
               />
