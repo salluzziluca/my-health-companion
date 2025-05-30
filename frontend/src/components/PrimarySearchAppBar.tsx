@@ -14,10 +14,10 @@ import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import MailIcon from '@mui/icons-material/Mail';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import MoreIcon from '@mui/icons-material/MoreVert';
 import HomeIcon from '@mui/icons-material/Home';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
+import MoreIcon from '@mui/icons-material/MoreVert';
+import { NotificationsBell } from './GoalNotifications';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -156,16 +156,8 @@ export default function PrimarySearchAppBar() {
         <p>Messages</p>
       </MenuItem>
       <MenuItem>
-        <IconButton
-          size="large"
-          aria-label="show 17 new notifications"
-          color="inherit"
-        >
-          <Badge badgeContent={17} color="error">
-            <NotificationsIcon />
-          </Badge>
-        </IconButton>
-        <p>Notifications</p>
+        <NotificationsBell />
+        <p>Notificaciones</p>
       </MenuItem>
       <MenuItem onClick={handleProfileMenuOpen}>
         <IconButton
@@ -225,15 +217,7 @@ export default function PrimarySearchAppBar() {
                 <MailIcon />
               </Badge>
             </IconButton>
-            <IconButton
-              size="large"
-              aria-label="show 17 new notifications"
-              color="inherit"
-            >
-              <Badge badgeContent={17} color="error">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
+            <NotificationsBell />
             <IconButton
               size="large"
               edge="end"
