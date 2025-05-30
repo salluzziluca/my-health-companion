@@ -29,6 +29,7 @@ import { healthService, professionalService } from '../../services/api';
 import { WeightLog, WeeklySummary, WeeklyNote } from '../../types/health';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { jwtDecode } from 'jwt-decode';
+import { useGoalNotifications } from '../GoalNotifications';
 
 interface JwtPayload {
   sub: string;
@@ -46,6 +47,12 @@ interface Patient {
   email: string;
 }
 
+// Objetivos simulados (esto vendría del backend en el futuro)
+const GOALS = {
+  targetWeight: 75, // Peso objetivo en kg
+  weightTolerance: 0.5 // Tolerancia en kg para considerar que se alcanzó el objetivo
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [weight, setWeight] = useState('');
@@ -59,6 +66,7 @@ const Dashboard = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
+  const { showGoalNotification, hasShownNotification } = useGoalNotifications();
 
   // Función para obtener el tipo de usuario del token
   const getUserTypeFromToken = (): string | null => {
@@ -119,8 +127,10 @@ const Dashboard = () => {
     if (!weight) return;
 
     try {
+      const newWeight = parseFloat(weight);
+      
       // Registrar el nuevo peso
-      await healthService.logWeight(parseFloat(weight));
+      await healthService.logWeight(newWeight);
 
       // Actualizar el perfil con el nuevo peso
       const token = localStorage.getItem('token');
@@ -131,9 +141,16 @@ const Dashboard = () => {
           Authorization: token ? `Bearer ${token}` : '',
         },
         body: JSON.stringify({
-          weight: parseFloat(weight)
+          weight: newWeight
         }),
       });
+
+      // Verificar objetivo de peso
+      const weightGoalKey = `weight_${newWeight}`;
+      if (Math.abs(newWeight - GOALS.targetWeight) <= GOALS.weightTolerance && 
+          !hasShownNotification(weightGoalKey)) {
+        showGoalNotification('weight', `¡Felicitaciones! ¡Alcanzaste tu peso objetivo de ${GOALS.targetWeight} kg!`, weightGoalKey);
+      }
 
       setWeight('');
       fetchWeeklySummary(); // Refresh the summary
