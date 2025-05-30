@@ -206,6 +206,43 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId }) => {
         }
     };
 
+    // Función para calcular el porcentaje de progreso hacia una meta de peso
+    const calculateWeightProgress = (goalProgress: GoalProgress): number => {
+        if (!goalProgress.goal.target_weight || !goalProgress.current_weight) return 0;
+
+        if (goalProgress.weight_progress_difference !== null && goalProgress.weight_progress_difference !== undefined) {
+            const currentWeight = goalProgress.current_weight;
+            const targetWeight = goalProgress.goal.target_weight;
+            const startWeight = currentWeight - goalProgress.weight_progress_difference;
+            const totalWeightToChange = Math.abs(targetWeight - startWeight);
+            const weightChanged = Math.abs(currentWeight - startWeight);
+
+            if (totalWeightToChange === 0) return 100;
+
+            const progress = Math.min((weightChanged / totalWeightToChange) * 100, 100);
+            return Math.round(progress);
+        }
+
+        return 0;
+    };
+
+    // Función para calcular el porcentaje de progreso hacia una meta de calorías
+    const calculateCalorieProgress = (goalProgress: GoalProgress): number => {
+        if (!goalProgress.goal.target_calories || !goalProgress.current_daily_calories) return 0;
+
+        const progress = (goalProgress.current_daily_calories / goalProgress.goal.target_calories) * 100;
+        return Math.round(Math.min(progress, 150)); // Limitamos a 150% para no mostrar valores extremos
+    };
+
+    // Función para obtener el color del progreso
+    const getProgressColor = (progress: number, isCompleted: boolean = false): 'success' | 'warning' | 'info' | 'default' => {
+        if (isCompleted) return 'success';
+        if (progress >= 90) return 'success';
+        if (progress >= 70) return 'warning';
+        if (progress >= 40) return 'info';
+        return 'default';
+    };
+
     if (loading) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
@@ -308,6 +345,21 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId }) => {
                                                 {progress.days_remaining !== null && (
                                                     <Typography variant="body2">
                                                         Días restantes: <strong>{progress.days_remaining}</strong>
+                                                    </Typography>
+                                                )}
+                                                {/* Mostrar porcentajes de progreso */}
+                                                {(goal.goal_type === 'weight' || goal.goal_type === 'both') && progress.current_weight && (
+                                                    <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
+                                                        Progreso de peso: <span style={{ color: getProgressColor(calculateWeightProgress(progress), progress.is_weight_achieved || false) === 'success' ? '#4caf50' : '#ff9800' }}>
+                                                            {calculateWeightProgress(progress)}%
+                                                        </span>
+                                                    </Typography>
+                                                )}
+                                                {(goal.goal_type === 'calories' || goal.goal_type === 'both') && progress.current_daily_calories && (
+                                                    <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
+                                                        Progreso de calorías: <span style={{ color: getProgressColor(calculateCalorieProgress(progress), progress.is_calories_achieved || false) === 'success' ? '#4caf50' : '#ff9800' }}>
+                                                            {calculateCalorieProgress(progress)}%
+                                                        </span>
                                                     </Typography>
                                                 )}
                                             </Box>

@@ -242,6 +242,46 @@ const Dashboard = () => {
     }
   };
 
+  // Función para calcular el porcentaje de progreso hacia una meta de peso
+  const calculateWeightProgress = (goalProgress: GoalProgress): number => {
+    if (!goalProgress.goal.target_weight || !goalProgress.current_weight) return 0;
+
+    const targetWeight = goalProgress.goal.target_weight;
+    const currentWeight = goalProgress.current_weight;
+
+    // Necesitamos saber el peso inicial para calcular correctamente el progreso
+    // Por ahora, usaremos una aproximación basada en la diferencia actual
+    if (goalProgress.weight_progress_difference !== null && goalProgress.weight_progress_difference !== undefined) {
+      const startWeight = currentWeight - goalProgress.weight_progress_difference;
+      const totalWeightToChange = Math.abs(targetWeight - startWeight);
+      const weightChanged = Math.abs(currentWeight - startWeight);
+
+      if (totalWeightToChange === 0) return 100;
+
+      const progress = Math.min((weightChanged / totalWeightToChange) * 100, 100);
+      return Math.round(progress);
+    }
+
+    return 0;
+  };
+
+  // Función para calcular el porcentaje de progreso hacia una meta de calorías
+  const calculateCalorieProgress = (goalProgress: GoalProgress): number => {
+    if (!goalProgress.goal.target_calories || !goalProgress.current_daily_calories) return 0;
+
+    const progress = (goalProgress.current_daily_calories / goalProgress.goal.target_calories) * 100;
+    return Math.round(Math.min(progress, 150)); // Limitamos a 150% para no mostrar valores extremos
+  };
+
+  // Función para obtener el color del progreso
+  const getProgressColor = (progress: number, isCompleted: boolean = false) => {
+    if (isCompleted) return 'success';
+    if (progress >= 90) return 'success';
+    if (progress >= 70) return 'warning';
+    if (progress >= 40) return 'info';
+    return 'default';
+  };
+
   // Obtener metas activas para los gráficos
   const weightGoals = goalProgress.filter(g =>
     g.goal.goal_type === 'weight' || g.goal.goal_type === 'both'
@@ -412,7 +452,35 @@ const Dashboard = () => {
             <LineChart data={weeklySummary.weight_data.weight_logs}>
               <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
               <XAxis dataKey="date" stroke={theme.palette.text.secondary} tick={{ fill: theme.palette.text.secondary, fontSize: 13 }} />
-              <YAxis stroke={theme.palette.text.secondary} tick={{ fill: theme.palette.text.secondary, fontSize: 13 }} />
+              <YAxis
+                stroke={theme.palette.text.secondary}
+                tick={{ fill: theme.palette.text.secondary, fontSize: 13 }}
+                domain={(() => {
+                  // Obtener el rango de pesos de los datos
+                  const weights = weeklySummary.weight_data.weight_logs.map(log => log.weight);
+
+                  // Obtener los pesos objetivo de las metas activas
+                  const targetWeights = weightGoals
+                    .map(goal => goal.goal.target_weight)
+                    .filter(weight => weight !== null && weight !== undefined) as number[];
+
+                  // Combinar todos los pesos (actuales + objetivos)
+                  const allWeights = [...weights, ...targetWeights];
+
+                  if (allWeights.length === 0) return ['auto', 'auto'];
+
+                  const minWeight = Math.min(...allWeights);
+                  const maxWeight = Math.max(...allWeights);
+
+                  // Agregar un margen del 10% arriba y abajo para que el gráfico se vea mejor
+                  const margin = (maxWeight - minWeight) * 0.1 || 5; // Mínimo 5kg de margen si todos los pesos son iguales
+
+                  return [
+                    Math.max(0, minWeight - margin), // No permitir pesos negativos
+                    maxWeight + margin
+                  ];
+                })()}
+              />
               <Tooltip contentStyle={{ background: 'white', borderRadius: 8, border: `1px solid ${theme.palette.divider}` }} />
               <Line type="monotone" dataKey="weight" stroke={theme.palette.primary.main} strokeWidth={3} dot={{ r: 5, fill: theme.palette.primary.main, stroke: 'white', strokeWidth: 2 }} activeDot={{ r: 7 }} isAnimationActive />
               {/* Líneas de meta de peso */}
@@ -437,17 +505,24 @@ const Dashboard = () => {
         </Box>
         <Stack direction="row" spacing={2} alignItems="center" sx={{ mt: 2 }}>
           <Chip label={`Cambio: ${weeklySummary.weight_data.weight_change} kg`} color={weeklySummary.weight_data.weight_change >= 0 ? 'success' : 'error'} size="small" sx={{ borderRadius: 1, fontWeight: 600 }} />
-          {weightGoals.map((goalProgress) => (
-            goalProgress.goal.target_weight && (
+          {weightGoals.map((goalProgress) => {
+            const progress = calculateWeightProgress(goalProgress);
+            return goalProgress.goal.target_weight && (
               <Chip
                 key={`weight-goal-chip-${goalProgress.goal.id}`}
-                label={goalProgress.is_weight_achieved ? `✓ Meta alcanzada` : `Meta: ${goalProgress.goal.target_weight}kg`}
-                color={goalProgress.is_weight_achieved ? 'success' : 'default'}
+                label={
+                  goalProgress.is_weight_achieved
+                    ? `✓ Meta alcanzada (100%)`
+                    : progress > 0
+                      ? `Meta: ${goalProgress.goal.target_weight}kg (${progress}%)`
+                      : `Meta: ${goalProgress.goal.target_weight}kg`
+                }
+                color={getProgressColor(progress, goalProgress.is_weight_achieved || false) as any}
                 size="small"
                 sx={{ borderRadius: 1, fontWeight: 600 }}
               />
-            )
-          ))}
+            );
+          })}
         </Stack>
       </Paper>
 
@@ -488,17 +563,24 @@ const Dashboard = () => {
           </Box>
           <Stack direction="row" spacing={2} alignItems="center" sx={{ mt: 2 }}>
             <Chip label={`Promedio: ${weeklySummary.calorie_data.average_daily_calories.toFixed(0)} cal/día`} color="primary" size="small" sx={{ borderRadius: 1, fontWeight: 600 }} />
-            {calorieGoals.map((goalProgress) => (
-              goalProgress.goal.target_calories && (
+            {calorieGoals.map((goalProgress) => {
+              const progress = calculateCalorieProgress(goalProgress);
+              return goalProgress.goal.target_calories && (
                 <Chip
                   key={`calorie-goal-chip-${goalProgress.goal.id}`}
-                  label={goalProgress.is_calories_achieved ? `✓ Meta alcanzada` : `Meta: ${goalProgress.goal.target_calories} cal`}
-                  color={goalProgress.is_calories_achieved ? 'success' : 'default'}
+                  label={
+                    goalProgress.is_calories_achieved
+                      ? `✓ Meta alcanzada (${progress}%)`
+                      : progress > 0
+                        ? `Meta: ${goalProgress.goal.target_calories} cal (${progress}%)`
+                        : `Meta: ${goalProgress.goal.target_calories} cal`
+                  }
+                  color={getProgressColor(progress, goalProgress.is_calories_achieved || false) as any}
                   size="small"
                   sx={{ borderRadius: 1, fontWeight: 600 }}
                 />
-              )
-            ))}
+              );
+            })}
           </Stack>
         </Paper>
       ) : null}
@@ -510,8 +592,9 @@ const Dashboard = () => {
             Metas de Calorías
           </Typography>
           <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
-            {calorieGoals.map((goalProgress) => (
-              goalProgress.goal.target_calories && (
+            {calorieGoals.map((goalProgress) => {
+              const progress = calculateCalorieProgress(goalProgress);
+              return goalProgress.goal.target_calories && (
                 <Box key={`calorie-goal-info-${goalProgress.goal.id}`} sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2, bgcolor: 'background.paper' }}>
                   <Typography variant="body2" color="text.secondary">Meta diaria</Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.warning.main }}>
@@ -520,9 +603,14 @@ const Dashboard = () => {
                   <Typography variant="caption" color="text.secondary">
                     {goalProgress.is_calories_achieved ? '✓ Alcanzada' : 'Pendiente'}
                   </Typography>
+                  {progress > 0 && (
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: getProgressColor(progress, goalProgress.is_calories_achieved || false) === 'success' ? 'success.main' : 'warning.main', mt: 0.5 }}>
+                      Progreso: {progress}%
+                    </Typography>
+                  )}
                 </Box>
-              )
-            ))}
+              );
+            })}
             <Alert severity="info" sx={{ mt: 2 }}>
               Registra comidas para ver tu progreso hacia las metas de calorías.
             </Alert>
@@ -546,8 +634,9 @@ const Dashboard = () => {
               {calorieGoals.length > 0 && (
                 <>
                   <Divider />
-                  {calorieGoals.map((goalProgress) => (
-                    goalProgress.goal.target_calories && (
+                  {calorieGoals.map((goalProgress) => {
+                    const progress = calculateCalorieProgress(goalProgress);
+                    return goalProgress.goal.target_calories && (
                       <Box key={`calorie-summary-goal-${goalProgress.goal.id}`}>
                         <Typography variant="body2" color="text.secondary">
                           Meta: {goalProgress.goal.target_calories} cal/día
@@ -559,9 +648,14 @@ const Dashboard = () => {
                               'No disponible'}
                           </Typography>
                         )}
+                        {progress > 0 && (
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: getProgressColor(progress, goalProgress.is_calories_achieved || false) === 'success' ? 'success.main' : 'warning.main' }}>
+                            Progreso: {progress}%
+                          </Typography>
+                        )}
                       </Box>
-                    )
-                  ))}
+                    );
+                  })}
                 </>
               )}
             </Stack>

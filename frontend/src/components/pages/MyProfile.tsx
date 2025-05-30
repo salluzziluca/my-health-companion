@@ -581,7 +581,33 @@ const MyProfile = () => {
                   <LineChart data={[...weightHistory].reverse()}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
-                    <YAxis />
+                    <YAxis
+                      domain={(() => {
+                        // Obtener el rango de pesos del historial
+                        const weights = weightHistory.map(log => log.weight);
+
+                        // Obtener los pesos objetivo de las metas activas
+                        const targetWeights = weightGoals
+                          .map(goal => goal.goal.target_weight)
+                          .filter(weight => weight !== null && weight !== undefined) as number[];
+
+                        // Combinar todos los pesos (actuales + objetivos)
+                        const allWeights = [...weights, ...targetWeights];
+
+                        if (allWeights.length === 0) return ['auto', 'auto'];
+
+                        const minWeight = Math.min(...allWeights);
+                        const maxWeight = Math.max(...allWeights);
+
+                        // Agregar un margen del 10% arriba y abajo para que el gráfico se vea mejor
+                        const margin = (maxWeight - minWeight) * 0.1 || 5; // Mínimo 5kg de margen si todos los pesos son iguales
+
+                        return [
+                          Math.max(0, minWeight - margin), // No permitir pesos negativos
+                          maxWeight + margin
+                        ];
+                      })()}
+                    />
                     <Tooltip />
                     <Line type="monotone" dataKey="weight" stroke="#8884d8" />
                     {/* Líneas de meta de peso */}
