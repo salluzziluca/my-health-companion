@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from sqlmodel import Field, SQLModel, Relationship
 from datetime import date, datetime
 from enum import Enum
@@ -72,25 +72,20 @@ class Goal(GoalBase, table=True):
     patient: "Patient" = Relationship()
     professional: "Professional" = Relationship()
 
-
 class GoalCreate(GoalBase):
     patient_id: int
     
-    @field_validator('goal_type')
-    @classmethod
-    def validate_goal_requirements(cls, value, info):
-        data = info.data
-        target_weight = data.get('target_weight')
-        target_calories = data.get('target_calories')
-        
-        if value == GoalType.WEIGHT and target_weight is None:
+    @model_validator(mode='after')
+    def validate_goal_requirements(self):
+        """Validación personalizada a nivel de modelo"""
+        if self.goal_type == GoalType.WEIGHT and self.target_weight is None:
             raise ValueError('Se requiere target_weight para objetivos de peso')
-        if value == GoalType.CALORIES and target_calories is None:
+        if self.goal_type == GoalType.CALORIES and self.target_calories is None:
             raise ValueError('Se requiere target_calories para objetivos de calorías')
-        if value == GoalType.BOTH and (target_weight is None or target_calories is None):
+        if self.goal_type == GoalType.BOTH and (self.target_weight is None or self.target_calories is None):
             raise ValueError('Se requieren tanto target_weight como target_calories para objetivos mixtos')
         
-        return value
+        return self
 
 
 class GoalRead(GoalBase):
@@ -126,16 +121,3 @@ class GoalUpdate(SQLModel):
         if value is not None and value > 10000:
             raise ValueError('Las calorías objetivo no pueden exceder las 10000')
         return value
-
-
-class GoalProgress(SQLModel):
-    """Modelo para mostrar el progreso de un objetivo (no es tabla, solo para respuestas)"""
-    goal: GoalRead
-    current_weight: Optional[float] = None
-    current_daily_calories: Optional[int] = None
-    weight_progress_percentage: Optional[float] = None
-    calories_progress_percentage: Optional[float] = None
-    is_weight_achieved: Optional[bool] = None
-    is_calories_achieved: Optional[bool] = None
-    is_fully_achieved: bool = False
-    days_remaining: Optional[int] = None

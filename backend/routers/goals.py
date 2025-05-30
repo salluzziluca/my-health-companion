@@ -3,8 +3,9 @@ from sqlmodel import Session, select, func
 from typing import List, Optional
 from datetime import date, datetime
 
+from schemas.goal_progress import GoalProgress
 from config.database import get_session
-from models.goals import Goal, GoalCreate, GoalRead, GoalUpdate, GoalProgress, GoalStatus, GoalType
+from models.goals import Goal, GoalCreate, GoalRead, GoalUpdate, GoalStatus, GoalType
 from models.patients import Patient
 from models.professionals import Professional
 from models.weight_logs import WeightLog
