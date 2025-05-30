@@ -12,6 +12,7 @@ import MealDashboard from './components/MealDashboard';
 import PatientDetails from './components/pages/PatientDetails';
 import WeeklyDietPage from './components/pages/WeeklyDietPage';
 import NutricionistaDashboard from './components/pages/NutricionistaDashboard';
+import GoalNotificationsProvider from './components/GoalNotifications';
 
 
 // Create a theme context
@@ -233,23 +234,25 @@ function App() {
     <ColorModeContext.Provider value={colorMode}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <Router>
-          <Routes>
-            <Route path="/login" element={<SignInSide />} />
-            <Route path="/register" element={<SignUpSide />} />
-            <Route path="/" element={<Navigate to="/login" replace />} />
-            <Route path="/" element={<Layout />}>
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="myprofile" element={<MyProfile />} />
-              <Route path="myaccount" element={<MyAccount />} />
-              <Route path="meals" element={<MealDashboard />} />
-              <Route path="patient/:id" element={<PatientDetails />} />
-              <Route path="weekly-diet" element={<WeeklyDietPage />} />
-              <Route path="nutricionista" element={<NutricionistaDashboard />} />
-            </Route>
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
-        </Router>
+        <GoalNotificationsProvider>
+          <Router>
+            <Routes>
+              <Route path="/login" element={<SignInSide />} />
+              <Route path="/register" element={<SignUpSide />} />
+              <Route path="/" element={<Navigate to="/login" replace />} />
+              <Route path="/" element={<Layout />}>
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="myprofile" element={<MyProfile />} />
+                <Route path="myaccount" element={<MyAccount />} />
+                <Route path="meals" element={<MealDashboard />} />
+                <Route path="patient/:id" element={<PatientDetails />} />
+                <Route path="weekly-diet" element={<WeeklyDietPage />} />
+                <Route path="nutricionista" element={<NutricionistaDashboard />} />
+              </Route>
+              <Route path="*" element={<Navigate to="/login" replace />} />
+            </Routes>
+          </Router>
+        </GoalNotificationsProvider>
       </ThemeProvider>
     </ColorModeContext.Provider>
   );
