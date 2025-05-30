@@ -223,7 +223,7 @@ def get_my_goals_progress(
         #     session.add(goal)
         #     session.commit()
         #     session.refresh(goal)
-        
+
         # Calcular días restantes
         if goal.target_date:
             days_remaining = (goal.target_date - date.today()).days
@@ -231,6 +231,85 @@ def get_my_goals_progress(
         
         progress_list.append(progress)
     
+    return progress_list
+
+
+@router_goals.get("/patient/{patient_id}/progress", response_model=List[GoalProgress])
+def get_patient_goals_progress(
+    *,
+    session: Session = Depends(get_session),
+    current_professional = Depends(get_current_professional),
+    patient_id: int = Path(..., description="ID del paciente"),
+):
+    """Obtener el progreso de los objetivos activos de un paciente (solo profesionales asignados)"""
+    # Verificar que el paciente existe y pertenece al profesional
+    patient = session.get(Patient, patient_id)
+    if not patient:
+        raise HTTPException(status_code=404, detail="Paciente no encontrado")
+    if patient.professional_id != current_professional.id:
+        raise HTTPException(status_code=403, detail="No tienes permisos para ver el progreso de este paciente")
+
+    active_goals = session.exec(
+        select(Goal).where(
+            Goal.patient_id == patient_id,
+            Goal.status == GoalStatus.ACTIVE
+        )
+    ).all()
+    if not active_goals:
+        return []
+    progress_list = []
+    for goal in active_goals:
+        progress = GoalProgress(goal=goal)
+        # Calcular progreso de peso
+        if goal.goal_type in [GoalType.WEIGHT, GoalType.BOTH] and goal.target_weight:
+            latest_weight = session.exec(
+                select(WeightLog)
+                .where(WeightLog.patient_id == patient_id)
+                .where(WeightLog.timestamp <= goal.target_date)
+                .order_by(WeightLog.timestamp.desc())
+                .limit(1)
+            ).first()
+            if latest_weight:
+                progress.current_weight = latest_weight.weight
+                progress.weight_progress_difference = latest_weight.weight - goal.target_weight
+                progress.is_weight_achieved = abs(latest_weight.weight - goal.target_weight) <= 0.5
+        # Calcular progreso de calorías
+        if goal.goal_type in [GoalType.CALORIES, GoalType.BOTH] and goal.target_calories:
+            start_date = goal.start_date
+            end_date = goal.target_date if goal.target_date else date.today()
+            end_date = min(end_date, date.today())
+            recent_meals = session.exec(
+                select(Meal)
+                .where(
+                    Meal.patient_id == patient_id,
+                    func.date(Meal.timestamp) >= start_date,
+                    func.date(Meal.timestamp) <= end_date
+                )
+            ).all()
+            if recent_meals:
+                daily_calories = {}
+                for meal in recent_meals:
+                    meal_date = meal.timestamp.date()
+                    if meal_date not in daily_calories:
+                        daily_calories[meal_date] = 0
+                    daily_calories[meal_date] += meal.calories
+                if daily_calories:
+                    avg_calories = sum(daily_calories.values()) / len(daily_calories)
+                    progress.current_daily_calories = int(avg_calories)
+                    progress.calories_progress_difference = int(avg_calories - goal.target_calories)
+                    tolerance = goal.target_calories * 0.05
+                    progress.is_calories_achieved = abs(avg_calories - goal.target_calories) <= tolerance
+        # Verificar si el objetivo está completamente alcanzado
+        if goal.goal_type == GoalType.WEIGHT:
+            progress.is_fully_achieved = progress.is_weight_achieved or False
+        elif goal.goal_type == GoalType.CALORIES:
+            progress.is_fully_achieved = progress.is_calories_achieved or False
+        elif goal.goal_type == GoalType.BOTH:
+            progress.is_fully_achieved = (progress.is_weight_achieved or False) and (progress.is_calories_achieved or False)
+        if goal.target_date:
+            days_remaining = (goal.target_date - date.today()).days
+            progress.days_remaining = max(days_remaining, 0)
+        progress_list.append(progress)
     return progress_list
 
 

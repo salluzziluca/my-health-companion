@@ -138,6 +138,7 @@ my-health-companion/
 
 -   **POST** `/goals/`: Crear un nuevo objetivo para un paciente (solo profesionales)
 -   **GET** `/goals/patient/{patient_id}`: Obtener objetivos de un paciente (solo profesionales)
+-   **GET** `/goals/patient/{patient_id}/progress`: Obtener el progreso de los objetivos activos de un paciente (solo profesionales)
 -   **GET** `/goals/my-goals`: Obtener mis objetivos (solo pacientes)
 -   **GET** `/goals/my-goals/active`: Obtener mis objetivos activos (solo pacientes)
 -   **GET** `/goals/my-goals/progress`: Obtener el progreso de mis objetivos activos (solo pacientes)
