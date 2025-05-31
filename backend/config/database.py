@@ -10,12 +10,18 @@ from models.meals import Meal
 from models.weekly_notes import WeeklyNote
 from models.weight_logs import WeightLog
 
-sqlite_file_name = "../health_app.sqlite"
-base_dir = os.path.dirname(os.path.realpath(__file__))
+# Configuración de la base de datos
+if os.getenv("DATABASE_URL"):
+    # En producción (Heroku), usar PostgreSQL
+    DATABASE_URL = os.getenv("DATABASE_URL").replace("postgres://", "postgresql://")
+    connect_args = {}
+else:
+    # En desarrollo, usar SQLite
+    sqlite_file_name = "../health_app.sqlite"
+    base_dir = os.path.dirname(os.path.realpath(__file__))
+    DATABASE_URL = f"sqlite:///{os.path.join(base_dir, sqlite_file_name)}"
+    connect_args = {"check_same_thread": False}
 
-DATABASE_URL = f"sqlite:///{os.path.join(base_dir, sqlite_file_name)}"
-
-connect_args = {"check_same_thread": False}
 engine = create_engine(DATABASE_URL, echo=False, connect_args=connect_args)
 
 

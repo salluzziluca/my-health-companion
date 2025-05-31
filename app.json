@@ -1,0 +1,20 @@
+{
+  "name": "My Health Companion",
+  "description": "Aplicación de salud y nutrición con sistema de usuarios y perfiles",
+  "repository": "https://github.com/salluzziluca/my-health-companion",
+  "keywords": ["python", "fastapi", "react", "health", "nutrition"],
+  "env": {
+    "SECRET_KEY": {
+      "description": "Una clave secreta para la generación de tokens JWT",
+      "generator": "secret"
+    }
+  },
+  "addons": [
+    "heroku-postgresql:hobby-dev"
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ]
+} 

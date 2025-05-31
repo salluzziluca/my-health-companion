@@ -68,3 +68,6 @@ Thumbs.db
 
 .vscode/settings.json
 node_modules
+
+# SQLite database
+backend/health_app.sqlite
