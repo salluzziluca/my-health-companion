@@ -3,9 +3,11 @@ import { Box, Typography, Avatar, TextField, Button, Stack, MenuItem, CircularPr
 import { jwtDecode } from 'jwt-decode';
 import { healthService } from '../../services/api';
 import { WeightHistory } from '../../types/health';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useLocation } from 'react-router-dom';
 import { Delete as DeleteIcon } from '@mui/icons-material';
+import { goalsService, GoalProgress } from '../../services/goals';
+import { useTheme } from '@mui/material/styles';
 
 interface JwtPayload {
   sub: string;
@@ -47,6 +49,8 @@ const MyProfile = () => {
     specialization: string;
   } | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [goalProgress, setGoalProgress] = useState<GoalProgress[]>([]);
+  const theme = useTheme();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
@@ -98,6 +102,16 @@ const MyProfile = () => {
     }
   };
 
+  const fetchGoalProgress = async () => {
+    try {
+      const progress = await goalsService.getMyGoalsProgress();
+      setGoalProgress(progress);
+    } catch (err) {
+      console.error('Error fetching goal progress:', err);
+      // No establecer error aquí porque las metas son opcionales
+    }
+  };
+
   const fetchProfile = async () => {
     setLoading(true);
     setError(null);
@@ -126,7 +140,7 @@ const MyProfile = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-        
+
         if (professionalResponse.ok) {
           const professionalData = await professionalResponse.json();
           setProfessionalInfo({
@@ -194,6 +208,7 @@ const MyProfile = () => {
   useEffect(() => {
     console.log('Route changed or component mounted, fetching profile...');
     fetchProfile();
+    fetchGoalProgress();
 
     const handleFocus = () => {
       console.log('Window focused, reloading profile...');
@@ -347,6 +362,11 @@ const MyProfile = () => {
       setError('Error al eliminar el profesional');
     }
   };
+
+  // Obtener metas activas de peso para el gráfico
+  const weightGoals = goalProgress.filter(g =>
+    g.goal.goal_type === 'weight' || g.goal.goal_type === 'both'
+  );
 
   if (loading) {
     return (
@@ -536,8 +556,8 @@ const MyProfile = () => {
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <IconButton 
-                    color="error" 
+                  <IconButton
+                    color="error"
                     onClick={() => setDeleteDialogOpen(true)}
                     sx={{ '&:hover': { backgroundColor: 'rgba(211, 47, 47, 0.04)' } }}
                   >
@@ -561,9 +581,52 @@ const MyProfile = () => {
                   <LineChart data={[...weightHistory].reverse()}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
-                    <YAxis />
+                    <YAxis
+                      domain={(() => {
+                        // Obtener el rango de pesos del historial
+                        const weights = weightHistory.map(log => log.weight);
+
+                        // Obtener los pesos objetivo de las metas activas
+                        const targetWeights = weightGoals
+                          .map(goal => goal.goal.target_weight)
+                          .filter(weight => weight !== null && weight !== undefined) as number[];
+
+                        // Combinar todos los pesos (actuales + objetivos)
+                        const allWeights = [...weights, ...targetWeights];
+
+                        if (allWeights.length === 0) return ['auto', 'auto'];
+
+                        const minWeight = Math.min(...allWeights);
+                        const maxWeight = Math.max(...allWeights);
+
+                        // Agregar un margen del 10% arriba y abajo para que el gráfico se vea mejor
+                        const margin = (maxWeight - minWeight) * 0.1 || 5; // Mínimo 5kg de margen si todos los pesos son iguales
+
+                        return [
+                          Math.max(0, minWeight - margin), // No permitir pesos negativos
+                          maxWeight + margin
+                        ];
+                      })()}
+                    />
                     <Tooltip />
                     <Line type="monotone" dataKey="weight" stroke="#8884d8" />
+                    {/* Líneas de meta de peso */}
+                    {weightGoals.map((goalProgress, index) => (
+                      goalProgress.goal.target_weight && (
+                        <ReferenceLine
+                          key={`weight-goal-${goalProgress.goal.id}`}
+                          y={goalProgress.goal.target_weight}
+                          stroke={theme.palette.success.main}
+                          strokeDasharray="5 5"
+                          strokeWidth={2}
+                          label={{
+                            value: `Meta: ${goalProgress.goal.target_weight}kg`,
+                            position: "top",
+                            style: { fill: theme.palette.success.main, fontWeight: 600 }
+                          }}
+                        />
+                      )
+                    ))}
                   </LineChart>
                 </ResponsiveContainer>
               </Box>
