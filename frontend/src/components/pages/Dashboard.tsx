@@ -27,10 +27,11 @@ import { Add as AddIcon, Edit as EditIcon, Restaurant as RestaurantIcon, Person 
 import { useNavigate } from 'react-router-dom';
 import { healthService, professionalService } from '../../services/api';
 import { WeightLog, WeeklySummary, WeeklyNote } from '../../types/health';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, ReferenceLine } from 'recharts';
 import { jwtDecode } from 'jwt-decode';
 import { useGoalNotifications } from '../GoalNotifications';
 import { useTheme } from '@mui/material/styles';
+import { goalsService, GoalProgress } from '../../services/goals';
 
 interface JwtPayload {
   sub: string;
@@ -75,6 +76,7 @@ const Dashboard = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
+  const [goalProgress, setGoalProgress] = useState<GoalProgress[]>([]);
   const { showGoalNotification, hasShownNotification } = useGoalNotifications();
   const theme = useTheme();
 
@@ -89,6 +91,16 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error decodificando el token:', error);
       return null;
+    }
+  };
+
+  const fetchGoalProgress = async () => {
+    try {
+      const progress = await goalsService.getMyGoalsProgress();
+      setGoalProgress(progress);
+    } catch (err) {
+      console.error('Error fetching goal progress:', err);
+      // No establecer error aquí porque las metas son opcionales
     }
   };
 
@@ -128,6 +140,7 @@ const Dashboard = () => {
       fetchPatients();
     } else {
       fetchWeeklySummary();
+      fetchGoalProgress();
     }
   }, []);
 
@@ -138,7 +151,7 @@ const Dashboard = () => {
 
     try {
       const newWeight = parseFloat(weight);
-      
+
       // Registrar el nuevo peso
       await healthService.logWeight(newWeight);
 
@@ -155,15 +168,23 @@ const Dashboard = () => {
         }),
       });
 
-      // Verificar objetivo de peso
-      const weightGoalKey = `weight_${newWeight}`;
-      if (Math.abs(newWeight - GOALS.targetWeight) <= GOALS.weightTolerance && 
-          !hasShownNotification(weightGoalKey)) {
-        showGoalNotification('weight', `¡Felicitaciones! ¡Alcanzaste tu peso objetivo de ${GOALS.targetWeight} kg!`, weightGoalKey);
-      }
+      // Verificar objetivo de peso con las metas reales
+      const activeWeightGoals = goalProgress.filter(
+        g => g.goal.goal_type === 'weight' || g.goal.goal_type === 'both'
+      );
+
+      activeWeightGoals.forEach(goalProgressItem => {
+        if (goalProgressItem.goal.target_weight && goalProgressItem.is_weight_achieved) {
+          const weightGoalKey = `weight_${newWeight}_${goalProgressItem.goal.id}`;
+          if (!hasShownNotification(weightGoalKey)) {
+            showGoalNotification('weight', `¡Felicitaciones! ¡Alcanzaste tu peso objetivo de ${goalProgressItem.goal.target_weight} kg!`, weightGoalKey);
+          }
+        }
+      });
 
       setWeight('');
       fetchWeeklySummary(); // Refresh the summary
+      fetchGoalProgress(); // Refresh goal progress
     } catch (err: any) {
       // Intentar extraer el mensaje del backend
       let msg = 'Error al registrar el peso';
@@ -221,6 +242,61 @@ const Dashboard = () => {
     }
   };
 
+  // Función para calcular el porcentaje de progreso hacia una meta de peso
+  const calculateWeightProgress = (goalProgress: GoalProgress): number => {
+    if (!goalProgress.goal.target_weight || !goalProgress.current_weight) return 0;
+
+    // weight_progress_difference = current_weight - target_weight
+    // Si es positivo: está por encima del objetivo
+    // Si es negativo: está por debajo del objetivo
+
+    // Para calcular el progreso necesitamos conocer el peso inicial
+    // Sin el peso inicial, no podemos calcular un porcentaje de progreso real
+    // Por ahora, usaremos un enfoque simplificado basado en qué tan cerca está del objetivo
+
+    if (goalProgress.weight_progress_difference !== null && goalProgress.weight_progress_difference !== undefined) {
+      const targetWeight = goalProgress.goal.target_weight;
+      const currentWeight = goalProgress.current_weight;
+      const difference = Math.abs(goalProgress.weight_progress_difference);
+
+      // Si la diferencia es muy pequeña (dentro de 0.5kg), consideramos que está cerca del 100%
+      if (difference <= 0.5) {
+        return 100;
+      }
+
+      // Sin conocer el peso inicial, no podemos calcular un progreso real
+      // Retornamos 0 para evitar mostrar porcentajes incorrectos
+      return 0;
+    }
+
+    return 0;
+  };
+
+  // Función para calcular el porcentaje de progreso hacia una meta de calorías
+  const calculateCalorieProgress = (goalProgress: GoalProgress): number => {
+    if (!goalProgress.goal.target_calories || !goalProgress.current_daily_calories) return 0;
+
+    const progress = (goalProgress.current_daily_calories / goalProgress.goal.target_calories) * 100;
+    return Math.round(Math.min(progress, 150)); // Limitamos a 150% para no mostrar valores extremos
+  };
+
+  // Función para obtener el color del progreso
+  const getProgressColor = (progress: number, isCompleted: boolean = false) => {
+    if (isCompleted) return 'success';
+    if (progress >= 90) return 'success';
+    if (progress >= 70) return 'warning';
+    if (progress >= 40) return 'info';
+    return 'default';
+  };
+
+  // Obtener metas activas para los gráficos
+  const weightGoals = goalProgress.filter(g =>
+    g.goal.goal_type === 'weight' || g.goal.goal_type === 'both'
+  );
+  const calorieGoals = goalProgress.filter(g =>
+    g.goal.goal_type === 'calories' || g.goal.goal_type === 'both'
+  );
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -253,7 +329,7 @@ const Dashboard = () => {
         >
           Gestionar Dietas de Pacientes
         </Button>
-        
+
         {patients.length === 0 ? (
           <Alert severity="info">
             No tienes pacientes asignados. Comparte tu código de vinculación con tus pacientes para que puedan unirse.
@@ -279,8 +355,8 @@ const Dashboard = () => {
                   >
                     Ver Detalles
                   </Button>
-                  <IconButton 
-                    color="error" 
+                  <IconButton
+                    color="error"
                     onClick={() => handleDeletePatient(patient)}
                     sx={{ '&:hover': { backgroundColor: 'rgba(211, 47, 47, 0.04)' } }}
                   >
@@ -383,16 +459,181 @@ const Dashboard = () => {
             <LineChart data={weeklySummary.weight_data.weight_logs}>
               <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
               <XAxis dataKey="date" stroke={theme.palette.text.secondary} tick={{ fill: theme.palette.text.secondary, fontSize: 13 }} />
-              <YAxis stroke={theme.palette.text.secondary} tick={{ fill: theme.palette.text.secondary, fontSize: 13 }} />
+              <YAxis
+                stroke={theme.palette.text.secondary}
+                tick={{ fill: theme.palette.text.secondary, fontSize: 13 }}
+                domain={(() => {
+                  // Obtener el rango de pesos de los datos
+                  const weights = weeklySummary.weight_data.weight_logs.map(log => log.weight);
+
+                  // Obtener los pesos objetivo de las metas activas
+                  const targetWeights = weightGoals
+                    .map(goal => goal.goal.target_weight)
+                    .filter(weight => weight !== null && weight !== undefined) as number[];
+
+                  // Combinar todos los pesos (actuales + objetivos)
+                  const allWeights = [...weights, ...targetWeights];
+
+                  if (allWeights.length === 0) return ['auto', 'auto'];
+
+                  const minWeight = Math.min(...allWeights);
+                  const maxWeight = Math.max(...allWeights);
+
+                  // Agregar un margen del 10% arriba y abajo para que el gráfico se vea mejor
+                  const margin = (maxWeight - minWeight) * 0.1 || 5; // Mínimo 5kg de margen si todos los pesos son iguales
+
+                  return [
+                    Math.max(0, minWeight - margin), // No permitir pesos negativos
+                    maxWeight + margin
+                  ];
+                })()}
+              />
               <Tooltip contentStyle={{ background: 'white', borderRadius: 8, border: `1px solid ${theme.palette.divider}` }} />
               <Line type="monotone" dataKey="weight" stroke={theme.palette.primary.main} strokeWidth={3} dot={{ r: 5, fill: theme.palette.primary.main, stroke: 'white', strokeWidth: 2 }} activeDot={{ r: 7 }} isAnimationActive />
+              {/* Líneas de meta de peso */}
+              {weightGoals.map((goalProgress, index) => (
+                goalProgress.goal.target_weight && (
+                  <ReferenceLine
+                    key={`weight-goal-${goalProgress.goal.id}`}
+                    y={goalProgress.goal.target_weight}
+                    stroke={theme.palette.success.main}
+                    strokeDasharray="5 5"
+                    strokeWidth={2}
+                    label={{
+                      value: `Meta: ${goalProgress.goal.target_weight}kg`,
+                      position: "top",
+                      style: { fill: theme.palette.success.main, fontWeight: 600 }
+                    }}
+                  />
+                )
+              ))}
             </LineChart>
           </ResponsiveContainer>
         </Box>
         <Stack direction="row" spacing={2} alignItems="center" sx={{ mt: 2 }}>
           <Chip label={`Cambio: ${weeklySummary.weight_data.weight_change} kg`} color={weeklySummary.weight_data.weight_change >= 0 ? 'success' : 'error'} size="small" sx={{ borderRadius: 1, fontWeight: 600 }} />
+          {weightGoals.map((goalProgress) => {
+            const progress = calculateWeightProgress(goalProgress);
+            const difference = goalProgress.weight_progress_difference;
+
+            return goalProgress.goal.target_weight && (
+              <Chip
+                key={`weight-goal-chip-${goalProgress.goal.id}`}
+                label={
+                  goalProgress.is_weight_achieved
+                    ? `✓ Meta alcanzada`
+                    : difference !== null && difference !== undefined
+                      ? Math.abs(difference) <= 0.5
+                        ? `Meta: ${goalProgress.goal.target_weight}kg (casi alcanzada)`
+                        : `Meta: ${goalProgress.goal.target_weight}kg (faltan ${Math.abs(difference).toFixed(1)}kg)`
+                      : `Meta: ${goalProgress.goal.target_weight}kg`
+                }
+                color={
+                  goalProgress.is_weight_achieved
+                    ? 'success'
+                    : difference !== null && difference !== undefined && Math.abs(difference) <= 0.5
+                      ? 'warning'
+                      : 'default'
+                }
+                size="small"
+                sx={{ borderRadius: 1, fontWeight: 600 }}
+              />
+            );
+          })}
         </Stack>
       </Paper>
+
+      {/* Gráfico de Calorías Diarias (si hay más de 1 día con datos O si hay metas activas) */}
+      {(weeklySummary.calorie_data.daily_breakdown && weeklySummary.calorie_data.daily_breakdown.length > 1) ||
+        (calorieGoals.length > 0 && weeklySummary.calorie_data.daily_breakdown && weeklySummary.calorie_data.daily_breakdown.length > 0) ? (
+        <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}`, background: 'white', minHeight: 340, mb: 3 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'primary.main', letterSpacing: '-0.5px' }}>
+            Calorías Diarias
+          </Typography>
+          <Box sx={{ height: 220 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={weeklySummary.calorie_data.daily_breakdown}>
+                <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+                <XAxis dataKey="date" stroke={theme.palette.text.secondary} tick={{ fill: theme.palette.text.secondary, fontSize: 13 }} />
+                <YAxis stroke={theme.palette.text.secondary} tick={{ fill: theme.palette.text.secondary, fontSize: 13 }} />
+                <Tooltip contentStyle={{ background: 'white', borderRadius: 8, border: `1px solid ${theme.palette.divider}` }} />
+                <Bar dataKey="calories" fill={theme.palette.secondary.main} radius={[4, 4, 0, 0]} />
+                {/* Líneas de meta de calorías */}
+                {calorieGoals.map((goalProgress, index) => (
+                  goalProgress.goal.target_calories && (
+                    <ReferenceLine
+                      key={`calorie-goal-${goalProgress.goal.id}`}
+                      y={goalProgress.goal.target_calories}
+                      stroke={theme.palette.warning.main}
+                      strokeDasharray="5 5"
+                      strokeWidth={2}
+                      label={{
+                        value: `Meta: ${goalProgress.goal.target_calories} cal`,
+                        position: "top",
+                        style: { fill: theme.palette.warning.main, fontWeight: 600 }
+                      }}
+                    />
+                  )
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </Box>
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ mt: 2 }}>
+            <Chip label={`Promedio: ${weeklySummary.calorie_data.average_daily_calories.toFixed(0)} cal/día`} color="primary" size="small" sx={{ borderRadius: 1, fontWeight: 600 }} />
+            {calorieGoals.map((goalProgress) => {
+              const progress = calculateCalorieProgress(goalProgress);
+              return goalProgress.goal.target_calories && (
+                <Chip
+                  key={`calorie-goal-chip-${goalProgress.goal.id}`}
+                  label={
+                    goalProgress.is_calories_achieved
+                      ? `✓ Meta alcanzada (${progress}%)`
+                      : progress > 0
+                        ? `Meta: ${goalProgress.goal.target_calories} cal (${progress}%)`
+                        : `Meta: ${goalProgress.goal.target_calories} cal`
+                  }
+                  color={getProgressColor(progress, goalProgress.is_calories_achieved || false) as any}
+                  size="small"
+                  sx={{ borderRadius: 1, fontWeight: 600 }}
+                />
+              );
+            })}
+          </Stack>
+        </Paper>
+      ) : null}
+
+      {/* Mostrar metas de calorías incluso si no hay gráfico */}
+      {calorieGoals.length > 0 && (!weeklySummary.calorie_data.daily_breakdown || weeklySummary.calorie_data.daily_breakdown.length === 0) && (
+        <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}`, background: 'white', mb: 3 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'primary.main', letterSpacing: '-0.5px' }}>
+            Metas de Calorías
+          </Typography>
+          <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+            {calorieGoals.map((goalProgress) => {
+              const progress = calculateCalorieProgress(goalProgress);
+              return goalProgress.goal.target_calories && (
+                <Box key={`calorie-goal-info-${goalProgress.goal.id}`} sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2, bgcolor: 'background.paper' }}>
+                  <Typography variant="body2" color="text.secondary">Meta diaria</Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.warning.main }}>
+                    {goalProgress.goal.target_calories} cal
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {goalProgress.is_calories_achieved ? '✓ Alcanzada' : 'Pendiente'}
+                  </Typography>
+                  {progress > 0 && (
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: getProgressColor(progress, goalProgress.is_calories_achieved || false) === 'success' ? 'success.main' : 'warning.main', mt: 0.5 }}>
+                      Progreso: {progress}%
+                    </Typography>
+                  )}
+                </Box>
+              );
+            })}
+            <Alert severity="info" sx={{ mt: 2 }}>
+              Registra comidas para ver tu progreso hacia las metas de calorías.
+            </Alert>
+          </Stack>
+        </Paper>
+      )}
 
       {/* Segunda fila: Resumen de Calorías | Distribución de Comidas (misma altura) */}
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} mb={3} sx={{ alignItems: 'stretch' }}>
@@ -406,6 +647,34 @@ const Dashboard = () => {
               <Typography variant="h5" sx={{ fontWeight: 600 }}>{weeklySummary.calorie_data.average_daily_calories.toFixed(0)}</Typography>
               <Typography variant="body2" color="text.secondary">promedio diario</Typography>
               <Typography variant="body2" color="text.secondary">{weeklySummary.calorie_data.days_logged} días registrados</Typography>
+              {/* Agregar información de metas en el resumen */}
+              {calorieGoals.length > 0 && (
+                <>
+                  <Divider />
+                  {calorieGoals.map((goalProgress) => {
+                    const progress = calculateCalorieProgress(goalProgress);
+                    return goalProgress.goal.target_calories && (
+                      <Box key={`calorie-summary-goal-${goalProgress.goal.id}`}>
+                        <Typography variant="body2" color="text.secondary">
+                          Meta: {goalProgress.goal.target_calories} cal/día
+                        </Typography>
+                        {goalProgress.current_daily_calories && (
+                          <Typography variant="body2" color={goalProgress.is_calories_achieved ? 'success.main' : 'warning.main'}>
+                            {goalProgress.is_calories_achieved ? '✓' : '•'} Diferencia: {goalProgress.calories_progress_difference !== null && goalProgress.calories_progress_difference !== undefined ?
+                              `${goalProgress.calories_progress_difference > 0 ? '+' : ''}${goalProgress.calories_progress_difference} cal` :
+                              'No disponible'}
+                          </Typography>
+                        )}
+                        {progress > 0 && (
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: getProgressColor(progress, goalProgress.is_calories_achieved || false) === 'success' ? 'success.main' : 'warning.main' }}>
+                            Progreso: {progress}%
+                          </Typography>
+                        )}
+                      </Box>
+                    );
+                  })}
+                </>
+              )}
             </Stack>
             <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
               <Button variant="contained" fullWidth startIcon={<RestaurantIcon />} onClick={() => navigate('/weekly-diet')} sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, fontSize: '1rem', boxShadow: 'none', transition: 'all 0.2s', '&:hover': { boxShadow: 2, transform: 'translateY(-2px)' } }}>Gestionar Dietas</Button>
