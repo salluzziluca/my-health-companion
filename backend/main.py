@@ -14,6 +14,8 @@ from routers.weekly_summaries import router_weekly_summaries
 from routers.weekly_notes import router_weekly_notes
 from routers.weekly_diets import router_weekly_diets
 from routers.goals import router_goals
+from routers.notification import router_notifications
+
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -35,6 +37,7 @@ app.include_router(router_weekly_summaries)
 app.include_router(router_weekly_notes)
 app.include_router(router_weekly_diets)
 app.include_router(router_goals)
+app.include_router(router_notifications)
 
 @app.get("/")
 async def root():
