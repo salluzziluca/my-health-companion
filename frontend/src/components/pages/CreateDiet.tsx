@@ -109,7 +109,16 @@ const CrearDieta: React.FC<Props> = ({ patientId, professionalId, onFinish }) =>
         });
       }
 
-      setSnackbar({ open: true, message: 'Dieta creada exitosamente', severity: 'success' });
+      // PROBANDO ENVIO DE MAIL (chequear si esto va aca)
+      try {
+        await axios.post(`/weekly-diets/${weeklyDietId}/send-diet-email`);
+      } catch (error) {
+        console.error('Error al enviar el email al paciente', error);
+        setSnackbar({ open: true, message: 'Dieta creada, pero falló el envío del email.', severity: 'error' });
+        return;
+      }
+      
+      setSnackbar({ open: true, message: 'Dieta creada exitosamente y email enviado al paciente', severity: 'success' });
       onFinish();
     } catch (err) {
       console.error('Error al agregar comidas', err);

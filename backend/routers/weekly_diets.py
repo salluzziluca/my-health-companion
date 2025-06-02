@@ -8,7 +8,9 @@ from models.weekly_diets import WeeklyDiets
 from models.weekly_diet_meals import WeeklyDietMeals, DayOfWeek, MealOfDay
 from models.foods import Food
 from models.meals import Meal
+from models.patients import Patient
 from utils.calories import calculate_meal_calories
+from utils.email_notifications import send_full_diet_email
 
 router_weekly_diets = APIRouter(prefix="/weekly-diets", tags=["Weekly Diets"])
 
@@ -274,3 +276,44 @@ def uncomplete_weekly_diet_meal(
         "weekly_meal": weekly_meal,
         "deleted_meal_id": meal_to_delete.id if meal_to_delete else None
     }
+
+# Endpoint para enviar un email de notificación al paciente
+@router_weekly_diets.post("/{weekly_diet_id}/send-diet-email")
+def send_full_diet_email_to_patient(
+    weekly_diet_id: int,
+    session: Session = Depends(get_session)
+):
+    # Verificar que la dieta semanal existe
+    weekly_diet = session.get(WeeklyDiets, weekly_diet_id)
+    if not weekly_diet:
+        raise HTTPException(status_code=404, detail="Weekly diet not found")
+
+    # Obtener el paciente asociado a la dieta semanal
+    patient = session.get(Patient, weekly_diet.patient_id)
+    if not patient or not patient.email:
+        raise HTTPException(status_code=404, detail="Patient not found or email not available")
+    
+    # Obtener todas las comidas de la dieta semanal
+    meals = session.exec(
+        select(WeeklyDietMeals).where(WeeklyDietMeals.weekly_diet_id == weekly_diet_id)
+    ).all()
+    if not meals:
+        raise HTTPException(status_code=404, detail="No meals found for the specified weekly diet")
+    
+    # Agrupar las comidas por día de la semana
+    meals_by_day = {}
+    for meal in meals:
+        if meal.day_of_week not in meals_by_day:
+            meals_by_day[meal.day_of_week] = []
+        meals_by_day[meal.day_of_week].append({
+            "meal_name": meal.meal_name,
+            "meal_of_the_day": meal.meal_of_the_day.value,
+        })
+
+    # Enviar el email de notificación
+    try:
+        send_full_diet_email(patient.email, weekly_diet.week_start_date, meals_by_day)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error sending diet email: {str(e)}")
+    
+    return {"message": "Diet email sent successfully to the patient", "patient_email": patient.email}
