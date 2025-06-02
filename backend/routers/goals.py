@@ -11,6 +11,8 @@ from models.professionals import Professional
 from models.weight_logs import WeightLog
 from models.meals import Meal
 from utils.security import get_current_patient, get_current_professional
+from utils.notifications import create_notification
+
 
 router_goals = APIRouter(
     prefix="/goals",
@@ -216,13 +218,23 @@ def get_my_goals_progress(
             progress.is_fully_achieved = (progress.is_weight_achieved or False) and (progress.is_calories_achieved or False)
 
         # Si el objetivo está completamente alcanzado y aún está activo, marcar como completado
-        # if progress.is_fully_achieved and goal.status == GoalStatus.ACTIVE:
-        #     goal.status = GoalStatus.COMPLETED
-        #     goal.achieved_at = datetime.now()
-        #     goal.updated_at = datetime.now()
-        #     session.add(goal)
-        #     session.commit()
-        #     session.refresh(goal)
+        if progress.is_fully_achieved and goal.status == GoalStatus.ACTIVE:
+            goal.status = GoalStatus.COMPLETED
+            goal.achieved_at = datetime.now()
+            goal.updated_at = datetime.now()
+            session.add(goal)
+            
+            # Crear notificación para el paciente
+            goal_type_messages = {
+                GoalType.WEIGHT: f"🎯 ¡Felicidades! Alcanzaste tu peso objetivo de {goal.target_weight} kg.",
+                GoalType.CALORIES: f"🎯 ¡Felicidades! Lograste tu meta de {goal.target_calories} kcal/día.",
+                GoalType.BOTH: "🎯 ¡Felicidades! Cumpliste tus metas de peso y calorías."
+            }
+
+            message = goal_type_messages.get(goal.goal_type, "🎯 ¡Felicidades! Alcanzaste tu objetivo.")
+            create_notification(session, goal.patient_id, message)
+            session.commit()
+            session.refresh(goal)
 
         # Calcular días restantes
         if goal.target_date:
