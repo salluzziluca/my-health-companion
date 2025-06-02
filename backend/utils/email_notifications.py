@@ -5,9 +5,10 @@ from datetime import date
 
 from models.weekly_diets import WeeklyDiets
 
-def send_full_diet_email(patient_email: str, week_start_date, meals_by_day: dict):
+def send_full_diet_email(patient_name: str, patient_email: str, week_start_date, meals_by_day: dict):
     subject = f"Nueva dieta semanal asignada - {week_start_date.strftime('%d/%m/%Y')}"
-    body = "Aquí está tu dieta semanal:\n\n"
+    body = f"¡Hola {patient_name}! 👋,\n\n"
+    body += "Aquí está tu dieta semanal:\n\n"
 
     ordered_days = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
     meal_order = {"breakfast": 0, "lunch": 1, "snack": 2, "dinner": 3}
@@ -30,6 +31,8 @@ def send_full_diet_email(patient_email: str, week_start_date, meals_by_day: dict
                 meal_name = meal['meal_name'].replace(meal_type, '').strip()
                 body += f"   - {meal_type}: {meal_name}\n"
             body += "\n"
+    body += "La dieta también está disponible en la aplicación.\n\n"
+    body += "Saludos,\nEl equipo de My Health Companion"
 
     send_email(to=patient_email, subject=subject, body=body.strip())
 

@@ -312,7 +312,7 @@ def send_full_diet_email_to_patient(
 
     # Enviar el email de notificación
     try:
-        send_full_diet_email(patient.email, weekly_diet.week_start_date, meals_by_day)
+        send_full_diet_email(patient.first_name, patient.email, weekly_diet.week_start_date, meals_by_day)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error sending diet email: {str(e)}")
     
