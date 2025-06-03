@@ -1,5 +1,5 @@
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlmodel import Field, SQLModel, Relationship
 from pydantic import field_validator
 
@@ -18,7 +18,9 @@ class MealBase(SQLModel):
     @field_validator('timestamp')
     @classmethod
     def validate_not_future(cls, value):
-        if value > datetime.now():
+        now = datetime.now(timezone.utc)
+        value_utc = value.astimezone(timezone.utc) if value.tzinfo else now
+        if value_utc > now:
             raise ValueError('La fecha no puede ser mayor a la actual')
         return value
     
