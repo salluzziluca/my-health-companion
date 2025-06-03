@@ -5,50 +5,19 @@ import MealCard from './MealCard';
 import AlertBanner from './AlertBanner';
 import { Meal, NewMeal } from '../types/Meal';
 import { getMeals, deleteMeal, createMeal, updateMeal } from '../services/meals';
-import { useGoalNotifications } from './GoalNotifications';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
-
-// Objetivos simulados (esto vendría del backend en el futuro)
-const GOALS = {
-  mealsPerDay: 5,
-  caloriesPerDay: 2000,
-  streakDays: 3
-};
 
 const MealDashboard = () => {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [mealToEdit, setMealToEdit] = useState<Meal | undefined>(undefined);
-  const { showGoalNotification, hasShownNotification } = useGoalNotifications();
-
-  const totalCalories = meals.reduce((acc, m) => acc + m.calories, 0);
-  const userTargetCalories = GOALS.caloriesPerDay;
-
-  // Función para verificar objetivos
-  const checkGoals = (updatedMeals: Meal[]) => {
-    // Verificar objetivo de comidas por día
-    const mealsGoalKey = `meals_${new Date().toISOString().split('T')[0]}`;
-    if (updatedMeals.length === GOALS.mealsPerDay && !hasShownNotification(mealsGoalKey)) {
-      showGoalNotification('meals', `¡Felicitaciones! Alcanzaste tu objetivo de ${GOALS.mealsPerDay} comidas por día.`, mealsGoalKey);
-    }
-
-    // Verificar objetivo de calorías
-    const totalCalories = updatedMeals.reduce((acc, m) => acc + m.calories, 0);
-    const caloriesGoalKey = `calories_${new Date().toISOString().split('T')[0]}`;
-    if (totalCalories >= GOALS.caloriesPerDay * 0.9 && 
-        totalCalories <= GOALS.caloriesPerDay * 1.1 && 
-        !hasShownNotification(caloriesGoalKey)) {
-      showGoalNotification('calories', `¡Excelente! Mantuviste tus calorías dentro del rango objetivo.`, caloriesGoalKey);
-    }
-  };
 
   useEffect(() => {
     getMeals()
       .then(meals => {
         setMeals(meals);
-        checkGoals(meals);
       })
       .catch((err) => console.error('Error al obtener las comidas:', err.response?.data || err.message));
   }, []);
@@ -56,9 +25,7 @@ const MealDashboard = () => {
   const handleAddMeal = async (newMeal: NewMeal) => {
     try {
       const created = await createMeal(newMeal);
-      const updatedMeals = [...meals, created];
-      setMeals(updatedMeals);
-      checkGoals(updatedMeals);
+      setMeals([...meals, created]);
     } catch (err: any) {
       console.error('Error al crear comida:', err.response?.data || err.message);
     }
@@ -69,7 +36,6 @@ const MealDashboard = () => {
       const updated = await updateMeal(mealId, updatedMeal);
       const updatedMeals = meals.map((m) => (m.id === mealId ? updated : m));
       setMeals(updatedMeals);
-      checkGoals(updatedMeals);
     } catch (err: any) {
       console.error('Error al editar comida:', err.response?.data || err.message);
     }
@@ -85,7 +51,7 @@ const MealDashboard = () => {
         Tus comidas de hoy
       </Typography>
 
-      <AlertBanner totalCalories={totalCalories} userTarget={userTargetCalories} />
+      <AlertBanner totalCalories={meals.reduce((acc, m) => acc + m.calories, 0)} userTarget={2000} />
 
       <Button
         variant="contained"

@@ -86,12 +86,15 @@ const CrearDieta: React.FC<Props> = ({ patientId, professionalId, onFinish }) =>
         }
       });
       weeklyDietId = data.id;
+      if (!weeklyDietId) {
+        setSnackbar({ open: true, message: 'No se pudo crear la dieta. Intenta nuevamente.', severity: 'error' });
+        return;
+      }
     } catch (error: any) {
       if (error?.response?.status === 400 && error?.response?.data?.detail?.includes("Weekly diet already exists")) {
         setSnackbar({ open: true, message: 'Ya existe una dieta para este paciente en esta semana.', severity: 'error' });
         return;
       }
-      console.error('Error al crear la dieta', error);
       setSnackbar({ open: true, message: 'Error al crear la dieta', severity: 'error' });
       return;
     }
@@ -108,11 +111,9 @@ const CrearDieta: React.FC<Props> = ({ patientId, professionalId, onFinish }) =>
           }
         });
       }
-
       setSnackbar({ open: true, message: 'Dieta creada exitosamente', severity: 'success' });
       onFinish();
     } catch (err) {
-      console.error('Error al agregar comidas', err);
       setSnackbar({ open: true, message: 'Error al agregar comidas a la dieta', severity: 'error' });
     }
   };

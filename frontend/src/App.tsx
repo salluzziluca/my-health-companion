@@ -12,7 +12,10 @@ import MealDashboard from './components/MealDashboard';
 import PatientDetails from './components/pages/PatientDetails';
 import WeeklyDietPage from './components/pages/WeeklyDietPage';
 import NutricionistaDashboard from './components/pages/NutricionistaDashboard';
-import GoalNotificationsProvider from './components/GoalNotifications';
+import NotificationsProvider from './components/GoalNotifications';
+import GoalManagement from './components/GoalManagement';
+import PatientGoals from './components/pages/PatientGoals';
+import { jwtDecode } from 'jwt-decode';
 
 
 // Create a theme context
@@ -57,6 +60,28 @@ export const appColors = {
 
 // Transition duration for theme changes
 const themeTransitionDuration = 800; // milliseconds
+
+interface JwtPayload {
+  sub: string;
+  user_type?: string;
+  type?: string;
+  role?: string;
+  exp: number;
+  [key: string]: any;
+}
+
+const getUserTypeFromToken = (): string | null => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+
+    const decoded = jwtDecode<JwtPayload>(token);
+    return decoded.user_type || decoded.type || decoded.role || null;
+  } catch (error) {
+    console.error('Error decodificando el token:', error);
+    return null;
+  }
+};
 
 function App() {
   const [mode, setMode] = useState<'light' | 'dark'>('light');
@@ -234,25 +259,31 @@ function App() {
     <ColorModeContext.Provider value={colorMode}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <GoalNotificationsProvider>
+        <NotificationsProvider>
           <Router>
             <Routes>
               <Route path="/login" element={<SignInSide />} />
               <Route path="/register" element={<SignUpSide />} />
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/" element={<Layout />}>
-                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="dashboard" element={
+                  getUserTypeFromToken() === 'professional' ? 
+                    <Navigate to="/nutricionista" replace /> : 
+                    <Dashboard />
+                } />
                 <Route path="myprofile" element={<MyProfile />} />
                 <Route path="myaccount" element={<MyAccount />} />
                 <Route path="meals" element={<MealDashboard />} />
                 <Route path="patient/:id" element={<PatientDetails />} />
                 <Route path="weekly-diet" element={<WeeklyDietPage />} />
                 <Route path="nutricionista" element={<NutricionistaDashboard />} />
+                <Route path="nutricionista/goals" element={<NutricionistaDashboard />} />
+                <Route path="goals" element={<PatientGoals />} />
               </Route>
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
           </Router>
-        </GoalNotificationsProvider>
+        </NotificationsProvider>
       </ThemeProvider>
     </ColorModeContext.Provider>
   );

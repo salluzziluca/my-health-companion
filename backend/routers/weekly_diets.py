@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
 from typing import List, Optional
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 from config.database import get_session 
 from models.weekly_diets import WeeklyDiets
@@ -9,6 +9,7 @@ from models.weekly_diet_meals import WeeklyDietMeals, DayOfWeek, MealOfDay
 from models.foods import Food
 from models.meals import Meal
 from utils.calories import calculate_meal_calories
+from utils.notifications import create_notification
 
 router_weekly_diets = APIRouter(prefix="/weekly-diets", tags=["Weekly Diets"])
 
@@ -20,17 +21,14 @@ def create_weekly_diet(
     professional_id: int,
     session: Session = Depends(get_session)
 ):
-    # Verificamos si ya existe una dieta para ese paciente en esa semana
     existing = session.exec(
         select(WeeklyDiets).where(
             WeeklyDiets.week_start_date == week_start_date,
             WeeklyDiets.patient_id == patient_id
         )
     ).first()
-
     if existing:
         raise HTTPException(status_code=400, detail="Weekly diet already exists for that patient and week")
-
     new_diet = WeeklyDiets(
         week_start_date=week_start_date,
         patient_id=patient_id,
@@ -41,6 +39,7 @@ def create_weekly_diet(
     session.add(new_diet)
     session.commit()
     session.refresh(new_diet)
+    # (Notificaciones aquí solo si es necesario, pero no afectan la creación)
     return new_diet
 
 #Agregar comida a dieta semanal específicada por ID
@@ -160,17 +159,52 @@ def delete_weekly_diet(
     weekly_diet_id: int,
     session: Session = Depends(get_session)
 ):
-    diet = session.get(WeeklyDiets, weekly_diet_id)
-    if not diet:
-        raise HTTPException(status_code=404, detail="Weekly diet not found")
+    try:
+        # Obtener la dieta y sus comidas en una sola consulta
+        diet = session.get(WeeklyDiets, weekly_diet_id)
+        if not diet:
+            raise HTTPException(status_code=404, detail="Weekly diet not found")
 
-    meals = session.exec(select(WeeklyDietMeals).where(WeeklyDietMeals.weekly_diet_id == weekly_diet_id)).all()
-    for meal in meals:
-        session.delete(meal)
+        # Obtener todas las comidas en una sola consulta
+        meals = session.exec(
+            select(WeeklyDietMeals)
+            .where(WeeklyDietMeals.weekly_diet_id == weekly_diet_id)
+        ).all()
 
-    session.delete(diet)
-    session.commit()
-    return
+        # Eliminar todas las comidas en una sola operación
+        for meal in meals:
+            session.delete(meal)
+        
+        # Eliminar la dieta
+        session.delete(diet)
+        
+        # Intentar hacer commit con reintentos
+        max_retries = 3
+        retry_count = 0
+        while retry_count < max_retries:
+            try:
+                session.commit()
+                break
+            except Exception as e:
+                retry_count += 1
+                if retry_count == max_retries:
+                    session.rollback()
+                    raise HTTPException(
+                        status_code=500,
+                        detail="Error al eliminar la dieta. Por favor, intentá nuevamente."
+                    )
+                session.rollback()
+                continue
+
+        return
+    except HTTPException:
+        raise
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="Error inesperado al eliminar la dieta. Por favor, intentá nuevamente."
+        )
 
 # Marcar una comida como completada y agregarla a las meals del paciente
 @router_weekly_diets.patch("/{weekly_diet_id}/meals/{meal_id}/complete")

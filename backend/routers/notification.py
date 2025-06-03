@@ -3,6 +3,7 @@ from sqlmodel import Session, select
 from models.notification import Notification
 from config.database import get_session
 from utils.security import get_current_patient
+from sqlalchemy import func
 
 router_notifications = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -57,11 +58,10 @@ def get_unread_notifications_count(
     current_patient = Depends(get_current_patient)
 ):
     count = session.exec(
-        select(Notification)
-        .where(
-            Notification.patient_id == current_patient.id,
-            Notification.is_read == False
-        )
-    ).count()
+    select(func.count()).select_from(Notification).where(
+        Notification.patient_id == current_patient.id,
+        Notification.is_read == False
+    )
+    ).one()
 
     return {"unread_count": count}

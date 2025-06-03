@@ -138,7 +138,7 @@ const DietasAsignadas: React.FC<DietasAsignadasProps> = ({
   const handleDeleteDiet = async () => {
     if (!dietToDelete) return;
     try {
-      await axios.delete(`/diets/${dietToDelete}`);
+      await axios.delete(`/weekly-diets/${dietToDelete}`);
       setDiets(diets.filter(diet => diet.id !== dietToDelete));
       setSnackbar({ open: true, message: 'Dieta eliminada correctamente', severity: 'success' });
     } catch (error) {
@@ -172,9 +172,9 @@ const DietasAsignadas: React.FC<DietasAsignadasProps> = ({
   if (diets.length === 0) {
     return (
       <Box sx={{ py: 2 }}>
-        <Typography color="text.secondary">
-          No hay dietas asignadas para este paciente.
-        </Typography>
+        <Alert severity="info" sx={{ borderRadius: 2 }}>
+          Este paciente no tiene dietas asignadas. Hacé clic en "Nueva Dieta" para crear una.
+        </Alert>
       </Box>
     );
   }
