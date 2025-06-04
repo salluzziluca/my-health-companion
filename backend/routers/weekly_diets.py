@@ -7,7 +7,7 @@ from config.database import get_session
 from models.weekly_diets import WeeklyDiets
 from models.weekly_diet_meals import WeeklyDietMeals, DayOfWeek, MealOfDay
 from models.foods import Food
-from models.meals import Meal
+from models.meals import Meal, MealCreate
 from models.patients import Patient
 from utils.calories import calculate_meal_calories
 from utils.email_notifications import send_full_diet_email
@@ -209,26 +209,38 @@ def complete_weekly_diet_meal(
         meal_grams=grams
     )
 
-    # Crear nueva meal en la tabla meals
-    new_meal = Meal(
-        meal_name=weekly_meal.meal_name,
-        grams=grams,
-        meal_of_the_day=weekly_meal.meal_of_the_day.value,
-        timestamp=timestamp,
-        food_id=weekly_meal.food_id,
-        patient_id=weekly_diet.patient_id,
-        calories=calories
-    )
+    try:
+        # Validar datos usando MealCreate
+        meal_data = MealCreate(
+            meal_name=weekly_meal.meal_name,
+            grams=grams,
+            meal_of_the_day=weekly_meal.meal_of_the_day.value,
+            timestamp=timestamp
+        )
 
-    # Marcar la comida de la dieta semanal como completada
-    weekly_meal.completed = True
+        # Crear nueva meal en la tabla meals usando los datos validados
+        new_meal = Meal(
+            meal_name=meal_data.meal_name,
+            grams=meal_data.grams,
+            meal_of_the_day=meal_data.meal_of_the_day,
+            timestamp=meal_data.timestamp,
+            food_id=weekly_meal.food_id,
+            patient_id=weekly_diet.patient_id,
+            calories=calories
+        )
 
-    session.add(new_meal)
-    session.commit()
-    session.refresh(new_meal)
-    session.refresh(weekly_meal)
+        # Marcar la comida de la dieta semanal como completada
+        weekly_meal.completed = True
 
-    return {"message": "Meal completed successfully", "meal": new_meal, "weekly_meal": weekly_meal}
+        session.add(new_meal)
+        session.commit()
+        session.refresh(new_meal)
+        session.refresh(weekly_meal)
+
+        return {"message": "Meal completed successfully", "meal": new_meal, "weekly_meal": weekly_meal}
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 # Endpoint para desmarcar una comida como completada y eliminar el registro de meals
 @router_weekly_diets.patch("/{weekly_diet_id}/meals/{meal_id}/uncomplete")

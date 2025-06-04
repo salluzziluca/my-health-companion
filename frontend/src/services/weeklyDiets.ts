@@ -62,10 +62,14 @@ export const getWeeklyDietMeals = async (weeklyDietId: number): Promise<WeeklyDi
     return response.data;
 };
 
-export const markMealAsCompleted = async (mealId: number, completed: boolean, weeklyDietId: number, grams: number = 100): Promise<WeeklyDietMeal> => {
+export const markMealAsCompleted = async (mealId: number, completed: boolean, weeklyDietId: number, grams: number = 100, timestamp?: string): Promise<WeeklyDietMeal> => {
     if (completed) {
-        // Para completar, necesitamos enviar el parámetro grams
-        const response = await api.patch(`/weekly-diets/${weeklyDietId}/meals/${mealId}/complete?grams=${grams}`);
+        // Para completar, necesitamos enviar el parámetro grams y opcionalmente el timestamp
+        let url = `/weekly-diets/${weeklyDietId}/meals/${mealId}/complete?grams=${grams}`;
+        if (timestamp) {
+            url += `&timestamp=${encodeURIComponent(timestamp)}`;
+        }
+        const response = await api.patch(url);
         // El endpoint complete devuelve {message, meal, weekly_meal}
         return response.data.weekly_meal;
     } else {
