@@ -88,12 +88,12 @@ export default function PrimarySearchAppBar() {
 
   const handleGoToProfile = () => {
     handleMenuClose(); // cerramos el menú
-    navigate('/myprofile'); // navegamos a /profile
+    navigate('/profile'); // navegamos a /profile
   };
 
   const handleGoToAccount = () => {
     handleMenuClose(); // cerramos el menú
-    navigate('/myaccount'); // navegamos a /profile
+    navigate('/account'); // navegamos a /account
   };
 
   const handleGoToWeeklyDiet = () => {

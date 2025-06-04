@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import {
     Box,
     Typography,
@@ -30,7 +31,7 @@ import {
 import { goalsService, Goal, GoalProgress } from '../services/goals';
 
 interface GoalManagementProps {
-    patientId: number;
+    patientId?: number;
 }
 
 interface GoalFormData {
@@ -41,7 +42,10 @@ interface GoalFormData {
     target_date: string;
 }
 
-const GoalManagement: React.FC<GoalManagementProps> = ({ patientId }) => {
+const GoalManagement: React.FC<GoalManagementProps> = ({ patientId: propPatientId }) => {
+    const { patientId: urlPatientId } = useParams<{ patientId: string }>();
+    const patientId = propPatientId || (urlPatientId ? parseInt(urlPatientId, 10) : undefined);
+
     const [goals, setGoals] = useState<Goal[]>([]);
     const [goalProgress, setGoalProgress] = useState<GoalProgress[]>([]);
     const [loading, setLoading] = useState(true);
@@ -57,6 +61,8 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId }) => {
     });
 
     const fetchGoals = async () => {
+        if (!patientId) return;
+        
         try {
             setLoading(true);
             setError(null);
@@ -75,8 +81,18 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId }) => {
     };
 
     useEffect(() => {
-        fetchGoals();
+        if (patientId) {
+            fetchGoals();
+        }
     }, [patientId]);
+
+    if (!patientId) {
+        return (
+            <Box sx={{ p: 3 }}>
+                <Alert severity="error">ID de paciente no válido</Alert>
+            </Box>
+        );
+    }
 
     const handleCreateGoal = async () => {
         try {
