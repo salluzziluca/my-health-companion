@@ -133,6 +133,7 @@ my-health-companion/
 -   **GET** `/weekly-diets/{weekly_diet_id}/meals`: Obtener platos de dieta semanal con estado
 -   **DELETE** `/weekly-diets/{weekly_diet_id}/meals/{meal_id}`: Eliminar plato de dieta semanal
 -   **DELETE** `/weekly-diets/{weekly_diet_id}`: Eliminar dieta semanal
+-   **POST** `/weekly-diets/{weekly_diet_id}/send-diet-email`: Enviar dieta semanal por email al paciente
 
 ### Goals
 
@@ -152,6 +153,7 @@ my-health-companion/
 -   El frontend está construido con React + TypeScript
 -   Se usa Material-UI para los componentes de la interfaz
 -   La autenticación se maneja con JWT tokens
+-   El envio de emails se realiza usando la librería `smtplib` de Python
 
 ### Documentacion de FastAPI
 
