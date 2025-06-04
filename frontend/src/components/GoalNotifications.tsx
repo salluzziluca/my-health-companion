@@ -1,48 +1,68 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { Snackbar, Alert, AlertColor, Badge, IconButton, Menu, MenuItem, Typography, Box, List, ListItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
-import { EmojiEvents, TrendingUp, LocalFireDepartment, Notifications as NotificationsIcon, MonitorWeight } from '@mui/icons-material';
-
-// Tipos de objetivos que podemos notificar
-export type GoalType = 'streak' | 'calories' | 'meals' | 'weight';
-
-// Interfaz para las notificaciones
-interface GoalNotification {
-  id: string;
-  type: GoalType;
-  message: string;
-  severity: AlertColor;
-  icon: React.ReactNode;
-  timestamp: Date;
-  read: boolean;
-  goalKey?: string;
-}
+import { Snackbar, Alert, Badge, IconButton, Menu, Typography, Box, List, ListItem, ListItemText, Divider } from '@mui/material';
+import { Notifications as NotificationsIcon } from '@mui/icons-material';
+import { notificationsService, Notification } from '../services/notifications';
+import { jwtDecode } from 'jwt-decode';
 
 // Contexto para las notificaciones
-interface GoalNotificationsContextType {
-  showGoalNotification: (type: GoalType, message: string, goalKey?: string) => void;
-  notifications: GoalNotification[];
+interface NotificationsContextType {
+  notifications: Notification[];
   unreadCount: number;
-  markAsRead: (id: string) => void;
-  markAllAsRead: () => void;
-  clearNotifications: () => void;
-  hasShownNotification: (goalKey: string) => boolean;
+  markAsRead: (id: number) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
+  deleteNotification: (id: number) => Promise<void>;
+  refreshNotifications: () => Promise<void>;
 }
 
-const GoalNotificationsContext = createContext<GoalNotificationsContextType | undefined>(undefined);
+const NotificationsContext = createContext<NotificationsContextType | undefined>(undefined);
+
+interface JwtPayload {
+  user_type?: string;
+  type?: string;
+  role?: string;
+  [key: string]: any;
+}
 
 // Hook personalizado para usar las notificaciones
-export const useGoalNotifications = () => {
-  const context = useContext(GoalNotificationsContext);
+export const useNotifications = () => {
+  const context = useContext(NotificationsContext);
+  const userType = getUserTypeFromToken();
+  // Solo bloquear para profesionales
+  if (userType === 'professional') {
+    return {
+      notifications: [],
+      unreadCount: 0,
+      markAsRead: async () => {},
+      markAllAsRead: async () => {},
+      deleteNotification: async () => {},
+      refreshNotifications: async () => {},
+    };
+  }
   if (!context) {
-    throw new Error('useGoalNotifications debe ser usado dentro de un GoalNotificationsProvider');
+    throw new Error('useNotifications debe ser usado dentro de un NotificationsProvider');
   }
   return context;
 };
 
+const getUserTypeFromToken = () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+    const decoded = jwtDecode<JwtPayload>(token);
+    const userType = decoded.user_type || decoded.type || decoded.role || null;
+    console.log('[NOTIF] Tipo de usuario detectado:', userType);
+    return userType;
+  } catch {
+    return null;
+  }
+};
+
 // Componente de la campanita de notificaciones
 export const NotificationsBell: React.FC = () => {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications } = useGoalNotifications();
+  const userType = getUserTypeFromToken();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, refreshNotifications } = useNotifications();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  if (userType === 'professional') return null;
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -52,9 +72,16 @@ export const NotificationsBell: React.FC = () => {
     setAnchorEl(null);
   };
 
-  const handleNotificationClick = (notification: GoalNotification) => {
-    markAsRead(notification.id);
+  const handleNotificationClick = async (notification: Notification) => {
+    if (!notification.is_read) {
+      await markAsRead(notification.id);
+    }
     handleClose();
+  };
+
+  const handleDeleteClick = async (e: React.MouseEvent, notification: Notification) => {
+    e.stopPropagation();
+    await deleteNotification(notification.id);
   };
 
   return (
@@ -85,17 +112,21 @@ export const NotificationsBell: React.FC = () => {
           <Typography variant="h6">Notificaciones</Typography>
           {notifications.length > 0 && (
             <Box>
-              <IconButton size="small" onClick={markAllAsRead} sx={{ mr: 1 }}>
+              <IconButton 
+                size="small" 
+                onClick={async () => {
+                  await markAllAsRead();
+                  await refreshNotifications();
+                }} 
+                sx={{ mr: 1 }}
+              >
                 <Typography variant="caption" color="primary">Marcar todas como leídas</Typography>
-              </IconButton>
-              <IconButton size="small" onClick={clearNotifications}>
-                <Typography variant="caption" color="error">Limpiar</Typography>
               </IconButton>
             </Box>
           )}
         </Box>
         <Divider />
-        <List sx={{ p: 0 }}>
+        <List>
           {notifications.length === 0 ? (
             <ListItem>
               <ListItemText 
@@ -110,19 +141,25 @@ export const NotificationsBell: React.FC = () => {
                 onClick={() => handleNotificationClick(notification)}
                 sx={{
                   cursor: 'pointer',
-                  bgcolor: notification.read ? 'inherit' : 'action.hover',
+                  bgcolor: notification.is_read ? 'inherit' : 'action.hover',
                   '&:hover': { bgcolor: 'action.selected' }
                 }}
+                secondaryAction={
+                  <IconButton 
+                    edge="end" 
+                    aria-label="eliminar"
+                    onClick={(e) => handleDeleteClick(e, notification)}
+                  >
+                    <Typography variant="caption" color="error">Eliminar</Typography>
+                  </IconButton>
+                }
               >
-                <ListItemIcon sx={{ minWidth: 40 }}>
-                  {notification.icon}
-                </ListItemIcon>
                 <ListItemText
                   primary={notification.message}
-                  secondary={notification.timestamp.toLocaleString()}
+                  secondary={new Date(notification.created_at).toLocaleString()}
                   primaryTypographyProps={{
                     variant: 'body2',
-                    color: notification.read ? 'text.secondary' : 'text.primary'
+                    color: notification.is_read ? 'text.secondary' : 'text.primary'
                   }}
                   secondaryTypographyProps={{
                     variant: 'caption',
@@ -138,191 +175,60 @@ export const NotificationsBell: React.FC = () => {
   );
 };
 
-// Función auxiliar para obtener el icono basado en el tipo
-const getIconByType = (type: GoalType): React.ReactNode => {
-  switch (type) {
-    case 'streak':
-      return <LocalFireDepartment />;
-    case 'calories':
-      return <TrendingUp />;
-    case 'meals':
-      return <EmojiEvents />;
-    case 'weight':
-      return <MonitorWeight />;
-    default:
-      return <EmojiEvents />;
-  }
-};
-
 // Proveedor del contexto
-export const GoalNotificationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [notifications, setNotifications] = useState<GoalNotification[]>(() => {
-    // Cargar notificaciones del localStorage al iniciar
-    const saved = localStorage.getItem('goalNotifications');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        // Convertir las fechas de string a Date y reconstruir los iconos
-        return parsed.map((n: any) => ({
-          ...n,
-          timestamp: new Date(n.timestamp),
-          icon: getIconByType(n.type) // Reconstruir el icono basado en el tipo
-        }));
-      } catch (e) {
-        console.error('Error al cargar notificaciones:', e);
-        return [];
-      }
-    }
-    return [];
-  });
-  const [currentNotification, setCurrentNotification] = useState<GoalNotification | null>(null);
+export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  // Guardar notificaciones en localStorage cuando cambien
-  useEffect(() => {
+  const refreshNotifications = useCallback(async () => {
     try {
-      // Convertir las notificaciones a un formato seguro para localStorage
-      const notificationsToSave = notifications.map(n => ({
-        ...n,
-        icon: undefined, // No guardamos el componente React
-        type: n.type // Guardamos el tipo para reconstruir el icono
-      }));
-      localStorage.setItem('goalNotifications', JSON.stringify(notificationsToSave));
-    } catch (e) {
-      console.error('Error al guardar notificaciones:', e);
-    }
-  }, [notifications]);
-
-  const getGoalConfig = useCallback((type: GoalType): { severity: AlertColor; icon: React.ReactNode } => {
-    switch (type) {
-      case 'streak':
-        return {
-          severity: 'success',
-          icon: <LocalFireDepartment />
-        };
-      case 'calories':
-        return {
-          severity: 'info',
-          icon: <TrendingUp />
-        };
-      case 'meals':
-        return {
-          severity: 'warning',
-          icon: <EmojiEvents />
-        };
-      case 'weight':
-        return {
-          severity: 'success',
-          icon: <MonitorWeight />
-        };
-      default:
-        return {
-          severity: 'info',
-          icon: <EmojiEvents />
-        };
+      const [notifs, count] = await Promise.all([
+        notificationsService.getNotifications(),
+        notificationsService.getUnreadCount()
+      ]);
+      setNotifications(notifs);
+      setUnreadCount(count);
+    } catch (error) {
+      console.error('Error al obtener notificaciones:', error);
     }
   }, []);
 
-  const hasShownNotification = useCallback((goalKey: string): boolean => {
-    return notifications.some(n => n.goalKey === goalKey);
-  }, [notifications]);
+  // Cargar notificaciones al montar el componente y cada 30 segundos
+  useEffect(() => {
+    refreshNotifications();
+    const interval = setInterval(refreshNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [refreshNotifications]);
 
-  const showGoalNotification = useCallback((type: GoalType, message: string, goalKey?: string) => {
-    // Si se proporciona un goalKey y ya se mostró la notificación, no mostrar de nuevo
-    if (goalKey && hasShownNotification(goalKey)) {
-      return;
-    }
+  const markAsRead = useCallback(async (id: number) => {
+    await notificationsService.markAsRead(id);
+    await refreshNotifications();
+  }, [refreshNotifications]);
 
-    const { severity } = getGoalConfig(type);
-    const icon = getIconByType(type); // Usar la función auxiliar para obtener el icono
-    const newNotification: GoalNotification = {
-      id: Date.now().toString(),
-      type,
-      message,
-      severity,
-      icon,
-      timestamp: new Date(),
-      read: false,
-      goalKey
-    };
-    
-    // Evitar duplicados verificando el goalKey
-    setNotifications(prev => {
-      if (goalKey && prev.some(n => n.goalKey === goalKey)) {
-        return prev;
-      }
-      return [newNotification, ...prev];
-    });
-    
-    // Solo mostrar el snackbar si no hay una notificación actual
-    if (!currentNotification) {
-      setCurrentNotification(newNotification);
-    }
-  }, [getGoalConfig, hasShownNotification, currentNotification]);
+  const markAllAsRead = useCallback(async () => {
+    await notificationsService.markAllAsRead();
+    await refreshNotifications();
+  }, [refreshNotifications]);
 
-  const markAsRead = useCallback((id: string) => {
-    setNotifications(prev =>
-      prev.map(notification =>
-        notification.id === id
-          ? { ...notification, read: true }
-          : notification
-      )
-    );
-  }, []);
-
-  const markAllAsRead = useCallback(() => {
-    setNotifications(prev =>
-      prev.map(notification => ({ ...notification, read: true }))
-    );
-  }, []);
-
-  const clearNotifications = useCallback(() => {
-    setNotifications([]);
-  }, []);
-
-  const handleCloseSnackbar = () => {
-    setCurrentNotification(null);
-  };
-
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const deleteNotification = useCallback(async (id: number) => {
+    await notificationsService.deleteNotification(id);
+    await refreshNotifications();
+  }, [refreshNotifications]);
 
   return (
-    <GoalNotificationsContext.Provider 
+    <NotificationsContext.Provider 
       value={{ 
-        showGoalNotification, 
-        notifications, 
+        notifications,
         unreadCount,
         markAsRead,
         markAllAsRead,
-        clearNotifications,
-        hasShownNotification
+        deleteNotification,
+        refreshNotifications
       }}
     >
       {children}
-      <Snackbar
-        open={!!currentNotification}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={currentNotification?.severity}
-          icon={currentNotification?.icon}
-          variant="filled"
-          sx={{ 
-            width: '100%',
-            minWidth: '300px',
-            boxShadow: 3,
-            '& .MuiAlert-icon': {
-              alignItems: 'center'
-            }
-          }}
-        >
-          {currentNotification?.message}
-        </Alert>
-      </Snackbar>
-    </GoalNotificationsContext.Provider>
+    </NotificationsContext.Provider>
   );
 };
 
-export default GoalNotificationsProvider; 
+export default NotificationsProvider; 

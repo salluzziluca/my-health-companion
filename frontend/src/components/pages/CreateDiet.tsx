@@ -86,6 +86,11 @@ const CrearDieta: React.FC<Props> = ({ patientId, professionalId, onFinish }) =>
         }
       });
       weeklyDietId = data.id;
+      if (!weeklyDietId) {
+        console.error('No se recibió un id de dieta semanal en la respuesta:', data);
+        setSnackbar({ open: true, message: 'No se pudo crear la dieta. Intenta nuevamente.', severity: 'error' });
+        return;
+      }
     } catch (error: any) {
       if (error?.response?.status === 400 && error?.response?.data?.detail?.includes("Weekly diet already exists")) {
         setSnackbar({ open: true, message: 'Ya existe una dieta para este paciente en esta semana.', severity: 'error' });

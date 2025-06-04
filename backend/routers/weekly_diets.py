@@ -11,6 +11,7 @@ from models.meals import Meal, MealCreate
 from models.patients import Patient
 from utils.calories import calculate_meal_calories
 from utils.email_notifications import send_full_diet_email
+from utils.notifications import create_notification
 
 router_weekly_diets = APIRouter(prefix="/weekly-diets", tags=["Weekly Diets"])
 
@@ -43,6 +44,7 @@ def create_weekly_diet(
     session.add(new_diet)
     session.commit()
     session.refresh(new_diet)
+    # (Notificaciones aquí solo si es necesario, pero no afectan la creación)
     return new_diet
 
 #Agregar comida a dieta semanal específicada por ID
