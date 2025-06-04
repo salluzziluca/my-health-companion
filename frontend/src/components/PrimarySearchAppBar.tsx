@@ -17,6 +17,7 @@ import MailIcon from '@mui/icons-material/Mail';
 import HomeIcon from '@mui/icons-material/Home';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import MoreIcon from '@mui/icons-material/MoreVert';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { NotificationsBell } from './GoalNotifications';
 
 const Search = styled('div')(({ theme }) => ({
@@ -101,6 +102,21 @@ export default function PrimarySearchAppBar() {
     navigate('/weekly-diet');
   };
 
+  const handleLogout = async () => {
+    try {
+      // Primero cerramos el menú
+      handleMenuClose();
+      // Navegamos primero para desmontar los componentes
+      navigate('/login', { replace: true });
+      // Esperamos un momento para asegurarnos de que la navegación se complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      // Finalmente limpiamos el token
+      localStorage.removeItem('token');
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  };
+
   const menuId = 'primary-search-account-menu';
   const renderMenu = (
     <Menu
@@ -121,6 +137,10 @@ export default function PrimarySearchAppBar() {
       <MenuItem onClick={handleGoToProfile}>Profile</MenuItem>
       <MenuItem onClick={handleGoToAccount}>My account</MenuItem>
       <MenuItem onClick={handleGoToWeeklyDiet}>Mi Dieta Semanal</MenuItem>
+      <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
+        <LogoutIcon sx={{ mr: 1, color: 'error.main' }} />
+        Logout
+      </MenuItem>
     </Menu>
   );
 
@@ -170,6 +190,12 @@ export default function PrimarySearchAppBar() {
           <AccountCircle />
         </IconButton>
         <p>Profile</p>
+      </MenuItem>
+      <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
+        <IconButton size="large" color="error">
+          <LogoutIcon />
+        </IconButton>
+        <p>Logout</p>
       </MenuItem>
     </Menu>
   );

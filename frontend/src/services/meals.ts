@@ -22,6 +22,12 @@ export const updateMeal = async (mealId: number, updates: any) => {
 };
 
 export const deleteMeal = async (mealId: number) => {
-  await api.delete(`/meals/${mealId}`);
+  try {
+    const response = await api.delete(`/meals/${mealId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting meal:', error);
+    throw error;
+  }
 };
 
