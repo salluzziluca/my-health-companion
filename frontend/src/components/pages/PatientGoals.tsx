@@ -22,11 +22,11 @@ import axios from '../../services/axiosConfig';
 
 interface Goal {
   id: number;
-  type: 'weight' | 'calories' | 'both';
+  goal_type: 'weight' | 'calories' | 'both';
   target_weight?: number;
   target_calories?: number;
   start_date: string;
-  end_date: string;
+  target_date?: string;
   status: 'active' | 'completed' | 'expired';
   progress: {
     current_weight?: number;
@@ -75,13 +75,13 @@ const PatientGoals: React.FC = () => {
     fetchGoals();
   }, []);
 
-  const getGoalTypeLabel = (type: string) => {
+  const getGoalTypeLabel = (goal_type: string) => {
     const types: { [key: string]: string } = {
       'weight': 'Peso',
       'calories': 'Calorías',
       'both': 'Peso y Calorías'
     };
-    return types[type] || type;
+    return types[goal_type] || goal_type;
   };
 
   const getStatusColor = (status: string) => {
@@ -118,6 +118,22 @@ const PatientGoals: React.FC = () => {
     if (progress >= 70) return theme.palette.warning.main;
     if (progress >= 40) return theme.palette.info.main;
     return theme.palette.grey[500];
+  };
+
+  const getGoalDescription = (goal: Goal) => {
+    if (goal.goal_type === 'weight') {
+      return goal.target_weight ? `Alcanzar un peso de ${goal.target_weight} kg` : 'Objetivo de peso sin valor asignado';
+    }
+    if (goal.goal_type === 'calories') {
+      return goal.target_calories ? `Consumir ${goal.target_calories} kcal/día` : 'Objetivo de calorías sin valor asignado';
+    }
+    if (goal.goal_type === 'both') {
+      let desc = '';
+      if (goal.target_weight) desc += `Alcanzar ${goal.target_weight} kg`;
+      if (goal.target_calories) desc += (desc ? ' y ' : '') + `consumir ${goal.target_calories} kcal/día`;
+      return desc || 'Objetivo mixto sin valores asignados';
+    }
+    return 'Objetivo sin información';
   };
 
   if (loading) {
@@ -164,51 +180,57 @@ const PatientGoals: React.FC = () => {
         <Alert severity="info">No tenés objetivos asignados. Tu nutricionista te asignará objetivos cuando sea necesario.</Alert>
       ) : (
         <Stack spacing={3}>
-          {goals.map((goal) => (
-            <Paper key={goal.id} elevation={1} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 1, textAlign: 'center' }}>
-                {goal.type === 'weight' && 'Objetivo de Peso'}
-                {goal.type === 'calories' && 'Objetivo de Calorías'}
-                {goal.type === 'both' && 'Objetivo de Peso y Calorías'}
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
-              <Stack spacing={1} alignItems="center">
-                {(goal.type === 'weight' || goal.type === 'both') && (
-                  <Typography variant="h3" sx={{ color: 'primary.main', fontWeight: 800, mb: 1 }}>
-                    {goal.target_weight ? `${goal.target_weight} kg` : 'No asignado'}
+          {goals.map((goal) => {
+            // Determinar textos para estado actual y objetivo
+            let estadoActual = '';
+            let objetivo = '';
+            if ((goal.goal_type === 'weight' || goal.goal_type === 'both') && goal.progress.current_weight !== undefined) {
+              estadoActual = `${goal.progress.current_weight} kg`;
+              objetivo = goal.target_weight ? `${goal.target_weight} kg` : '';
+            } else if ((goal.goal_type === 'calories' || goal.goal_type === 'both') && goal.progress.current_daily_calories !== undefined) {
+              estadoActual = `${goal.progress.current_daily_calories} kcal/día`;
+              objetivo = goal.target_calories ? `${goal.target_calories} kcal/día` : '';
+            }
+            return (
+              <Paper key={goal.id} elevation={1} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'flex-start' }, mb: 2 }}>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 0.5, textAlign: { xs: 'center', md: 'left' } }}>
+                      {goal.goal_type === 'weight' && 'Objetivo de Peso'}
+                      {goal.goal_type === 'calories' && 'Objetivo de Calorías'}
+                      {goal.goal_type === 'both' && 'Objetivo de Peso y Calorías'}
+                    </Typography>
+                    <Typography variant="subtitle1" sx={{ color: 'text.secondary', mb: 1, textAlign: { xs: 'center', md: 'left' } }}>
+                      {getGoalDescription(goal)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: { xs: 'center', md: 'flex-end' }, justifyContent: 'flex-start', mt: { xs: 2, md: 0 } }}>
+                    {(estadoActual || objetivo) && (
+                      <Typography variant="body1" sx={{ color: 'text.primary', fontWeight: 500, fontSize: 18, textAlign: { xs: 'center', md: 'right' } }}>
+                        Estado actual: <span style={{ color: theme.palette.primary.main, fontWeight: 700 }}>{estadoActual}</span>
+                        {objetivo && (
+                          <span style={{ color: theme.palette.text.secondary, fontWeight: 400 }}> / Objetivo: <span style={{ color: theme.palette.primary.main, fontWeight: 700 }}>{objetivo}</span></span>
+                        )}
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+                <Divider sx={{ mb: 2 }} />
+                <Stack spacing={1} sx={{ mt: 2 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Inicio: {formatDate(goal.start_date)}
+                    {goal.target_date && goal.target_date !== '' && goal.target_date !== null ? ` | Fin: ${formatDate(goal.target_date)}` : ''}
                   </Typography>
-                )}
-                {(goal.type === 'calories' || goal.type === 'both') && (
-                  <Typography variant="h3" sx={{ color: 'secondary.main', fontWeight: 800, mb: 1 }}>
-                    {goal.target_calories ? `${goal.target_calories} kcal/día` : 'No asignado'}
+                  <Typography variant="caption" color="text.secondary">
+                    Estado: {getStatusLabel(goal.status)}
                   </Typography>
-                )}
-              </Stack>
-              <Stack spacing={1}>
-                {goal.progress.current_weight !== undefined && (
-                  <Typography variant="body2">Peso actual: <b>{goal.progress.current_weight} kg</b></Typography>
-                )}
-                {goal.progress.current_daily_calories !== undefined && (
-                  <Typography variant="body2">Calorías actuales: <b>{goal.progress.current_daily_calories} kcal/día</b></Typography>
-                )}
-                {goal.progress.weight_progress !== undefined && (
-                  <LinearProgress variant="determinate" value={Math.min(goal.progress.weight_progress, 100)} sx={{ height: 8, borderRadius: 4, mb: 1 }} />
-                )}
-                {goal.progress.calories_progress !== undefined && (
-                  <LinearProgress variant="determinate" value={Math.min(goal.progress.calories_progress, 100)} sx={{ height: 8, borderRadius: 4, mb: 1 }} />
-                )}
-                <Typography variant="caption" color="text.secondary">
-                  Inicio: {formatDate(goal.start_date)} | Fin: {goal.end_date ? formatDate(goal.end_date) : 'No disponible'}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Estado: {getStatusLabel(goal.status)}
-                </Typography>
-                {goal.status === 'completed' && (
-                  <Typography variant="body2" color="success.main" sx={{ fontWeight: 600 }}>¡Objetivo alcanzado!</Typography>
-                )}
-              </Stack>
-            </Paper>
-          ))}
+                  {goal.status === 'completed' && (
+                    <Typography variant="body2" color="success.main" sx={{ fontWeight: 600 }}>¡Objetivo alcanzado!</Typography>
+                  )}
+                </Stack>
+              </Paper>
+            );
+          })}
         </Stack>
       )}
     </Box>

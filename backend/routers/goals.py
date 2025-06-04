@@ -61,6 +61,17 @@ def create_goal(
     session.commit()
     session.refresh(db_goal)
     
+    # Crear notificación para el paciente
+    goal_type_messages = {
+        GoalType.WEIGHT: f"🎯 Tu nutricionista te ha asignado un nuevo objetivo de peso: {goal.target_weight} kg para el {goal.target_date}.",
+        GoalType.CALORIES: f"🎯 Tu nutricionista te ha asignado un nuevo objetivo de calorías: {goal.target_calories} kcal/día para el {goal.target_date}.",
+        GoalType.BOTH: f"🎯 Tu nutricionista te ha asignado nuevos objetivos: {goal.target_weight} kg y {goal.target_calories} kcal/día para el {goal.target_date}."
+    }
+    
+    message = goal_type_messages.get(goal.goal_type, "🎯 Tu nutricionista te ha asignado un nuevo objetivo.")
+    create_notification(session, goal.patient_id, message)
+    session.commit()
+    
     return db_goal
 
 
