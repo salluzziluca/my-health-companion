@@ -330,4 +330,12 @@ def send_full_diet_email_to_patient(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error sending diet email: {str(e)}")
     
+    # Crear una notificación para el paciente
+    create_notification(
+        session=session,
+        patient_id=patient.id,
+        message="Se te ha asignado una nueva dieta semanal."
+    )
+    session.commit()
+    
     return {"message": "Diet email sent successfully to the patient", "patient_email": patient.email}
