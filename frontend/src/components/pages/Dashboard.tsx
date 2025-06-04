@@ -23,13 +23,12 @@ import {
   Avatar,
   Chip,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Restaurant as RestaurantIcon, Person as PersonIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Add as AddIcon, Edit as EditIcon, Restaurant as RestaurantIcon, Person as PersonIcon, Delete as DeleteIcon, TrendingUp as TrendingUpIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { healthService, professionalService } from '../../services/api';
 import { WeightLog, WeeklySummary, WeeklyNote } from '../../types/health';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, ReferenceLine } from 'recharts';
 import { jwtDecode } from 'jwt-decode';
-import { useGoalNotifications } from '../GoalNotifications';
 import { useTheme } from '@mui/material/styles';
 import { goalsService, GoalProgress } from '../../services/goals';
 
@@ -77,7 +76,6 @@ const Dashboard = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
   const [goalProgress, setGoalProgress] = useState<GoalProgress[]>([]);
-  const { showGoalNotification, hasShownNotification } = useGoalNotifications();
   const theme = useTheme();
 
   // Función para obtener el tipo de usuario del token
@@ -168,42 +166,12 @@ const Dashboard = () => {
         }),
       });
 
-      // Verificar objetivo de peso con las metas reales
-      const activeWeightGoals = goalProgress.filter(
-        g => g.goal.goal_type === 'weight' || g.goal.goal_type === 'both'
-      );
-
-      activeWeightGoals.forEach(goalProgressItem => {
-        if (goalProgressItem.goal.target_weight && goalProgressItem.is_weight_achieved) {
-          const weightGoalKey = `weight_${newWeight}_${goalProgressItem.goal.id}`;
-          if (!hasShownNotification(weightGoalKey)) {
-            showGoalNotification('weight', `¡Felicitaciones! ¡Alcanzaste tu peso objetivo de ${goalProgressItem.goal.target_weight} kg!`, weightGoalKey);
-          }
-        }
-      });
-
       setWeight('');
       fetchWeeklySummary(); // Refresh the summary
       fetchGoalProgress(); // Refresh goal progress
-    } catch (err: any) {
-      // Intentar extraer el mensaje del backend
-      let msg = 'Error al registrar el peso';
-      if (err?.response?.data?.detail) {
-        const detail = err.response.data.detail;
-        if (Array.isArray(detail) && detail[0]?.msg) {
-          msg = detail[0].msg;
-        } else if (typeof detail === 'string') {
-          msg = detail;
-        }
-        // Limpiar detalles técnicos si aparecen en el mensaje
-        if (typeof msg === 'string') {
-          msg = msg.replace(/\[type=.*?\]/gi, '').replace(/value_error:?\w*/gi, '').trim();
-          msg = msg.replace(/^Value error,\s*/i, '');
-        }
-      } else if (err?.message && err.message.includes('peso')) {
-        msg = err.message;
-      }
-      setWeightError(msg);
+    } catch (error) {
+      console.error('Error al registrar peso:', error);
+      setWeightError('Error al registrar el peso');
     }
   };
 
@@ -676,9 +644,62 @@ const Dashboard = () => {
                 </>
               )}
             </Stack>
-            <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
-              <Button variant="contained" fullWidth startIcon={<RestaurantIcon />} onClick={() => navigate('/weekly-diet')} sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, fontSize: '1rem', boxShadow: 'none', transition: 'all 0.2s', '&:hover': { boxShadow: 2, transform: 'translateY(-2px)' } }}>Gestionar Dietas</Button>
-              <Button variant="outlined" fullWidth onClick={() => navigate('/meals?add=true')} sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, fontSize: '1rem', borderColor: theme.palette.primary.main, color: theme.palette.primary.main, '&:hover': { bgcolor: theme.palette.primary.light + '10', borderColor: theme.palette.primary.dark } }}>Agregar Comida</Button>
+            <Stack spacing={2} sx={{ mt: 3 }}>
+              <Stack direction="row" spacing={2}>
+                <Button 
+                  variant="contained" 
+                  fullWidth 
+                  startIcon={<RestaurantIcon />} 
+                  onClick={() => navigate('/weekly-diet')} 
+                  sx={{ 
+                    borderRadius: 2, 
+                    textTransform: 'none', 
+                    fontWeight: 600, 
+                    fontSize: '1rem', 
+                    boxShadow: 'none', 
+                    transition: 'all 0.2s', 
+                    '&:hover': { boxShadow: 2, transform: 'translateY(-2px)' } 
+                  }}
+                >
+                  Gestionar Dietas
+                </Button>
+                <Button 
+                  variant="outlined" 
+                  fullWidth 
+                  onClick={() => navigate('/meals?add=true')} 
+                  sx={{ 
+                    borderRadius: 2, 
+                    textTransform: 'none', 
+                    fontWeight: 600, 
+                    fontSize: '1rem', 
+                    borderColor: theme.palette.primary.main, 
+                    color: theme.palette.primary.main, 
+                    '&:hover': { 
+                      bgcolor: theme.palette.primary.light + '10', 
+                      borderColor: theme.palette.primary.dark 
+                    } 
+                  }}
+                >
+                  Gestionar Comidas
+                </Button>
+              </Stack>
+              <Button 
+                variant="contained" 
+                startIcon={<TrendingUpIcon />} 
+                onClick={() => navigate('/goals')} 
+                sx={{ 
+                  width: '100%',
+                  borderRadius: 2, 
+                  textTransform: 'none', 
+                  fontWeight: 600, 
+                  fontSize: '1rem', 
+                  boxShadow: 'none', 
+                  transition: 'all 0.2s', 
+                  '&:hover': { boxShadow: 2, transform: 'translateY(-2px)' } 
+                }}
+              >
+                Gestionar Objetivos Asignados
+              </Button>
             </Stack>
           </Paper>
         </Box>
