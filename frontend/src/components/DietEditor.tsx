@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TextField, Button, Typography, Snackbar, Alert } from '@mui/material';
+import { TextField, Button, Typography } from '@mui/material';
 import axios from 'axios';
 
 interface Props {
@@ -17,7 +17,6 @@ const getStartOfWeek = (): string => {
 const DietEditor: React.FC<Props> = ({ patientId }) => {
   const [weekStart, setWeekStart] = useState(getStartOfWeek());
   const [dietText, setDietText] = useState('');
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
 
   const handleSubmit = async () => {
     try {
@@ -26,9 +25,9 @@ const DietEditor: React.FC<Props> = ({ patientId }) => {
         week_start_date: weekStart,
         notes: dietText,
       });
-      setSnackbar({ open: true, message: '✅ Dieta enviada correctamente', severity: 'success' });
+      alert('✅ Dieta enviada correctamente');
     } catch (error) {
-      setSnackbar({ open: true, message: '❌ Error al enviar la dieta', severity: 'error' });
+      alert('❌ Error al enviar la dieta');
       console.error(error);
     }
   };
@@ -56,21 +55,6 @@ const DietEditor: React.FC<Props> = ({ patientId }) => {
       <Button variant="contained" color="primary" onClick={handleSubmit}>
         Guardar dieta
       </Button>
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-          variant="filled"
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </>
   );
 };
