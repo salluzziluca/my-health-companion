@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   Box, TextField, Button, Typography,
-  Autocomplete, CircularProgress, MenuItem, List, ListItem, ListItemText, Snackbar, Alert
+  Autocomplete, CircularProgress, MenuItem, List, ListItem, ListItemText
 } from '@mui/material';
 import axios from '../../services/axiosConfig';
 
@@ -42,7 +42,6 @@ const CrearDieta: React.FC<Props> = ({ patientId, professionalId, onFinish }) =>
   const [grams, setGrams] = useState('');
   const [loading, setLoading] = useState(false);
   const [pendingMeals, setPendingMeals] = useState<PendingMeal[]>([]);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
   useEffect(() => {
     setLoading(true);
@@ -70,7 +69,7 @@ const CrearDieta: React.FC<Props> = ({ patientId, professionalId, onFinish }) =>
 
   const handleCrearDieta = async () => {
     if (pendingMeals.length === 0) {
-      setSnackbar({ open: true, message: 'Agregá al menos una comida antes de crear la dieta.', severity: 'error' });
+      alert('Agregá al menos una comida antes de crear la dieta.');
       return;
     }
 
@@ -88,11 +87,11 @@ const CrearDieta: React.FC<Props> = ({ patientId, professionalId, onFinish }) =>
       weeklyDietId = data.id;
     } catch (error: any) {
       if (error?.response?.status === 400 && error?.response?.data?.detail?.includes("Weekly diet already exists")) {
-        setSnackbar({ open: true, message: 'Ya existe una dieta para este paciente en esta semana.', severity: 'error' });
+        alert("Ya existe una dieta para este paciente en esta semana.");
         return;
       }
       console.error('Error al crear la dieta', error);
-      setSnackbar({ open: true, message: 'Error al crear la dieta', severity: 'error' });
+      alert('Error al crear la dieta');
       return;
     }
 
@@ -109,16 +108,12 @@ const CrearDieta: React.FC<Props> = ({ patientId, professionalId, onFinish }) =>
         });
       }
 
-      setSnackbar({ open: true, message: 'Dieta creada exitosamente', severity: 'success' });
+      alert('Dieta creada exitosamente');
       onFinish();
     } catch (err) {
       console.error('Error al agregar comidas', err);
-      setSnackbar({ open: true, message: 'Error al agregar comidas a la dieta', severity: 'error' });
+      alert('Error al agregar comidas a la dieta');
     }
-  };
-
-  const handleCloseSnackbar = () => {
-    setSnackbar(prev => ({ ...prev, open: false }));
   };
 
   return (
@@ -210,32 +205,6 @@ const CrearDieta: React.FC<Props> = ({ patientId, professionalId, onFinish }) =>
           </Button>
         </>
       )}
-
-      <Snackbar 
-        open={snackbar.open} 
-        autoHideDuration={6000} 
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        sx={{ 
-          position: 'fixed',
-          zIndex: 9999,
-          top: '24px !important',
-          left: '50% !important',
-          transform: 'translateX(-50%) !important'
-        }}
-      >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbar.severity} 
-          sx={{ 
-            width: '100%',
-            minWidth: '300px',
-            boxShadow: 3
-          }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };

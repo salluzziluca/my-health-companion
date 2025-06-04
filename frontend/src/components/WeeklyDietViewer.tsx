@@ -55,13 +55,6 @@ const mealTypeLabels: { [key: string]: string } = {
     snack: 'Snack',
 };
 
-const getCompletionColor = (percentage: number) => {
-    if (percentage === 100) return '#4caf50'; // Verde cuando está completo
-    if (percentage >= 75) return '#2196f3'; // Azul cuando está cerca
-    if (percentage >= 50) return '#ff9800'; // Naranja cuando está a la mitad
-    return '#f44336'; // Rojo cuando está bajo
-};
-
 const WeeklyDietViewer: React.FC<WeeklyDietViewerProps> = ({ weeklyDietId }) => {
     const [meals, setMeals] = useState<WeeklyDietMeal[]>([]);
     const [loading, setLoading] = useState(true);
@@ -142,13 +135,6 @@ const WeeklyDietViewer: React.FC<WeeklyDietViewerProps> = ({ weeklyDietId }) => 
         return grouped;
     };
 
-    // Calcular porcentaje de completado por día
-    const getCompletionPercentage = (meals: WeeklyDietMeal[] = []) => {
-        if (!meals.length) return 0;
-        const completed = meals.filter(m => m.completed).length;
-        return Math.round((completed / meals.length) * 100);
-    };
-
     if (loading) {
         return (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
@@ -161,87 +147,76 @@ const WeeklyDietViewer: React.FC<WeeklyDietViewerProps> = ({ weeklyDietId }) => 
     const days = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
 
     return (
-        <Box sx={{ p: { xs: 1, md: 3 }, maxWidth: 900, mx: 'auto', width: '100%' }}>
-            {days.map((day) => {
-                const dayMeals = groupedMeals[day] || [];
-                const completion = getCompletionPercentage(dayMeals);
-                return (
-                    <Paper key={day} elevation={0} sx={{ mb: 3, borderRadius: 3, border: `1px solid #eee`, background: 'white', boxShadow: 2 }}>
-                        <Box sx={{ p: 3 }}>
-                            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
-                                <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: '-0.5px' }}>
-                                    {dayLabels[day]}
-                                </Typography>
-                                <Chip
-                                    label={`${completion}% completado`}
+        <Box sx={{ p: 2 }}>
+            {days.map((day) => (
+                <Card key={day} sx={{ mb: 2, boxShadow: 2 }}>
+                    <CardContent>
+                        <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
+                            {dayLabels[day]}
+                        </Typography>
+                        <Divider sx={{ mb: 2 }} />
+                        <List>
+                            {groupedMeals[day]?.map((meal) => (
+                                <ListItem
+                                    key={meal.id}
                                     sx={{
-                                        fontWeight: 600,
+                                        bgcolor: meal.completed ? 'action.hover' : 'transparent',
                                         borderRadius: 1,
-                                        fontSize: '1rem',
-                                        bgcolor: getCompletionColor(completion),
-                                        color: 'white',
-                                        transition: 'background-color 0.3s ease'
+                                        mb: 1,
+                                        p: 0,
+                                        display: 'flex',
+                                        alignItems: 'center',
                                     }}
-                                />
-                            </Stack>
-                            <Divider sx={{ mb: 2 }} />
-                            <List>
-                                {dayMeals.length > 0 ? dayMeals.map((meal) => (
-                                    <ListItem
-                                        key={meal.id}
-                                        sx={{
-                                            bgcolor: meal.completed ? 'action.hover' : 'transparent',
-                                            borderRadius: 1,
-                                            mb: 1,
-                                            p: 0,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                        }}
+                                >
+                                    <Box
+                                        sx={{ p: 1 }}
+                                        onClick={(e) => e.stopPropagation()}
                                     >
-                                        <Box sx={{ p: 1 }} onClick={(e) => e.stopPropagation()}>
-                                            <Checkbox
-                                                checked={meal.completed}
-                                                onChange={(e) => {
-                                                    handleMealCompletion(meal.id, e.target.checked);
-                                                }}
-                                                color="primary"
-                                            />
-                                        </Box>
-                                        <Box
-                                            sx={{
-                                                flex: 1,
-                                                p: 1,
-                                                cursor: 'pointer',
-                                                '&:hover': { bgcolor: 'action.hover' },
-                                                borderRadius: 1,
+                                        <Checkbox
+                                            checked={meal.completed}
+                                            onChange={(e) => {
+                                                handleMealCompletion(meal.id, e.target.checked);
                                             }}
-                                            onClick={() => handleMealClick(meal)}
-                                        >
-                                            <Stack direction="row" alignItems="center" spacing={2}>
-                                                <Typography variant="body1">
-                                                    {meal.meal_name}
-                                                </Typography>
-                                                <Chip
-                                                    label={mealTypeLabels[meal.meal_of_the_day]}
-                                                    size="small"
-                                                    sx={{
-                                                        bgcolor: mealTypeColors[meal.meal_of_the_day],
-                                                        color: 'white',
-                                                    }}
-                                                />
-                                            </Stack>
-                                        </Box>
-                                    </ListItem>
-                                )) : (
-                                    <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
-                                        No hay comidas programadas para este día
-                                    </Typography>
-                                )}
-                            </List>
-                        </Box>
-                    </Paper>
-                );
-            })}
+                                            color="primary"
+                                        />
+                                    </Box>
+                                    <Box
+                                        sx={{
+                                            flex: 1,
+                                            p: 1,
+                                            cursor: 'pointer',
+                                            '&:hover': {
+                                                bgcolor: 'action.hover',
+                                            },
+                                            borderRadius: 1,
+                                        }}
+                                        onClick={() => handleMealClick(meal)}
+                                    >
+                                        <Stack direction="row" alignItems="center" spacing={2}>
+                                            <Typography variant="body1">
+                                                {meal.meal_name}
+                                            </Typography>
+                                            <Chip
+                                                label={mealTypeLabels[meal.meal_of_the_day]}
+                                                size="small"
+                                                sx={{
+                                                    bgcolor: mealTypeColors[meal.meal_of_the_day],
+                                                    color: 'white',
+                                                }}
+                                            />
+                                        </Stack>
+                                    </Box>
+                                </ListItem>
+                            ))}
+                            {!groupedMeals[day] && (
+                                <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                                    No hay comidas programadas para este día
+                                </Typography>
+                            )}
+                        </List>
+                    </CardContent>
+                </Card>
+            ))}
 
             <Dialog
                 open={!!selectedMeal}

@@ -14,11 +14,10 @@ import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import MailIcon from '@mui/icons-material/Mail';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import MoreIcon from '@mui/icons-material/MoreVert';
 import HomeIcon from '@mui/icons-material/Home';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
-import MoreIcon from '@mui/icons-material/MoreVert';
-import { NotificationsBell } from './GoalNotifications';
-import LogoutIcon from '@mui/icons-material/Logout';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -88,24 +87,18 @@ export default function PrimarySearchAppBar() {
   };
 
   const handleGoToProfile = () => {
-    handleMenuClose();
-    navigate('/myprofile');
+    handleMenuClose(); // cerramos el menú
+    navigate('/myprofile'); // navegamos a /profile
   };
 
   const handleGoToAccount = () => {
-    handleMenuClose();
-    navigate('/myaccount');
+    handleMenuClose(); // cerramos el menú
+    navigate('/myaccount'); // navegamos a /profile
   };
 
   const handleGoToWeeklyDiet = () => {
     handleMenuClose();
     navigate('/weekly-diet');
-  };
-
-  const handleLogout = () => {
-    handleMenuClose();
-    localStorage.removeItem('token');
-    navigate('/login');
   };
 
   const menuId = 'primary-search-account-menu';
@@ -128,9 +121,6 @@ export default function PrimarySearchAppBar() {
       <MenuItem onClick={handleGoToProfile}>Profile</MenuItem>
       <MenuItem onClick={handleGoToAccount}>My account</MenuItem>
       <MenuItem onClick={handleGoToWeeklyDiet}>Mi Dieta Semanal</MenuItem>
-      <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
-        <LogoutIcon sx={{ mr: 1 }} /> Logout
-      </MenuItem>
     </Menu>
   );
 
@@ -166,8 +156,16 @@ export default function PrimarySearchAppBar() {
         <p>Messages</p>
       </MenuItem>
       <MenuItem>
-        <NotificationsBell />
-        <p>Notificaciones</p>
+        <IconButton
+          size="large"
+          aria-label="show 17 new notifications"
+          color="inherit"
+        >
+          <Badge badgeContent={17} color="error">
+            <NotificationsIcon />
+          </Badge>
+        </IconButton>
+        <p>Notifications</p>
       </MenuItem>
       <MenuItem onClick={handleProfileMenuOpen}>
         <IconButton
@@ -180,12 +178,6 @@ export default function PrimarySearchAppBar() {
           <AccountCircle />
         </IconButton>
         <p>Profile</p>
-      </MenuItem>
-      <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
-        <IconButton size="large" color="inherit">
-          <LogoutIcon />
-        </IconButton>
-        <p>Logout</p>
       </MenuItem>
     </Menu>
   );
@@ -233,7 +225,15 @@ export default function PrimarySearchAppBar() {
                 <MailIcon />
               </Badge>
             </IconButton>
-            <NotificationsBell />
+            <IconButton
+              size="large"
+              aria-label="show 17 new notifications"
+              color="inherit"
+            >
+              <Badge badgeContent={17} color="error">
+                <NotificationsIcon />
+              </Badge>
+            </IconButton>
             <IconButton
               size="large"
               edge="end"

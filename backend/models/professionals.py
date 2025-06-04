@@ -7,7 +7,6 @@ import uuid
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from models.patients import Patient
-    from models.goals import Goal
 
 class ProfessionalBase(SQLModel):
     email: EmailStr
@@ -49,7 +48,6 @@ class Professional(ProfessionalBase, table=True):
     
     # Relación one-to-many: un profesional puede tener muchos pacientes
     patients: List["Patient"] = Relationship(back_populates="professional")
-    goals: List["Goal"] = Relationship(back_populates="professional")
 
 
 class ProfessionalCreate(ProfessionalBase):

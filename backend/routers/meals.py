@@ -65,6 +65,7 @@ def create_meal(
     session.add(new_meal)
     session.commit()
     session.refresh(new_meal)
+    
     return new_meal
 
 @router_meals.get("/{meal_id}", response_model=MealRead)

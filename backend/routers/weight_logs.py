@@ -31,6 +31,7 @@ def create_weight_log(
     # Actualizar el campo weight del paciente con el último peso registrado
     current_patient.weight = weight_log.weight
     session.add(current_patient)
+    
     session.commit()
     session.refresh(db_weight_log)
     
