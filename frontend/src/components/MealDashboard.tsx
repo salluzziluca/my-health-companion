@@ -13,6 +13,8 @@ const MealDashboard = () => {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [mealToEdit, setMealToEdit] = useState<Meal | undefined>(undefined);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [mealToDelete, setMealToDelete] = useState<number | null>(null);
 
   useEffect(() => {
     getMeals()
@@ -42,7 +44,26 @@ const MealDashboard = () => {
   };
 
   const handleDeleteClick = (id: number) => {
-    setMealToEdit(undefined);
+    setMealToDelete(id);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (mealToDelete) {
+      try {
+        await deleteMeal(mealToDelete);
+        setMeals(meals.filter(meal => meal.id !== mealToDelete));
+      } catch (err: any) {
+        console.error('Error al eliminar comida:', err.response?.data || err.message);
+      }
+    }
+    setShowDeleteDialog(false);
+    setMealToDelete(null);
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteDialog(false);
+    setMealToDelete(null);
   };
 
   return (
@@ -114,6 +135,26 @@ const MealDashboard = () => {
         onEdit={handleEditMeal}
         initialMeal={mealToEdit}
       />
+
+      <Dialog
+        open={showDeleteDialog}
+        onClose={handleCancelDelete}
+      >
+        <DialogTitle>Confirmar eliminación</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Estás seguro de que deseas eliminar esta comida? Esta acción no se puede deshacer.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete} color="primary">
+            Cancelar
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error" variant="contained">
+            Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

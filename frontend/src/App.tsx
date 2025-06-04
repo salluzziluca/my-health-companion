@@ -12,7 +12,7 @@ import MealDashboard from './components/MealDashboard';
 import PatientDetails from './components/pages/PatientDetails';
 import WeeklyDietPage from './components/pages/WeeklyDietPage';
 import NutricionistaDashboard from './components/pages/NutricionistaDashboard';
-import NotificationsProvider from './components/GoalNotifications';
+import { NotificationsProvider } from './components/GoalNotifications';
 import GoalManagement from './components/GoalManagement';
 import PatientGoals from './components/pages/PatientGoals';
 import { jwtDecode } from 'jwt-decode';
