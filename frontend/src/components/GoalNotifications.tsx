@@ -1,24 +1,14 @@
-<<<<<<< HEAD
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { Snackbar, Alert, Badge, IconButton, Menu, MenuItem, Typography, Box, List, ListItem, ListItemText, Divider, Button } from '@mui/material';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import { notificationsService, Notification } from '../services/notifications';
-import { jwtDecode } from 'jwt-decode';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { getNotifications, markAsRead, deleteNotification } from '../services/notificationService';
-=======
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import { Badge, IconButton, Menu, Typography, Box, List, ListItem, ListItemText, Divider, Snackbar, Alert } from '@mui/material';
+import { Badge, IconButton, Menu, MenuItem, Typography, Box, List, ListItem, ListItemText, Divider, Snackbar, Alert, Button } from '@mui/material';
 import { Notifications as NotificationsIcon } from '@mui/icons-material';
 import { notificationsService, Notification } from '../services/notifications';
 import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 interface NotificationWithRead extends Notification {
   read: boolean;
 }
->>>>>>> temp-changes
 
 // Contexto para las notificaciones
 const NotificationsContext = createContext<{
@@ -115,42 +105,18 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
-<<<<<<< HEAD
-const getUserTypeFromToken = () => {
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) return null;
-    const decoded = jwtDecode<JwtPayload>(token);
-    const userType = decoded.user_type || decoded.type || decoded.role || null;
-    console.log('[NOTIF] Tipo de usuario detectado:', userType);
-    return userType;
-  } catch {
-    return null;
-  }
-};
-
 interface GoalNotificationsProps {
   onNotificationClick?: () => void;
 }
 
 export const NotificationsBell: React.FC<GoalNotificationsProps> = ({ onNotificationClick }) => {
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [showSnackbar, setShowSnackbar] = useState(false);
-  const [latestNotification, setLatestNotification] = useState<Notification | null>(null);
-  const [shownNotifications, setShownNotifications] = useState<number[]>([]);
-  const navigate = useNavigate();
-  const { userType } = useAuth();
-=======
-export const NotificationsBell: React.FC = () => {
   const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [newNotification, setNewNotification] = useState<NotificationWithRead | null>(null);
   const lastShownNotificationIdRef = useRef<number | null>(null);
   const navigate = useNavigate();
->>>>>>> temp-changes
+  const { userType } = useAuth();
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -163,51 +129,6 @@ export const NotificationsBell: React.FC = () => {
     setAnchorEl(null);
   };
 
-<<<<<<< HEAD
-  const handleSnackbarClose = async () => {
-    if (latestNotification && !latestNotification.is_read) {
-      await markAsRead(latestNotification.id);
-    }
-    setShowSnackbar(false);
-  };
-
-  const handleViewDiet = async () => {
-    if (latestNotification) {
-      await deleteNotification(latestNotification.id);
-    }
-    setShowSnackbar(false);
-    navigate('/weekly-diet');
-  };
-
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const response = await getNotifications();
-        if (response.success) {
-          setNotifications(response.data);
-          const unread = response.data.filter((n: Notification) => !n.is_read).length;
-          setUnreadCount(unread);
-
-          // Mostrar Snackbar solo para notificaciones no leídas y no mostradas
-          const latestUnread = response.data.find((n: Notification) => !n.is_read);
-          if (latestUnread && !shownNotifications.includes(latestUnread.id)) {
-            setLatestNotification(latestUnread);
-            setShowSnackbar(true);
-            setShownNotifications(prev => [...prev, latestUnread.id]);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching notifications:', error);
-      }
-    };
-
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 1000);
-
-    return () => clearInterval(interval);
-  }, [shownNotifications]);
-
-=======
   const handleSnackbarClose = () => {
     setShowSnackbar(false);
     setNewNotification(null);
@@ -223,7 +144,7 @@ export const NotificationsBell: React.FC = () => {
     }
   };
 
-  const handleNotificationClick = async (event: React.MouseEvent, notification: NotificationWithRead) => {
+  const handleNotificationClick = async (event: React.MouseEvent<HTMLElement>, notification: NotificationWithRead) => {
     // Si el click no fue en un botón, navegar a weekly-diet y marcar como leída
     if (event.target && !(event.target as HTMLElement).closest('button')) {
       if (!notification.read) {
@@ -263,16 +184,18 @@ export const NotificationsBell: React.FC = () => {
     }
   }, [notifications, showSnackbar]);
 
-  const userType = jwtDecode<{ type: string }>(localStorage.getItem('token') || '').type;
->>>>>>> temp-changes
   if (userType === 'professional') return null;
 
   return (
-    <Box>
+    <>
       <IconButton
-        size="large"
         color="inherit"
         onClick={handleClick}
+        sx={{
+          '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          },
+        }}
       >
         <Badge badgeContent={unreadCount} color="error">
           <NotificationsIcon />
@@ -286,22 +209,12 @@ export const NotificationsBell: React.FC = () => {
         PaperProps={{
           elevation: 0,
           sx: {
-<<<<<<< HEAD
             maxHeight: 300,
             width: 360,
             maxWidth: '100%',
-            mt: 1.5
-          }
-=======
             overflow: 'visible',
             filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
             mt: 1.5,
-            '& .MuiAvatar-root': {
-              width: 32,
-              height: 32,
-              ml: -0.5,
-              mr: 1,
-            },
             '&:before': {
               content: '""',
               display: 'block',
@@ -315,12 +228,23 @@ export const NotificationsBell: React.FC = () => {
               zIndex: 0,
             },
           },
->>>>>>> temp-changes
         }}
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       >
-<<<<<<< HEAD
+        <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6">Notificaciones</Typography>
+          {unreadCount > 0 && (
+            <Button
+              size="small"
+              onClick={handleMarkAllAsRead}
+              sx={{ textTransform: 'none' }}
+            >
+              Marcar todas como leídas
+            </Button>
+          )}
+        </Box>
+        <Divider />
         {notifications.length === 0 ? (
           <MenuItem disabled>
             <Typography>No hay notificaciones</Typography>
@@ -329,58 +253,58 @@ export const NotificationsBell: React.FC = () => {
           notifications.map((notification) => (
             <MenuItem 
               key={notification.id}
-              onClick={() => {
-                handleClose();
-                navigate('/weekly-diet');
-              }}
+              onClick={(e: React.MouseEvent<HTMLElement>) => handleNotificationClick(e, notification)}
               sx={{
                 whiteSpace: 'normal',
                 py: 1.5,
-                borderBottom: '1px solid',
-                borderColor: 'divider',
-                '&:last-child': {
-                  borderBottom: 'none'
+                display: 'block',
+                '&:hover': {
+                  backgroundColor: 'action.hover',
                 },
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
               }}
             >
-              <Box>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    fontWeight: notification.is_read ? 400 : 600,
-                    color: notification.is_read ? 'text.secondary' : 'text.primary'
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: notification.read ? 400 : 600,
+                    color: notification.read ? 'text.secondary' : 'text.primary',
                   }}
                 >
                   {notification.message}
                 </Typography>
-                <Typography 
-                  variant="caption" 
-                  color="text.secondary"
-                  sx={{ display: 'block', mt: 0.5 }}
-                >
-                  {new Date(notification.created_at).toLocaleString()}
-                </Typography>
+                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                  {!notification.read && (
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMarkAsRead(notification);
+                      }}
+                      sx={{ p: 0.5 }}
+                    >
+                      <Typography variant="caption" color="primary">
+                        Marcar como leída
+                      </Typography>
+                    </IconButton>
+                  )}
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(notification);
+                    }}
+                    sx={{ p: 0.5 }}
+                  >
+                    <Typography variant="caption" color="error">
+                      Eliminar
+                    </Typography>
+                  </IconButton>
+                </Box>
               </Box>
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteNotification(notification.id);
-                }}
-                sx={{
-                  color: 'error.main',
-                  '&:hover': {
-                    color: 'error.dark'
-                  }
-                }}
-              >
-                <Typography variant="caption" color="inherit">
-                  Eliminar
-                </Typography>
-              </IconButton>
+              <Typography variant="caption" color="text.secondary">
+                {new Date(notification.created_at).toLocaleString()}
+              </Typography>
             </MenuItem>
           ))
         )}
@@ -435,7 +359,7 @@ export const NotificationsBell: React.FC = () => {
               <Button 
                 variant="contained" 
                 color="success"
-                onClick={handleViewDiet}
+                onClick={handleSnackbarClick}
                 sx={{ 
                   textTransform: 'none',
                   fontWeight: 600,
@@ -447,7 +371,7 @@ export const NotificationsBell: React.FC = () => {
             </Box>
           }
         >
-          {latestNotification?.message}
+          {newNotification?.message}
         </Alert>
       </Snackbar>
     </>
@@ -455,148 +379,3 @@ export const NotificationsBell: React.FC = () => {
 };
 
 export default NotificationsBell;
-
-// Proveedor del contexto
-export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  const refreshNotifications = useCallback(async () => {
-    try {
-      const [notifs, count] = await Promise.all([
-        notificationsService.getNotifications(),
-        notificationsService.getUnreadCount()
-      ]);
-      setNotifications(notifs);
-      setUnreadCount(count);
-    } catch (error) {
-      console.error('Error al obtener notificaciones:', error);
-    }
-  }, []);
-
-  // Cargar notificaciones al montar el componente y cada 1 segundo
-  useEffect(() => {
-    refreshNotifications();
-    const interval = setInterval(refreshNotifications, 1000);
-    return () => clearInterval(interval);
-  }, [refreshNotifications]);
-
-  const markAsRead = useCallback(async (id: number) => {
-    await notificationsService.markAsRead(id);
-    await refreshNotifications();
-  }, [refreshNotifications]);
-
-  const markAllAsRead = useCallback(async () => {
-    await notificationsService.markAllAsRead();
-    await refreshNotifications();
-  }, [refreshNotifications]);
-
-  const deleteNotification = useCallback(async (id: number) => {
-    await notificationsService.deleteNotification(id);
-    await refreshNotifications();
-  }, [refreshNotifications]);
-
-  return (
-    <NotificationsContext.Provider 
-      value={{ 
-        notifications,
-        unreadCount,
-        markAsRead,
-        markAllAsRead,
-        deleteNotification,
-        refreshNotifications
-      }}
-    >
-      {children}
-    </NotificationsContext.Provider>
-  );
-}; 
-=======
-        <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6">Notificaciones</Typography>
-          {unreadCount > 0 && (
-            <IconButton onClick={handleMarkAllAsRead} size="small">
-              <Typography variant="caption" color="primary">Marcar todas como leídas</Typography>
-            </IconButton>
-          )}
-        </Box>
-        <Divider />
-        <List sx={{ width: 360, maxHeight: 400, overflow: 'auto' }}>
-          {notifications.length === 0 ? (
-            <ListItem>
-              <ListItemText primary="No hay notificaciones" />
-            </ListItem>
-          ) : (
-            notifications.map((notification) => (
-              <ListItem
-                key={notification.id}
-                onClick={(e) => handleNotificationClick(e, notification)}
-                sx={{
-                  bgcolor: notification.read ? 'transparent' : 'action.hover',
-                  '&:hover': {
-                    bgcolor: 'action.selected',
-                    cursor: 'pointer'
-                  },
-                }}
-              >
-                <ListItemText
-                  primary={notification.message}
-                  secondary={new Date(notification.created_at).toLocaleString()}
-                />
-                <Box>
-                  {!notification.read && (
-                    <IconButton
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleMarkAsRead(notification);
-                      }}
-                      sx={{ mr: 1 }}
-                    >
-                      <Typography variant="caption" color="primary">Marcar como leída</Typography>
-                    </IconButton>
-                  )}
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(notification);
-                    }}
-                    color="error"
-                  >
-                    <Typography variant="caption" color="error">Eliminar</Typography>
-                  </IconButton>
-                </Box>
-              </ListItem>
-            ))
-          )}
-        </List>
-      </Menu>
-      <Snackbar
-        open={showSnackbar}
-        autoHideDuration={3000}
-        onClose={handleSnackbarClose}
-        onClick={handleSnackbarClick}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert 
-          onClose={handleSnackbarClose} 
-          severity="success" 
-          variant="filled"
-          sx={{ 
-            width: '100%',
-            bgcolor: 'success.light',
-            '& .MuiAlert-icon': {
-              color: 'success.dark'
-            }
-          }}
-        >
-          ¡Nueva dieta disponible! Haz clic para verla.
-        </Alert>
-      </Snackbar>
-    </Box>
-  );
-};
-
-export default NotificationsBell; 
->>>>>>> temp-changes
