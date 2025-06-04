@@ -24,11 +24,14 @@ import {
     TableHead,
     TableRow,
     Paper,
+    Snackbar,
+    Alert,
 } from '@mui/material';
 import { WeeklyDietMeal, getWeeklyDietMeals, markMealAsCompleted, getFoodIngredients, getIngredientDetails, FoodWithIngredients, Ingredient } from '../services/weeklyDiets';
 
 interface WeeklyDietViewerProps {
     weeklyDietId: number;
+    weekStartDate: string;
 }
 
 const mealTypeColors: { [key: string]: string } = {
@@ -62,13 +65,18 @@ const getCompletionColor = (percentage: number) => {
     return '#f44336'; // Rojo cuando está bajo
 };
 
-const WeeklyDietViewer: React.FC<WeeklyDietViewerProps> = ({ weeklyDietId }) => {
+const WeeklyDietViewer: React.FC<WeeklyDietViewerProps> = ({ weeklyDietId, weekStartDate }) => {
     const [meals, setMeals] = useState<WeeklyDietMeal[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedMeal, setSelectedMeal] = useState<WeeklyDietMeal | null>(null);
     const [foodDetails, setFoodDetails] = useState<FoodWithIngredients | null>(null);
     const [ingredientsDetails, setIngredientsDetails] = useState<{ [key: number]: Ingredient }>({});
     const [loadingIngredients, setLoadingIngredients] = useState(false);
+    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+        open: false,
+        message: '',
+        severity: 'success'
+    });
 
     const fetchMeals = async () => {
         try {
@@ -85,14 +93,48 @@ const WeeklyDietViewer: React.FC<WeeklyDietViewerProps> = ({ weeklyDietId }) => 
         fetchMeals();
     }, [weeklyDietId]);
 
-    const handleMealCompletion = async (mealId: number, completed: boolean) => {
+    const handleMealCompletion = async (mealId: number, completed: boolean, dayOfWeek: string) => {
         try {
-            await markMealAsCompleted(mealId, completed, weeklyDietId, 100);
+            // Calcular la fecha específica del día basada en week_start_date
+            const weekStart = new Date(weekStartDate);
+            const dayIndex = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'].indexOf(dayOfWeek);
+
+            // Crear la fecha del día específico manteniendo la hora actual
+            const now = new Date();
+            const targetDate = new Date(weekStart);
+            targetDate.setDate(weekStart.getDate() + dayIndex);
+
+            // Mantener la hora actual en lugar de medianoche
+            targetDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+
+            await markMealAsCompleted(mealId, completed, weeklyDietId, 100, targetDate.toISOString());
             setMeals(meals.map(meal =>
                 meal.id === mealId ? { ...meal, completed } : meal
             ));
-        } catch (error) {
+
+            setSnackbar({
+                open: true,
+                message: completed ? 'Comida marcada como completada' : 'Comida desmarcada',
+                severity: 'success'
+            });
+        } catch (error: any) {
             console.error('Error al actualizar el estado de la comida:', error);
+
+            let errorMessage = 'Error al actualizar el estado de la comida';
+
+            if (error.response?.status === 400) {
+                errorMessage = 'No se puede completar esta comida. Verifica que sea el día correcto.';
+            } else if (error.response?.data?.detail) {
+                errorMessage = error.response.data.detail;
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
+            setSnackbar({
+                open: true,
+                message: errorMessage,
+                severity: 'error'
+            });
         }
     };
 
@@ -149,6 +191,10 @@ const WeeklyDietViewer: React.FC<WeeklyDietViewerProps> = ({ weeklyDietId }) => 
         return Math.round((completed / meals.length) * 100);
     };
 
+    const handleCloseSnackbar = () => {
+        setSnackbar(prev => ({ ...prev, open: false }));
+    };
+
     if (loading) {
         return (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
@@ -202,7 +248,7 @@ const WeeklyDietViewer: React.FC<WeeklyDietViewerProps> = ({ weeklyDietId }) => 
                                             <Checkbox
                                                 checked={meal.completed}
                                                 onChange={(e) => {
-                                                    handleMealCompletion(meal.id, e.target.checked);
+                                                    handleMealCompletion(meal.id, e.target.checked, day);
                                                 }}
                                                 color="primary"
                                             />
@@ -298,6 +344,17 @@ const WeeklyDietViewer: React.FC<WeeklyDietViewerProps> = ({ weeklyDietId }) => 
                     <Button onClick={handleCloseDialog}>Cerrar</Button>
                 </DialogActions>
             </Dialog>
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 };

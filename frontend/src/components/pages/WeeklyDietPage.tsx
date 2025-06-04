@@ -95,7 +95,7 @@ const WeeklyDietPage: React.FC = () => {
                     {formattedDateRange}
                 </Typography>
             </Paper>
-            <WeeklyDietViewer weeklyDietId={currentDiet.id} />
+            <WeeklyDietViewer weeklyDietId={currentDiet.id} weekStartDate={currentDiet.week_start_date} />
         </Box>
     );
 };
