@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: backend
+    env: python
+    plan: free
+    buildCommand: ""
+    startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
+    workingDir: backend
+    autoDeploy: true
+
+  - type: static
+    name: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: build
+    workingDir: frontend
+    autoDeploy: true
