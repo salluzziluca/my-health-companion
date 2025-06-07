@@ -9,14 +9,10 @@ import {
   Alert,
   Button,
   Stack,
-  Divider,
-  Tabs,
-  Tab,
 } from '@mui/material';
 import { professionalService } from '../../services/api';
-import GoalManagement from '../GoalManagement';
 
-interface PatientDetailsData {
+interface PatientDetails {
   id: number;
   first_name: string;
   last_name: string;
@@ -27,39 +23,12 @@ interface PatientDetailsData {
   gender: string;
 }
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`patient-tabpanel-${index}`}
-      aria-labelledby={`patient-tab-${index}`}
-      {...other}
-    >
-      {value === index && (
-        <Box sx={{ py: 3 }}>
-          {children}
-        </Box>
-      )}
-    </div>
-  );
-}
-
 const PatientDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [patient, setPatient] = useState<PatientDetailsData | null>(null);
+  const [patient, setPatient] = useState<PatientDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tabValue, setTabValue] = useState(0);
 
   useEffect(() => {
     const fetchPatientDetails = async () => {
@@ -77,10 +46,6 @@ const PatientDetails = () => {
 
     fetchPatientDetails();
   }, [id]);
-
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
-  };
 
   if (loading) {
     return (
@@ -107,73 +72,49 @@ const PatientDetails = () => {
   }
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
+    <Box sx={{ p: 3 }}>
       <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
         <Button variant="outlined" onClick={() => navigate('/dashboard')}>
           Volver al Dashboard
         </Button>
-        <Typography variant="h4">
-          {patient.first_name} {patient.last_name}
-        </Typography>
+        <Typography variant="h4">Detalles del Paciente</Typography>
       </Stack>
 
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={tabValue} onChange={handleTabChange} aria-label="patient details tabs">
-          <Tab label="Información Personal" />
-          <Tab label="Gestión de Metas" />
-        </Tabs>
-      </Box>
+      <Card>
+        <CardContent>
+          <Stack spacing={3}>
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Información Personal
+              </Typography>
+              <Typography>
+                <strong>Nombre:</strong> {patient.first_name} {patient.last_name}
+              </Typography>
+              <Typography>
+                <strong>Email:</strong> {patient.email}
+              </Typography>
+              <Typography>
+                <strong>Género:</strong> {patient.gender === 'male' ? 'Masculino' : patient.gender === 'female' ? 'Femenino' : 'Otro'}
+              </Typography>
+              <Typography>
+                <strong>Fecha de Nacimiento:</strong> {new Date(patient.birth_date).toLocaleDateString()}
+              </Typography>
+            </Box>
 
-      <TabPanel value={tabValue} index={0}>
-        <Card>
-          <CardContent>
-            <Stack spacing={3}>
-              <Box>
-                <Typography variant="h6" gutterBottom>
-                  Información Personal
-                </Typography>
-                <Stack spacing={1}>
-                  <Typography>
-                    <strong>Nombre:</strong> {patient.first_name} {patient.last_name}
-                  </Typography>
-                  <Typography>
-                    <strong>Email:</strong> {patient.email}
-                  </Typography>
-                  <Typography>
-                    <strong>Género:</strong> {patient.gender === 'male' ? 'Masculino' : patient.gender === 'female' ? 'Femenino' : 'Otro'}
-                  </Typography>
-                  <Typography>
-                    <strong>Fecha de Nacimiento:</strong> {new Date(patient.birth_date).toLocaleDateString()}
-                  </Typography>
-                </Stack>
-              </Box>
-
-              <Divider />
-
-              <Box>
-                <Typography variant="h6" gutterBottom>
-                  Medidas
-                </Typography>
-                <Stack spacing={1}>
-                  <Typography>
-                    <strong>Altura:</strong> {patient.height} cm
-                  </Typography>
-                  <Typography>
-                    <strong>Peso:</strong> {patient.weight} kg
-                  </Typography>
-                  <Typography>
-                    <strong>IMC:</strong> {(patient.weight / Math.pow(patient.height / 100, 2)).toFixed(1)}
-                  </Typography>
-                </Stack>
-              </Box>
-            </Stack>
-          </CardContent>
-        </Card>
-      </TabPanel>
-
-      <TabPanel value={tabValue} index={1}>
-        <GoalManagement patientId={patient.id} />
-      </TabPanel>
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Medidas
+              </Typography>
+              <Typography>
+                <strong>Altura:</strong> {patient.height} cm
+              </Typography>
+              <Typography>
+                <strong>Peso:</strong> {patient.weight} kg
+              </Typography>
+            </Box>
+          </Stack>
+        </CardContent>
+      </Card>
     </Box>
   );
 };
