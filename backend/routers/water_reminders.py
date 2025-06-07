@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from config.database import get_session
-from models.water_reminders import ReminderFrequency, WaterReminder, WaterReminderCreate, WaterReminderRead, WaterReminderUpdate
+from models.water_reminders import WaterReminder, WaterReminderCreate, WaterReminderRead, WaterReminderUpdate
 from utils.notifications import create_notification
 from utils.security import get_current_patient
 
@@ -50,7 +50,7 @@ def create_or_update_water_reminder(
         return db_reminder
 
 
-@router_water_reminders.get("/", response_model=Optional[WaterReminderRead])
+@router_water_reminders.get("/", response_model=Optional[WaterReminderRead]) # type: ignore
 def get_my_water_reminder(
     *,
     session: Session = Depends(get_session),
@@ -126,35 +126,12 @@ def send_water_reminder_now(
     if not reminder or not reminder.is_enabled:
         raise HTTPException(status_code=400, detail="No tienes recordatorios habilitados")
     
-    # Mensajes por defecto según frecuencia
-    default_messages = {
-        ReminderFrequency.HOURLY: "💧 ¡Hora de hidratarse! Recuerda beber un vaso de agua.",
-        ReminderFrequency.EVERY_2_HOURS: "💧 ¡Es momento de beber agua! Tu cuerpo te lo agradecerá.",
-        ReminderFrequency.EVERY_3_HOURS: "💧 ¡Tiempo de hidratación! Mantén tu cuerpo bien hidratado.",
-        ReminderFrequency.CUSTOM: "💧 ¡Recuerda mantenerte hidratado!"
-    }
-    
-    message = reminder.custom_message or default_messages.get(
-        reminder.frequency, 
-        "💧 ¡Recuerda beber agua!"
-    )
+    message = reminder.custom_message or "💧 ¡Recuerda beber agua! Tu cuerpo te lo agradecerá."
     
     create_notification(session, current_patient.id, message)
     session.commit()
     
     return {"message": "Recordatorio enviado exitosamente"}
-
-
-# Funciones utilitarias para el sistema de recordatorios
-def get_reminder_interval_minutes(frequency: ReminderFrequency) -> int:
-    """Obtener el intervalo en minutos según la frecuencia"""
-    intervals = {
-        ReminderFrequency.HOURLY: 60,
-        ReminderFrequency.EVERY_2_HOURS: 120,
-        ReminderFrequency.EVERY_3_HOURS: 180,
-        ReminderFrequency.CUSTOM: 120  # Por defecto cada 2 horas
-    }
-    return intervals.get(frequency, 120)
 
 
 def should_send_reminder(reminder: WaterReminder, current_time: time) -> bool:
@@ -171,7 +148,6 @@ def should_send_reminder(reminder: WaterReminder, current_time: time) -> bool:
         return current_time >= reminder.start_time or current_time <= reminder.end_time
 
 
-# Función para el cron job o tarea programada
 def send_scheduled_water_reminders(session: Session):
     """
     Función para enviar recordatorios programados de agua.
@@ -180,7 +156,6 @@ def send_scheduled_water_reminders(session: Session):
     from datetime import datetime
     
     current_time = datetime.now().time()
-    current_minute = current_time.hour * 60 + current_time.minute
     
     # Obtener todos los recordatorios activos
     active_reminders = session.exec(
@@ -189,22 +164,7 @@ def send_scheduled_water_reminders(session: Session):
     
     for reminder in active_reminders:
         if should_send_reminder(reminder, current_time):
-            interval_minutes = get_reminder_interval_minutes(reminder.frequency)
-            
-            # Verificar si es momento de enviar (según el intervalo)
-            if current_minute % interval_minutes == 0:
-                default_messages = {
-                    ReminderFrequency.HOURLY: "💧 ¡Hora de hidratarse! Recuerda beber un vaso de agua.",
-                    ReminderFrequency.EVERY_2_HOURS: "💧 ¡Es momento de beber agua! Tu cuerpo te lo agradecerá.",
-                    ReminderFrequency.EVERY_3_HOURS: "💧 ¡Tiempo de hidratación! Mantén tu cuerpo bien hidratado.",
-                    ReminderFrequency.CUSTOM: "💧 ¡Recuerda mantenerte hidratado!"
-                }
-                
-                message = reminder.custom_message or default_messages.get(
-                    reminder.frequency, 
-                    "💧 ¡Recuerda beber agua!"
-                )
-                
-                create_notification(session, reminder.patient_id, message)
+            message = reminder.custom_message or "💧 ¡Recuerda beber agua! Tu cuerpo te lo agradecerá."
+            create_notification(session, reminder.patient_id, message)
     
     session.commit()

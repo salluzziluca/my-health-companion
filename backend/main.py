@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 import uvicorn
 from config.database import create_db_and_tables
+from apscheduler.schedulers.background import BackgroundScheduler
+from sqlmodel import select
+from models.water_reminders import WaterReminder
 
 # Importación de routers
 from routers.auth import router_auth
@@ -16,7 +19,8 @@ from routers.weekly_diets import router_weekly_diets
 from routers.goals import router_goals
 from routers.notification import router_notifications
 from routers.water_router import router_water
-from routers.water_reminders import router_water_reminders
+from routers.water_reminders import router_water_reminders, send_scheduled_water_reminders
+from config.database import get_session
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -25,6 +29,51 @@ app = FastAPI(title="API de Nutrición y Salud")
 
 # Crear tablas en la base de datos
 create_db_and_tables()
+
+# Inicializar el scheduler para recordatorios de agua
+scheduler = BackgroundScheduler()
+
+def schedule_reminders():
+    session = next(get_session())
+    try:
+        # Limpiar trabajos existentes
+        scheduler.remove_all_jobs()
+        
+        # Obtener recordatorios activos
+        active_reminders = session.exec(
+            select(WaterReminder).where(WaterReminder.is_enabled == True)
+        ).all()
+        
+        # Programar un trabajo para cada recordatorio
+        for reminder in active_reminders:
+            def create_job(reminder_id):
+                def job_func():
+                    try:
+                        s = next(get_session())
+                        try:
+                            send_scheduled_water_reminders(s)
+                        finally:
+                            s.close()
+                    except Exception as e:
+                        print(f"Error en recordatorio {reminder_id}: {str(e)}")
+                return job_func
+                
+            scheduler.add_job(
+                create_job(reminder.id),
+                'interval',
+                minutes=reminder.interval_minutes,
+                id=f'water_reminder_{reminder.id}',
+                replace_existing=True
+            )
+    finally:
+        session.close()
+
+# Programar el trabajo de reconfiguración para que se ejecute cada hora
+scheduler.add_job(schedule_reminders, 'interval', hours=1, id='refresh_reminders')
+
+# Ejecutar la configuración inicial
+schedule_reminders()
+scheduler.start()
 
 # Incluir routers
 app.include_router(router_auth)

@@ -1,27 +1,27 @@
-from typing import  Optional
+from typing import Optional
 from datetime import datetime, time
 from pydantic import BaseModel, Field, field_validator
-from enum import Enum
 from sqlmodel import SQLModel, Field as SQLField, Relationship
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from models.patients import Patient
 
-class ReminderFrequency(str, Enum):
-    HOURLY = "hourly"
-    EVERY_2_HOURS = "every_2_hours"
-    EVERY_3_HOURS = "every_3_hours"
-    CUSTOM = "custom"
-
 
 class WaterReminderBase(BaseModel):
     """Configuración base para recordatorios de agua"""
     is_enabled: bool = True
-    frequency: ReminderFrequency = ReminderFrequency.EVERY_2_HOURS
+    interval_minutes: int = Field(default=120, ge=1, le=1440, description="Intervalo en minutos entre recordatorios (1-1440)")
     start_time: time = Field(default=time(8, 0), description="Hora de inicio de recordatorios")
     end_time: time = Field(default=time(22, 0), description="Hora de fin de recordatorios")
     custom_message: Optional[str] = Field(None, max_length=200, description="Mensaje personalizado")
+    
+    @field_validator('interval_minutes')
+    @classmethod
+    def validate_interval_minutes(cls, value):
+        if value < 1 or value > 1440:
+            raise ValueError('El intervalo debe estar entre 1 y 1440 minutos (24 horas)')
+        return value
     
     @field_validator('start_time', 'end_time')
     @classmethod
@@ -51,12 +51,17 @@ class WaterReminderRead(WaterReminderBase):
 
 class WaterReminderUpdate(BaseModel):
     is_enabled: Optional[bool] = None
-    frequency: Optional[ReminderFrequency] = None
+    interval_minutes: Optional[int] = Field(None, ge=1, le=1440)
     start_time: Optional[time] = None
     end_time: Optional[time] = None
-    custom_message: Optional[str] = None
-
-
+    custom_message: Optional[str] = Field(None, max_length=200)
+    
+    @field_validator('interval_minutes')
+    @classmethod
+    def validate_interval_minutes(cls, value):
+        if value is not None and (value < 1 or value > 1440):
+            raise ValueError('El intervalo debe estar entre 1 y 1440 minutos (24 horas)')
+        return value
 
 
 class WaterReminder(WaterReminderBase, SQLModel, table=True):
@@ -69,4 +74,3 @@ class WaterReminder(WaterReminderBase, SQLModel, table=True):
     
     # Relaciones
     patient: "Patient" = Relationship(back_populates="water_reminder")
-

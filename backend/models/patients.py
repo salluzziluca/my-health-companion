@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from models.weight_logs import WeightLog
     from models.weekly_notes import WeeklyNote
     from models.goals import Goal
-    from models.water import WaterIntake
+    from models.water_intake import WaterIntake
     from models.water_reminders import WaterReminder
 
 class PatientBase(SQLModel):

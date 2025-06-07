@@ -4,7 +4,7 @@ from typing import List, Optional
 from datetime import date, datetime, timezone, timedelta
 
 from config.database import get_session
-from models.water import WaterIntake, WaterIntakeCreate, WaterIntakeRead, WaterIntakeUpdate
+from models.water_intake import WaterIntake, WaterIntakeCreate, WaterIntakeRead, WaterIntakeUpdate
 from models.goals import Goal, GoalType, GoalStatus
 from models.patients import Patient
 from utils.security import get_current_patient, get_current_professional

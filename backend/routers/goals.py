@@ -10,7 +10,7 @@ from models.patients import Patient
 from models.professionals import Professional
 from models.weight_logs import WeightLog
 from models.meals import Meal
-from models.water import WaterIntake
+from models.water_intake import WaterIntake
 from utils.security import get_current_patient, get_current_professional
 from utils.notifications import create_notification
 
