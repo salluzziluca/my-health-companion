@@ -5,6 +5,7 @@ import re
 from datetime import date
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from models.foods import Food
     from models.meals import Meal
@@ -13,6 +14,7 @@ if TYPE_CHECKING:
     from models.weekly_notes import WeeklyNote
     from models.goals import Goal
     from models.water import WaterIntake
+    from models.water_reminders import WaterReminder
 
 class PatientBase(SQLModel):
     email: EmailStr
@@ -97,6 +99,7 @@ class Patient(PatientBase, table=True):
     weekly_notes: List["WeeklyNote"] = Relationship(back_populates="patient")
     goals: List["Goal"] = Relationship(back_populates="patient")
     water_intakes: List["WaterIntake"] = Relationship(back_populates="patient")
+    water_reminder: List["WaterReminder"] = Relationship(back_populates="patient")
 
 
 class PatientCreate(PatientBase):

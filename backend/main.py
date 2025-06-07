@@ -16,7 +16,7 @@ from routers.weekly_diets import router_weekly_diets
 from routers.goals import router_goals
 from routers.notification import router_notifications
 from routers.water_router import router_water
-
+from routers.water_reminders import router_water_reminders
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -40,6 +40,7 @@ app.include_router(router_weekly_diets)
 app.include_router(router_goals)
 app.include_router(router_notifications)
 app.include_router(router_water)
+app.include_router(router_water_reminders)
 
 @app.get("/")
 async def root():
