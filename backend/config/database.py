@@ -21,9 +21,20 @@ connect_args = {"check_same_thread": False}
 engine = create_engine(DATABASE_URL, echo=False, connect_args=connect_args)
 
 
+# Función para usar como dependencia en FastAPI
 def get_session():
-    with Session(engine) as session:
+    """Función generadora para usar como dependencia en FastAPI"""
+    session = Session(engine)
+    try:
         yield session
+    finally:
+        session.close()
+
+
+# Función simple para crear sesiones fuera de FastAPI
+def create_session():
+    """Crear una nueva sesión para usar fuera de FastAPI"""
+    return Session(engine)
 
 
 def create_db_and_tables():

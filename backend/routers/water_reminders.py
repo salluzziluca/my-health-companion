@@ -2,6 +2,8 @@ from datetime import datetime, time
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
+from datetime import datetime
+
 
 from config.database import get_session
 from models.water_reminders import WaterReminder, WaterReminderCreate, WaterReminderRead, WaterReminderUpdate
@@ -147,24 +149,44 @@ def should_send_reminder(reminder: WaterReminder, current_time: time) -> bool:
         # Caso especial: start_time > end_time (ej: 22:00 - 8:00, a través de medianoche)
         return current_time >= reminder.start_time or current_time <= reminder.end_time
 
-
-def send_scheduled_water_reminders(session: Session):
+def send_scheduled_water_reminders():
     """
     Función para enviar recordatorios programados de agua.
     Esta función debe ser llamada por un cron job o tarea programada.
     """
-    from datetime import datetime
+    from config.database import create_session  
+    import logging
     
-    current_time = datetime.now().time()
-    
-    # Obtener todos los recordatorios activos
-    active_reminders = session.exec(
-        select(WaterReminder).where(WaterReminder.is_enabled == True)
-    ).all()
-    
-    for reminder in active_reminders:
-        if should_send_reminder(reminder, current_time):
-            message = reminder.custom_message or "💧 ¡Recuerda beber agua! Tu cuerpo te lo agradecerá."
-            create_notification(session, reminder.patient_id, message)
-    
-    session.commit()
+    session = None
+    try:
+        # Usar create_session() en lugar de get_session()
+        session = create_session()
+        current_time = datetime.now().time()
+        
+        # Obtener todos los recordatorios activos
+        active_reminders = session.exec(
+            select(WaterReminder).where(WaterReminder.is_enabled == True)
+        ).all()
+        
+        notifications_sent = 0
+        for reminder in active_reminders:
+            if should_send_reminder(reminder, current_time):
+                try:
+                    message = reminder.custom_message or "💧 ¡Recuerda beber agua! Tu cuerpo te lo agradecerá."
+                    create_notification(session, reminder.patient_id, message)
+                    notifications_sent += 1
+                except Exception as e:
+                    logging.error(f"Error enviando recordatorio para paciente {reminder.patient_id}: {e}")
+                    continue
+        
+        session.commit()
+        if notifications_sent > 0:
+            logging.info(f"Enviados {notifications_sent} recordatorios de agua")
+            
+    except Exception as e:
+        logging.error(f"Error en send_scheduled_water_reminders: {e}")
+        if session:
+            session.rollback()
+    finally:
+        if session:
+            session.close()
