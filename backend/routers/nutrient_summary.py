@@ -22,6 +22,7 @@ def daily_nutrient_summary(
     date: date = Query(..., description="Date in YYYY-MM-DD format"),
     session: Session = Depends(get_session)
 ):
+    """Obtener el resumen de nutrientes diarios para una fecha específica."""
     
     start = datetime.combine(date, time.min)
     end = datetime.combine(date, time.max)
@@ -70,6 +71,8 @@ def daily_nutrient_summary(
 
 @router_nutrient_summary.get("/{meal_id}", response_model=NutrientSummaryResponse)
 def nutrient_summary(meal_id: int, session: Session = Depends(get_session)):
+    """Obtener el resumen de nutrientes para una comida específica."""
+    
     meal = session.exec(select(Meal).where(Meal.id == meal_id)).first()
     if not meal:
         raise HTTPException(status_code=404, detail="Meal not found.")
