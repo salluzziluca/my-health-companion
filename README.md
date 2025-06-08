@@ -147,6 +147,11 @@ my-health-companion/
 -   **DELETE** `/goals/{goal_id}`: Eliminar un objetivo (solo profesionales)
 -   **POST** `/goals/{goal_id}/complete`: Marcar un objetivo como completado (solo profesionales)
 
+### Nutrient Summary
+-   **GET** `/nutrient-summary/daily`: Obtener resumen de macro y micronutrientes del paciente actual para una fecha específica (hoy por defecto)
+-   **GET** `/nutrient-summary/{meal_id}`: Obtener resumen de macro y micronutrientes de un plato específico del paciente actual
+
+
 ## Notas para Desarrolladores
 
 -   El backend usa SQLite como base de datos

@@ -4,6 +4,7 @@ from typing import List, Callable
 from config.database import get_session
 from models.nutrient_summary import NutrientSummaryResponse, MacroSummary, MicroSummary, Alerts
 from models.patients import Patient
+from utils.security import get_current_patient
 from models.ingredient_food import IngredientFood
 from models.ingredients import Ingredient
 from models.foods import Food
@@ -19,8 +20,9 @@ router_nutrient_summary = APIRouter(
 
 @router_nutrient_summary.get("/daily", response_model=NutrientSummaryResponse)
 def daily_nutrient_summary(
-    date: date = Query(..., description="Date in YYYY-MM-DD format"),
-    session: Session = Depends(get_session)
+    date: date = Query(default_factory=date.today, description="Date in YYYY-MM-DD format"),
+    session: Session = Depends(get_session),
+    current_patient: Patient = Depends(get_current_patient)
 ):
     """Obtener el resumen de nutrientes diarios para una fecha específica."""
     
@@ -28,7 +30,7 @@ def daily_nutrient_summary(
     end = datetime.combine(date, time.max)
 
     meals = session.exec(
-        select(Meal).where(Meal.timestamp >= start, Meal.timestamp <= end)
+        select(Meal).where(Meal.timestamp >= start, Meal.timestamp <= end, Meal.patient_id == current_patient.id)
     ).all()
 
     if not meals:
@@ -70,10 +72,11 @@ def daily_nutrient_summary(
     )
 
 @router_nutrient_summary.get("/{meal_id}", response_model=NutrientSummaryResponse)
-def nutrient_summary(meal_id: int, session: Session = Depends(get_session)):
+def nutrient_summary(meal_id: int, session: Session = Depends(get_session), current_patient: Patient = Depends(get_current_patient)):
     """Obtener el resumen de nutrientes para una comida específica."""
+
+    meal = session.exec(select(Meal).where(Meal.id == meal_id, Meal.patient_id == current_patient.id)).first()
     
-    meal = session.exec(select(Meal).where(Meal.id == meal_id)).first()
     if not meal:
         raise HTTPException(status_code=404, detail="Meal not found.")
 
