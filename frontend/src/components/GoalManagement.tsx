@@ -27,6 +27,7 @@ import {
     TrendingUp as TrendingUpIcon,
     LocalDining as CaloriesIcon,
     FitnessCenter as WeightIcon,
+    LocalDrink as WaterIcon,
 } from '@mui/icons-material';
 import { goalsService, Goal, GoalProgress } from '../services/goals';
 
@@ -35,9 +36,10 @@ interface GoalManagementProps {
 }
 
 interface GoalFormData {
-    goal_type: 'weight' | 'calories' | 'both';
+    goal_type: 'weight' | 'calories' | 'water';
     target_weight?: number;
     target_calories?: number;
+    target_milliliters?: number;
     start_date: string;
     target_date: string;
 }
@@ -56,13 +58,14 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId: propPatientI
         goal_type: 'weight',
         target_weight: undefined,
         target_calories: undefined,
+        target_milliliters: undefined,
         start_date: new Date().toISOString().split('T')[0],
         target_date: '',
     });
 
     const fetchGoals = async () => {
         if (!patientId) return;
-        
+
         try {
             setLoading(true);
             setError(null);
@@ -100,8 +103,9 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId: propPatientI
             const goalData = {
                 ...formData,
                 patient_id: patientId,
-                target_weight: formData.goal_type === 'calories' ? undefined : formData.target_weight,
-                target_calories: formData.goal_type === 'weight' ? undefined : formData.target_calories,
+                target_weight: formData.goal_type === 'weight' ? formData.target_weight : undefined,
+                target_calories: formData.goal_type === 'calories' ? formData.target_calories : undefined,
+                target_milliliters: formData.goal_type === 'water' ? formData.target_milliliters : undefined,
             };
 
             if (editingGoal) {
@@ -126,6 +130,7 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId: propPatientI
             goal_type: goal.goal_type,
             target_weight: goal.target_weight || undefined,
             target_calories: goal.target_calories || undefined,
+            target_milliliters: goal.target_milliliters || undefined,
             start_date: goal.start_date,
             target_date: goal.target_date,
         });
@@ -159,6 +164,7 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId: propPatientI
             goal_type: 'weight',
             target_weight: undefined,
             target_calories: undefined,
+            target_milliliters: undefined,
             start_date: new Date().toISOString().split('T')[0],
             target_date: '',
         });
@@ -176,8 +182,8 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId: propPatientI
                 return <WeightIcon />;
             case 'calories':
                 return <CaloriesIcon />;
-            case 'both':
-                return <TrendingUpIcon />;
+            case 'water':
+                return <WaterIcon />;
             default:
                 return <TrendingUpIcon />;
         }
@@ -189,8 +195,8 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId: propPatientI
                 return 'Peso';
             case 'calories':
                 return 'Calorías';
-            case 'both':
-                return 'Peso y Calorías';
+            case 'water':
+                return 'Hidratación';
             default:
                 return type;
         }
@@ -226,24 +232,13 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId: propPatientI
     const calculateWeightProgress = (goalProgress: GoalProgress): number => {
         if (!goalProgress.goal.target_weight || !goalProgress.current_weight) return 0;
 
-        // weight_progress_difference = current_weight - target_weight
-        // Si es positivo: está por encima del objetivo
-        // Si es negativo: está por debajo del objetivo
-
-        // Para calcular el progreso necesitamos conocer el peso inicial
-        // Sin el peso inicial, no podemos calcular un porcentaje de progreso real
-        // Por ahora, usaremos un enfoque simplificado basado en qué tan cerca está del objetivo
-
         if (goalProgress.weight_progress_difference !== null && goalProgress.weight_progress_difference !== undefined) {
             const difference = Math.abs(goalProgress.weight_progress_difference);
 
-            // Si la diferencia es muy pequeña (dentro de 0.5kg), consideramos que está cerca del 100%
             if (difference <= 0.5) {
                 return 100;
             }
 
-            // Sin conocer el peso inicial, no podemos calcular un progreso real
-            // Retornamos 0 para evitar mostrar porcentajes incorrectos
             return 0;
         }
 
@@ -255,7 +250,15 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId: propPatientI
         if (!goalProgress.goal.target_calories || !goalProgress.current_daily_calories) return 0;
 
         const progress = (goalProgress.current_daily_calories / goalProgress.goal.target_calories) * 100;
-        return Math.round(Math.min(progress, 150)); // Limitamos a 150% para no mostrar valores extremos
+        return Math.round(Math.min(progress, 150));
+    };
+
+    // Función para calcular el porcentaje de progreso hacia una meta de agua
+    const calculateWaterProgress = (goalProgress: GoalProgress): number => {
+        if (!goalProgress.goal.target_milliliters || !goalProgress.current_daily_water_ml) return 0;
+
+        const progress = (goalProgress.current_daily_water_ml / goalProgress.goal.target_milliliters) * 100;
+        return Math.round(Math.min(progress, 150));
     };
 
     // Función para obtener el color del progreso
@@ -338,6 +341,11 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId: propPatientI
                                                     • Calorías diarias: <strong>{goal.target_calories} cal</strong>
                                                 </Typography>
                                             )}
+                                            {goal.target_milliliters && (
+                                                <Typography variant="body1">
+                                                    • Hidratación diaria: <strong>{goal.target_milliliters} ml ({(goal.target_milliliters / 250).toFixed(0)} vasos)</strong>
+                                                </Typography>
+                                            )}
                                         </Box>
 
                                         {/* Progreso */}
@@ -366,13 +374,18 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId: propPatientI
                                                         )}
                                                     </Typography>
                                                 )}
-                                                {progress.days_remaining !== null && (
+                                                {progress.current_daily_water_ml && (
                                                     <Typography variant="body2">
-                                                        Días restantes: <strong>{progress.days_remaining}</strong>
+                                                        Hidratación promedio: <strong>{progress.current_daily_water_ml} ml/día ({(progress.current_daily_water_ml / 250).toFixed(1)} vasos)</strong>
+                                                        {progress.water_progress_difference !== null && progress.water_progress_difference !== undefined && (
+                                                            <span style={{ color: progress.water_progress_difference >= 0 ? '#4caf50' : '#f44336' }}>
+                                                                {' '}({progress.water_progress_difference > 0 ? '+' : ''}{progress.water_progress_difference} ml)
+                                                            </span>
+                                                        )}
                                                     </Typography>
                                                 )}
                                                 {/* Mostrar información de progreso más útil */}
-                                                {(goal.goal_type === 'weight' || goal.goal_type === 'both') && progress.current_weight && (
+                                                {goal.goal_type === 'weight' && progress.current_weight && (
                                                     <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
                                                         {progress.is_weight_achieved ? (
                                                             <span style={{ color: '#4caf50' }}>✓ Meta de peso alcanzada</span>
@@ -389,7 +402,7 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId: propPatientI
                                                         )}
                                                     </Typography>
                                                 )}
-                                                {(goal.goal_type === 'calories' || goal.goal_type === 'both') && progress.current_daily_calories && (
+                                                {goal.goal_type === 'calories' && progress.current_daily_calories && (
                                                     <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
                                                         Progreso de calorías: <span style={{ color: getProgressColor(calculateCalorieProgress(progress), progress.is_calories_achieved || false) === 'success' ? '#4caf50' : '#ff9800' }}>
                                                             {calculateCalorieProgress(progress)}%
@@ -422,6 +435,13 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId: propPatientI
                                                             size="small"
                                                             label={progress.is_calories_achieved ? "✓ Calorías logradas" : "Calorías pendientes"}
                                                             color={progress.is_calories_achieved ? "success" : "default"}
+                                                        />
+                                                    )}
+                                                    {progress.is_water_achieved !== null && (
+                                                        <Chip
+                                                            size="small"
+                                                            label={progress.is_water_achieved ? "✓ Hidratación lograda" : "Hidratación pendiente"}
+                                                            color={progress.is_water_achieved ? "success" : "default"}
                                                         />
                                                     )}
                                                     {progress.is_fully_achieved && (
@@ -489,10 +509,11 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId: propPatientI
                         >
                             <MenuItem value="weight">Solo Peso</MenuItem>
                             <MenuItem value="calories">Solo Calorías</MenuItem>
-                            <MenuItem value="both">Peso y Calorías</MenuItem>
+                            <MenuItem value="water">Solo Hidratación</MenuItem>
+
                         </TextField>
 
-                        {(formData.goal_type === 'weight' || formData.goal_type === 'both') && (
+                        {formData.goal_type === 'weight' && (
                             <TextField
                                 label="Peso Objetivo (kg)"
                                 type="number"
@@ -503,7 +524,7 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId: propPatientI
                             />
                         )}
 
-                        {(formData.goal_type === 'calories' || formData.goal_type === 'both') && (
+                        {formData.goal_type === 'calories' && (
                             <TextField
                                 label="Calorías Diarias Objetivo"
                                 type="number"
@@ -511,6 +532,18 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId: propPatientI
                                 onChange={(e) => setFormData({ ...formData, target_calories: e.target.value ? parseInt(e.target.value) : undefined })}
                                 fullWidth
                                 inputProps={{ min: 500, max: 5000, step: 50 }}
+                            />
+                        )}
+
+                        {formData.goal_type === 'water' && (
+                            <TextField
+                                label="Hidratación Diaria Objetivo (ml)"
+                                type="number"
+                                value={formData.target_milliliters || ''}
+                                onChange={(e) => setFormData({ ...formData, target_milliliters: parseInt(e.target.value) })}
+                                fullWidth
+                                inputProps={{ min: 500, max: 5000, step: 250 }}
+                                helperText={formData.target_milliliters ? `Equivale a ${(formData.target_milliliters / 250).toFixed(1)} vasos de 250ml` : 'Recomendado: 2000ml (8 vasos)'}
                             />
                         )}
 
@@ -543,7 +576,7 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId: propPatientI
                             !formData.target_date ||
                             (formData.goal_type === 'weight' && !formData.target_weight) ||
                             (formData.goal_type === 'calories' && !formData.target_calories) ||
-                            (formData.goal_type === 'both' && (!formData.target_weight || !formData.target_calories))
+                            (formData.goal_type === 'water' && !formData.target_milliliters)
                         }
                     >
                         {editingGoal ? 'Actualizar' : 'Crear Meta'}

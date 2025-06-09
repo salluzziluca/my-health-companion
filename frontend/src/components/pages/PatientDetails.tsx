@@ -15,6 +15,8 @@ import {
 } from '@mui/material';
 import { professionalService } from '../../services/api';
 import GoalManagement from '../GoalManagement';
+import WaterDashboard from '../WaterDashboard';
+import { goalsService, GoalProgress } from '../../services/goals';
 
 interface PatientDetailsData {
   id: number;
@@ -60,6 +62,16 @@ const PatientDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tabValue, setTabValue] = useState(0);
+  const [goalProgress, setGoalProgress] = useState<GoalProgress[]>([]);
+
+  const fetchGoalProgress = async (patientId: number) => {
+    try {
+      const progress = await goalsService.getPatientGoalsProgress(patientId);
+      setGoalProgress(progress);
+    } catch (err) {
+      console.error('Error fetching goal progress:', err);
+    }
+  };
 
   useEffect(() => {
     const fetchPatientDetails = async () => {
@@ -67,6 +79,7 @@ const PatientDetails = () => {
         if (!id) return;
         const data = await professionalService.getPatientDetails(id);
         setPatient(data);
+        await fetchGoalProgress(parseInt(id));
       } catch (err) {
         console.error('Error fetching patient details:', err);
         setError('Error al cargar los detalles del paciente');
@@ -121,6 +134,7 @@ const PatientDetails = () => {
         <Tabs value={tabValue} onChange={handleTabChange} aria-label="patient details tabs">
           <Tab label="Información Personal" />
           <Tab label="Gestión de Metas" />
+          <Tab label="Seguimiento de Hidratación" />
         </Tabs>
       </Box>
 
@@ -173,6 +187,15 @@ const PatientDetails = () => {
 
       <TabPanel value={tabValue} index={1}>
         <GoalManagement patientId={patient.id} />
+      </TabPanel>
+
+      <TabPanel value={tabValue} index={2}>
+        <WaterDashboard
+          waterGoals={goalProgress.filter(g => g.goal.goal_type === 'water')}
+          onWaterAdded={() => fetchGoalProgress(patient.id)}
+          isPatientView={false}
+          patientId={patient.id}
+        />
       </TabPanel>
     </Box>
   );
