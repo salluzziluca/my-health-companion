@@ -255,9 +255,9 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId: propPatientI
 
     // Función para calcular el porcentaje de progreso hacia una meta de agua
     const calculateWaterProgress = (goalProgress: GoalProgress): number => {
-        if (!goalProgress.goal.target_milliliters || !goalProgress.current_daily_water_ml) return 0;
+        if (!goalProgress.goal.target_milliliters || !goalProgress.current_daily_water) return 0;
 
-        const progress = (goalProgress.current_daily_water_ml / goalProgress.goal.target_milliliters) * 100;
+        const progress = (goalProgress.current_daily_water / goalProgress.goal.target_milliliters) * 100;
         return Math.round(Math.min(progress, 150));
     };
 
@@ -374,9 +374,9 @@ const GoalManagement: React.FC<GoalManagementProps> = ({ patientId: propPatientI
                                                         )}
                                                     </Typography>
                                                 )}
-                                                {progress.current_daily_water_ml && (
+                                                {progress.current_daily_water && (
                                                     <Typography variant="body2">
-                                                        Hidratación promedio: <strong>{progress.current_daily_water_ml} ml/día ({(progress.current_daily_water_ml / 250).toFixed(1)} vasos)</strong>
+                                                        Hidratación promedio: <strong>{progress.current_daily_water} ml/día ({(progress.current_daily_water / 250).toFixed(1)} vasos)</strong>
                                                         {progress.water_progress_difference !== null && progress.water_progress_difference !== undefined && (
                                                             <span style={{ color: progress.water_progress_difference >= 0 ? '#4caf50' : '#f44336' }}>
                                                                 {' '}({progress.water_progress_difference > 0 ? '+' : ''}{progress.water_progress_difference} ml)

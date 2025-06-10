@@ -250,9 +250,9 @@ const Dashboard = () => {
   };
 
   const calculateWaterProgress = (goalProgress: GoalProgress): number => {
-    if (!goalProgress.goal.target_milliliters || !goalProgress.current_daily_water_ml) return 0;
+    if (!goalProgress.goal.target_milliliters || !goalProgress.current_daily_water) return 0;
 
-    const progress = (goalProgress.current_daily_water_ml / goalProgress.goal.target_milliliters) * 100;
+    const progress = (goalProgress.current_daily_water / goalProgress.goal.target_milliliters) * 100;
     return Math.round(Math.min(progress, 150)); // Limitamos a 150% para no mostrar valores extremos
   };
 

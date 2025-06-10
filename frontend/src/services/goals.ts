@@ -20,7 +20,7 @@ export interface GoalProgress {
     goal: Goal;
     current_weight?: number | null;
     current_daily_calories?: number | null;
-    current_daily_water_ml?: number | null;
+    current_daily_water?: number | null;
     weight_progress_difference?: number | null;
     calories_progress_difference?: number | null;
     water_progress_difference?: number | null;

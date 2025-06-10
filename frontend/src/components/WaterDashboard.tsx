@@ -117,7 +117,7 @@ const WaterDashboard: React.FC<WaterDashboardProps> = ({
             targetMl: waterGoal.goal.target_milliliters,
             hasGoal: true,
             isAchieved: waterGoal.is_water_achieved || false,
-            progress: waterGoal.current_daily_water_ml || 0
+            progress: waterGoal.current_daily_water || 0
         };
     };
 
