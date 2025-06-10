@@ -147,10 +147,28 @@ my-health-companion/
 -   **DELETE** `/goals/{goal_id}`: Eliminar un objetivo (solo profesionales)
 -   **POST** `/goals/{goal_id}/complete`: Marcar un objetivo como completado (solo profesionales)
 
+### Water Intake
+
+-   **POST** `/water/`: Registrar una nueva ingesta de agua (solo pacientes)
+-   **GET** `/water/`: Obtener mis ingestas de agua (solo pacientes)
+-   **GET** `/water/daily-summary`: Obtener resumen diario de consumo de agua
+-   **GET** `/water/weekly-summary`: Obtener resumen semanal de consumo de agua
+-   **PUT** `/water/{intake_id}`: Actualizar una ingesta de agua (solo pacientes)
+-   **DELETE** `/water/{intake_id}`: Eliminar una ingesta de agua (solo pacientes)
+-   **GET** `/water/patient/{patient_id}`: Obtener ingestas de agua de un paciente (solo profesionales asignados)
+-   **GET** `/water/patient/{patient_id}/daily-summary`: Obtener resumen diario de agua de un paciente (solo profesionales asignados)
+
+### Water Reminders
+
+-   **POST** `/water/reminders/`: Crear o actualizar configuración de recordatorios de agua
+-   **GET** `/water/reminders/`: Obtener mi configuración de recordatorios de agua
+-   **PUT** `/water/reminders/`: Actualizar configuración de recordatorios de agua
+-   **DELETE** `/water/reminders/`: Eliminar configuración de recordatorios de agua
+-   **POST** `/water/reminders/send-now`: Enviar un recordatorio de agua inmediatamente (para pruebas)
+  
 ### Nutrient Summary
 -   **GET** `/nutrient-summary/daily`: Obtener resumen de macro y micronutrientes del paciente actual para una fecha específica (hoy por defecto)
 -   **GET** `/nutrient-summary/{meal_id}`: Obtener resumen de macro y micronutrientes de un plato específico del paciente actual
-
 
 ## Notas para Desarrolladores
 
