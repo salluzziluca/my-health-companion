@@ -165,6 +165,10 @@ my-health-companion/
 -   **PUT** `/water/reminders/`: Actualizar configuración de recordatorios de agua
 -   **DELETE** `/water/reminders/`: Eliminar configuración de recordatorios de agua
 -   **POST** `/water/reminders/send-now`: Enviar un recordatorio de agua inmediatamente (para pruebas)
+  
+### Nutrient Summary
+-   **GET** `/nutrient-summary/daily`: Obtener resumen de macro y micronutrientes del paciente actual para una fecha específica (hoy por defecto)
+-   **GET** `/nutrient-summary/{meal_id}`: Obtener resumen de macro y micronutrientes de un plato específico del paciente actual
 
 ## Notas para Desarrolladores
 
