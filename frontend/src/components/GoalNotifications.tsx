@@ -98,7 +98,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     refreshNotifications();
-    const interval = setInterval(refreshNotifications, 300000); // 5 minutos
+    const interval = setInterval(refreshNotifications, 300000); // 1 minuto
     return () => clearInterval(interval);
   }, [refreshNotifications]);
 
@@ -152,17 +152,25 @@ export const NotificationsBell: React.FC<GoalNotificationsProps> = ({ onNotifica
       if (!newNotification.read) {
         await markAsRead(newNotification.id);
       }
-      navigate('/weekly-diet');
+      if (newNotification.message.toLowerCase().includes('agua')) {
+        navigate('/goals');
+      } else {
+        navigate('/weekly-diet');
+      }
     }
   };
 
   const handleNotificationClick = async (event: React.MouseEvent<HTMLElement>, notification: NotificationWithRead) => {
-    // Si el click no fue en un botón, navegar a weekly-diet y marcar como leída
+    // Si el click no fue en un botón, navegar según el tipo de notificación y marcar como leída
     if (event.target && !(event.target as HTMLElement).closest('button')) {
       if (!notification.read) {
         await markAsRead(notification.id);
       }
-      navigate('/weekly-diet');
+      if (notification.message.toLowerCase().includes('agua')) {
+        navigate('/goals');
+      } else {
+        navigate('/weekly-diet');
+      }
       handleClose();
     }
   };
@@ -226,10 +234,10 @@ export const NotificationsBell: React.FC<GoalNotificationsProps> = ({ onNotifica
         PaperProps={{
           elevation: 0,
           sx: {
-            maxHeight: 300,
+            maxHeight: '80vh',
             width: 320,
             maxWidth: '90vw',
-            overflow: 'visible',
+            overflow: 'auto',
             filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
             mt: 1.5,
             '&:before': {
@@ -395,20 +403,18 @@ export const NotificationsBell: React.FC<GoalNotificationsProps> = ({ onNotifica
           }}
           action={
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              {!newNotification?.message.includes('💧') && (
-                <Button 
-                  variant="contained" 
-                  color="success"
-                  onClick={handleSnackbarClick}
-                  sx={{ 
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    px: 3
-                  }}
-                >
-                  Ver Dieta
-                </Button>
-              )}
+              <Button 
+                variant="contained" 
+                color="success"
+                onClick={handleSnackbarClick}
+                sx={{ 
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  px: 3
+                }}
+              >
+                {newNotification?.message.toLowerCase().includes('agua') ? 'Ver Objetivos' : 'Ver Dieta'}
+              </Button>
             </Box>
           }
         >
