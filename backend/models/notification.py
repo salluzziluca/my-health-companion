@@ -11,4 +11,4 @@ class Notification(SQLModel, table=True):
     is_read: bool = False
     created_at: datetime = Field(default_factory=datetime.now)
 
-    patient: "Patient" = Relationship()
+    patient: "Patient" = Relationship() # type: ignore
