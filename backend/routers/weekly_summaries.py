@@ -41,36 +41,38 @@ def get_weekly_summary(
     *,
     session: Session = Depends(get_session),
     current_patient = Depends(get_current_patient),
-    week_start_date: Optional[date] = Query(None, description="Fecha de inicio de la semana (lunes). Si no se proporciona, usa la semana actual"),
+    start_date: Optional[date] = Query(None, description="Fecha de inicio del período. Si no se proporciona, usa el inicio de la semana actual"),
+    end_date: Optional[date] = Query(None, description="Fecha de fin del período. Si no se proporciona, usa el fin de la semana actual"),
 ):
     """Obtener resumen semanal del progreso del paciente"""
     
-    # Si no se proporciona fecha, usar la semana actual
-    if not week_start_date:
+    # Si no se proporcionan fechas, usar la semana actual
+    if not start_date:
         today = date.today()
-        week_start_date = get_week_start_date(today)
+        start_date = get_week_start_date(today)
     
-    week_end_date = get_week_end_date(week_start_date)
+    if not end_date:
+        end_date = get_week_end_date(start_date)
     
     # Convertir a datetime para las consultas
-    week_start_datetime = datetime.combine(week_start_date, datetime.min.time())
-    week_end_datetime = datetime.combine(week_end_date, datetime.max.time())
+    start_datetime = datetime.combine(start_date, datetime.min.time())
+    end_datetime = datetime.combine(end_date, datetime.max.time())
     
     # ========== DATOS DE PESO ==========
     weight_data = WeightData()
     
-    # Obtener pesos de la semana
-    week_weights = session.exec(
+    # Obtener pesos del período
+    period_weights = session.exec(
         select(WeightLog).where(
             WeightLog.patient_id == current_patient.id,
-            WeightLog.timestamp >= week_start_datetime,
-            WeightLog.timestamp <= week_end_datetime
+            WeightLog.timestamp >= start_datetime,
+            WeightLog.timestamp <= end_datetime
         ).order_by(WeightLog.timestamp)
     ).all()
     
-    if week_weights:
-        weight_data.start_weight = week_weights[0].weight
-        weight_data.end_weight = week_weights[-1].weight
+    if period_weights:
+        weight_data.start_weight = period_weights[0].weight
+        weight_data.end_weight = period_weights[-1].weight
         weight_data.weight_change = weight_data.end_weight - weight_data.start_weight
         weight_data.weight_logs = [
             {
@@ -78,24 +80,24 @@ def get_weekly_summary(
                 "weight": log.weight,
                 "timestamp": log.timestamp.isoformat()
             }
-            for log in week_weights
+            for log in period_weights
         ]
     
     # ========== DATOS DE CALORÍAS ==========
-    # Obtener comidas de la semana con información de comida
-    week_meals = session.exec(
+    # Obtener comidas del período con información de comida
+    period_meals = session.exec(
         select(Meal, Food).join(Food).where(
             Meal.patient_id == current_patient.id,
-            Meal.timestamp >= week_start_datetime,
-            Meal.timestamp <= week_end_datetime
+            Meal.timestamp >= start_datetime,
+            Meal.timestamp <= end_datetime
         ).order_by(Meal.timestamp)
     ).all()
     
-    total_calories = sum(meal.calories for meal, _ in week_meals)
+    total_calories = sum(meal.calories for meal, _ in period_meals)
     
     # Agrupar por día
     daily_calories = {}
-    for meal, food in week_meals:
+    for meal, food in period_meals:
         meal_date = meal.timestamp.date()
         if meal_date not in daily_calories:
             daily_calories[meal_date] = {"calories": 0, "meals_count": 0}
@@ -122,14 +124,14 @@ def get_weekly_summary(
     )
     
     # ========== TENDENCIAS DE COMIDAS ==========
-    all_foods = [food.food_name for _, food in week_meals]
+    all_foods = [food.food_name for _, food in period_meals]
     food_counter = Counter(all_foods)
     favorite_foods = [food for food, _ in food_counter.most_common(5)]
     
     # Distribución por tipo de comida
     meal_distribution = {}
     meal_times = []
-    for meal, _ in week_meals:
+    for meal, _ in period_meals:
         meal_type = meal.meal_of_the_day.lower()
         meal_distribution[meal_type] = meal_distribution.get(meal_type, 0) + 1
         meal_times.append(meal.timestamp.hour)
@@ -144,25 +146,27 @@ def get_weekly_summary(
         most_frequent_meal_time = None
     
     meal_trends = MealTrends(
-        total_meals=len(week_meals),
+        total_meals=len(period_meals),
         favorite_foods=favorite_foods,
         most_frequent_meal_time=most_frequent_meal_time,
         meal_distribution=meal_distribution
     )
     
     # ========== NOTAS SEMANALES ==========
+    # Para las notas, seguimos usando la semana actual si no se especifica un período
+    week_start_for_notes = start_date if start_date == get_week_start_date(start_date) else get_week_start_date(date.today())
     weekly_note = session.exec(
         select(WeeklyNote).where(
             WeeklyNote.patient_id == current_patient.id,
-            WeeklyNote.week_start_date == week_start_date
+            WeeklyNote.week_start_date == week_start_for_notes
         )
     ).first()
     
     notes = weekly_note.notes if weekly_note else None
     
     return WeeklySummaryResponse(
-        week_start_date=week_start_date,
-        week_end_date=week_end_date,
+        week_start_date=start_date,
+        week_end_date=end_date,
         weight_data=weight_data,
         calorie_data=calorie_data,
         meal_trends=meal_trends,
