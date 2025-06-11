@@ -11,14 +11,15 @@ from models.weekly_notes import WeeklyNote
 from models.weight_logs import WeightLog
 from models.notification import Notification
 
-sqlite_file_name = "../health_app.sqlite"
-base_dir = os.path.dirname(os.path.realpath(__file__))
+#sqlite_file_name = "../health_app.sqlite"
+#base_dir = os.path.dirname(os.path.realpath(__file__))
 
-DATABASE_URL = f"sqlite:///{os.path.join(base_dir, sqlite_file_name)}"
+#DATABASE_URL = f"sqlite:///{os.path.join(base_dir, sqlite_file_name)}"
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:1527@localhost:5432/health_app")
 
-connect_args = {"check_same_thread": False}
-engine = create_engine(DATABASE_URL, echo=False, connect_args=connect_args)
-
+#connect_args = {"check_same_thread": False}
+#engine = create_engine(DATABASE_URL, echo=False, connect_args=connect_args)
+engine = create_engine(DATABASE_URL, echo=False)
 
 def get_session():
     with Session(engine) as session:

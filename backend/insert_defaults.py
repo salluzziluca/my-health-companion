@@ -1,10 +1,18 @@
-import sqlite3
+import psycopg2
 
-# Conexión a la base de datos
-conn = sqlite3.connect('backend\health_app.sqlite')
+# Conexión
+conn = psycopg2.connect(
+    dbname="health_app",
+    user="postgres",
+    password="1527",
+    host="localhost",
+    port="5432"
+)
 cursor = conn.cursor()
 
-cursor.executescript('''
+# SQL en múltiples sentencias separadas por punto y coma
+sql_script = '''
+-- Insertar ingredientes (1ra parte)
 INSERT INTO ingredients (name, category, grams, calories_kcal, protein_g, fat_g, carbs_g, iron_mg, calcium_mg, vitamin_c_mg) VALUES
 ('Pechuga de pollo', 'animal', 100, 165, 31, 3.6, 0, 1.0, 15, 0),
 ('Muslo de pollo', 'animal', 100, 177, 24, 8.0, 0, 1.3, 11, 0),
@@ -16,7 +24,7 @@ INSERT INTO ingredients (name, category, grams, calories_kcal, protein_g, fat_g,
 ('Atún', 'animal', 100, 132, 28, 1.0, 0, 1.0, 10, 0),
 ('Huevo', 'animal', 100, 155, 6, 5, 0.6, 1.2, 25, 0);
 
--- Verduras
+-- Ingredientes - verduras
 INSERT INTO ingredients (name, category, grams, calories_kcal, protein_g, fat_g, carbs_g, iron_mg, calcium_mg, vitamin_c_mg) VALUES
 ('Zanahoria', 'verdura', 100, 41, 0.9, 0.2, 10, 0.3, 33, 5.9),
 ('Brócoli', 'verdura', 100, 34, 2.8, 0.4, 7, 0.7, 47, 89),
@@ -28,7 +36,7 @@ INSERT INTO ingredients (name, category, grams, calories_kcal, protein_g, fat_g,
 ('Morrón rojo', 'verdura', 100, 31, 1.0, 0.3, 6.0, 0.4, 7, 127),
 ('Ajo', 'verdura', 100, 149, 6.4, 0.5, 33, 1.7, 181, 31.2);
 
--- Frutas
+-- Ingredientes - frutas
 INSERT INTO ingredients (name, category, grams, calories_kcal, protein_g, fat_g, carbs_g, iron_mg, calcium_mg, vitamin_c_mg) VALUES
 ('Manzana', 'fruta', 100, 52, 0.3, 0.2, 14, 0.1, 6, 4.6),
 ('Banana', 'fruta', 100, 89, 1.1, 0.3, 23, 0.3, 5, 8.7),
@@ -48,7 +56,7 @@ INSERT INTO ingredients (name, category, grams, calories_kcal, protein_g, fat_g,
 ('Soja cocida', 'proteína vegetal', 100, 173, 16.6, 9.0, 9.9, 2.5, 102, 6.0),
 ('Seitán', 'proteína vegetal', 100, 121, 21, 2.0, 4.0, 1.2, 14, 0);
 
--- Alimentos (foods)
+-- Alimentos
 INSERT INTO foods (food_name) VALUES
 ('Ensalada César'),
 ('Milanesa de pollo'),
@@ -59,37 +67,37 @@ INSERT INTO foods (food_name) VALUES
 ('Guiso de lentejas'),
 ('Sopa de verduras');
 
--- Relación ingredientes-alimentos (ingredients_foods) con gramos
+-- Relación ingredientes-alimentos
 INSERT INTO ingredients_foods (ingredient_id, food_id, grams) VALUES
-(2, 1, 100),  -- Ensalada César: Muslo de pollo
-(10, 1, 50),  -- Ensalada César: Zanahoria
-(12, 1, 50),  -- Ensalada César: Espinaca
+(2, 1, 100),
+(10, 1, 50),
+(12, 1, 50),
+(1, 2, 150),
+(17, 2, 60),
+(15, 2, 100),
+(15, 3, 250),
+(17, 3, 100),
+(1, 4, 100),
+(15, 4, 100),
+(18, 4, 150),
+(3, 5, 120),
+(7, 5, 80),
+(14, 6, 100),
+(17, 6, 50),
+(20, 7, 150),
+(10, 7, 80),
+(11, 8, 100),
+(12, 8, 80),
+(13, 8, 100);
+'''
 
-(1, 2, 150),  -- Milanesa de pollo: Pechuga de pollo
-(17, 2, 60),  -- Milanesa de pollo: Huevo
-(15, 2, 100), -- Milanesa de pollo: Papa
+# Ejecutar múltiples sentencias separadas por punto y coma
+for statement in sql_script.strip().split(';'):
+    if statement.strip():
+        cursor.execute(statement)
 
-(15, 3, 250), -- Tortilla de papa: Papa
-(17, 3, 100), -- Tortilla de papa: Huevo
-
-(1, 4, 100),  -- Arroz con pollo: Pechuga de pollo
-(15, 4, 100), -- Arroz con pollo: Papa
-(18, 4, 150), -- Arroz con pollo: Batata
-
-(3, 5, 120),  -- Hamburguesa: Carne de vaca
-(7, 5, 80),   -- Hamburguesa: Salmón
-
-(14, 6, 100), -- Pizza margarita: Tomate
-(17, 6, 50),  -- Pizza margarita: Huevo
-
-(20, 7, 150), -- Guiso de lentejas: Lentejas cocidas
-(10, 7, 80),  -- Guiso de lentejas: Zanahoria
-
-(11, 8, 100), -- Sopa de verduras: Brócoli
-(12, 8, 80),  -- Sopa de verduras: Espinaca
-(13, 8, 100); -- Sopa de verduras: Papa
-''')
-
+# Guardar cambios y cerrar
 conn.commit()
 conn.close()
-print('Datos insertados correctamente.')
+
+print("Datos insertados correctamente.")
