@@ -203,10 +203,22 @@ export const healthService = {
     },
 
     // Weekly Summaries
-    async getWeeklySummary(weekStartDate?: string): Promise<WeeklySummary> {
-        const url = weekStartDate
-            ? `/patients/weekly-summary?week_start_date=${weekStartDate}`
-            : '/patients/weekly-summary';
+    async getWeeklySummary(startDate?: string, endDate?: string): Promise<WeeklySummary> {
+        let url = '/patients/weekly-summary';
+        const params = new URLSearchParams();
+        
+        if (startDate) {
+            params.append('start_date', startDate);
+        }
+        if (endDate) {
+            params.append('end_date', endDate);
+        }
+        
+        const queryString = params.toString();
+        if (queryString) {
+            url += `?${queryString}`;
+        }
+        
         const response = await api.get<WeeklySummary>(url);
         return response.data;
     },
