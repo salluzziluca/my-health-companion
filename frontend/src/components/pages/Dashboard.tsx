@@ -22,8 +22,9 @@ import {
   ListItemAvatar,
   Avatar,
   Chip,
+  Grid,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Restaurant as RestaurantIcon, Person as PersonIcon, Delete as DeleteIcon, TrendingUp as TrendingUpIcon } from '@mui/icons-material';
+import { Add as AddIcon, Edit as EditIcon, Restaurant as RestaurantIcon, Person as PersonIcon, Delete as DeleteIcon, TrendingUp as TrendingUpIcon, Close as CloseIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { healthService, professionalService } from '../../services/api';
 import { WeightLog, WeeklySummary, WeeklyNote } from '../../types/health';
@@ -76,6 +77,9 @@ const Dashboard = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
   const [goalProgress, setGoalProgress] = useState<GoalProgress[]>([]);
+  const [openNutritionSummary, setOpenNutritionSummary] = useState(false);
+  const [nutritionSummary, setNutritionSummary] = useState<any>(null);
+  const [loadingNutrition, setLoadingNutrition] = useState(false);
   const theme = useTheme();
 
   // Función para obtener el tipo de usuario del token
@@ -130,6 +134,19 @@ const Dashboard = () => {
     }
   };
 
+  const fetchNutritionSummary = async () => {
+    try {
+      setLoadingNutrition(true);
+      const response = await healthService.getNutrientSummary();
+      console.log('Nutrition Summary Response:', response);
+      setNutritionSummary(response);
+    } catch (error) {
+      console.error('Error fetching nutrition summary:', error);
+    } finally {
+      setLoadingNutrition(false);
+    }
+  };
+
   useEffect(() => {
     const role = getUserTypeFromToken();
     setUserRole(role);
@@ -141,6 +158,12 @@ const Dashboard = () => {
       fetchGoalProgress();
     }
   }, []);
+
+  useEffect(() => {
+    if (openNutritionSummary) {
+      fetchNutritionSummary();
+    }
+  }, [openNutritionSummary]);
 
   const handleWeightSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -612,8 +635,30 @@ const Dashboard = () => {
               <Typography variant="h3" color="primary" sx={{ fontWeight: 700, letterSpacing: '-1px' }}>{weeklySummary.calorie_data.total_calories.toFixed(0)}</Typography>
               <Typography variant="body2" color="text.secondary">calorías totales</Typography>
               <Divider />
-              <Typography variant="h5" sx={{ fontWeight: 600 }}>{weeklySummary.calorie_data.average_daily_calories.toFixed(0)}</Typography>
-              <Typography variant="body2" color="text.secondary">promedio diario</Typography>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                  Promedio diario
+                </Typography>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
+                  {Math.round(weeklySummary.calorie_data.average_daily_calories)} kcal
+                </Typography>
+                <Button 
+                  variant="contained" 
+                  onClick={() => setOpenNutritionSummary(true)}
+                  sx={{ 
+                    borderRadius: 2, 
+                    textTransform: 'none', 
+                    fontWeight: 600, 
+                    fontSize: '0.9rem',
+                    px: 2,
+                    boxShadow: 'none', 
+                    transition: 'all 0.2s', 
+                    '&:hover': { boxShadow: 2, transform: 'translateY(-2px)' } 
+                  }}
+                >
+                  Resumen Nutricional
+                </Button>
+              </Stack>
               <Typography variant="body2" color="text.secondary">{weeklySummary.calorie_data.days_logged} días registrados</Typography>
               {/* Agregar información de metas en el resumen */}
               {calorieGoals.length > 0 && (
@@ -793,6 +838,136 @@ const Dashboard = () => {
           <Button onClick={() => setIsNoteDialogOpen(false)} sx={{ borderRadius: 2, textTransform: 'none', px: 3 }}>Cancelar</Button>
           <Button onClick={handleNoteSubmit} variant="contained" sx={{ borderRadius: 2, textTransform: 'none', px: 3, boxShadow: 'none', transition: 'all 0.2s', '&:hover': { boxShadow: 2, transform: 'translateY(-2px)', bgcolor: 'primary.dark' } }}>Guardar</Button>
         </DialogActions>
+      </Dialog>
+
+      <Dialog 
+        open={openNutritionSummary} 
+        onClose={() => setOpenNutritionSummary(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            Resumen Nutricional
+            <IconButton 
+              edge="end" 
+              color="inherit" 
+              onClick={() => setOpenNutritionSummary(false)}
+              aria-label="close"
+            >
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {loadingNutrition ? (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+              <CircularProgress />
+            </Box>
+          ) : nutritionSummary ? (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Resumen Diario
+              </Typography>
+              <Stack spacing={3}>
+                <Box>
+                  <Typography variant="subtitle1" color="primary" gutterBottom>
+                    Calorías
+                  </Typography>
+                  <Typography variant="h5" align="center">
+                    {Math.round(nutritionSummary.total_macros.protein_g * 4 + 
+                              nutritionSummary.total_macros.carbs_g * 4 + 
+                              nutritionSummary.total_macros.fat_g * 9)} kcal
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle1" color="primary" gutterBottom>
+                    Macronutrientes
+                  </Typography>
+                  <Stack spacing={1}>
+                    {Object.entries(nutritionSummary.total_macros).map(([key, value]) => (
+                      <Box key={key} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="body1" sx={{ width: '40%' }}>
+                          {key.replace('_g', '').charAt(0).toUpperCase() + key.replace('_g', '').slice(1)}:
+                        </Typography>
+                        <Typography variant="body1" sx={{ width: '30%', textAlign: 'center' }}>
+                          {Math.round(Number(value))}g
+                        </Typography>
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            width: '30%', 
+                            textAlign: 'right',
+                            '& > span': {
+                              backgroundColor: nutritionSummary.alerts[key.replace('_g', '')] === 'excess' ? 'error.main' : 'success.main',
+                              color: 'white',
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              display: 'inline-block',
+                              textAlign: 'center',
+                              fontWeight: 'bold',
+                              width: '100%'
+                            }
+                          }}
+                        >
+                          <span>
+                            {nutritionSummary.alerts[key.replace('_g', '')] === 'excess' ? 'Exceso' : 'Normal'}
+                          </span>
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Stack>
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle1" color="primary" gutterBottom>
+                    Micronutrientes
+                  </Typography>
+                  <Stack spacing={1}>
+                    {Object.entries(nutritionSummary.total_micros).map(([key, value]) => (
+                      <Box key={key} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="body1" sx={{ width: '40%' }}>
+                          {key.replace('_mg', '').split('_').map(word => 
+                            word.charAt(0).toUpperCase() + word.slice(1)
+                          ).join(' ')}:
+                        </Typography>
+                        <Typography variant="body1" sx={{ width: '30%', textAlign: 'center' }}>
+                          {Math.round(Number(value))}mg
+                        </Typography>
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            width: '30%', 
+                            textAlign: 'right',
+                            '& > span': {
+                              backgroundColor: nutritionSummary.alerts[key.replace('_mg', '')] === 'excess' ? 'error.main' : 'success.main',
+                              color: 'white',
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              display: 'inline-block',
+                              textAlign: 'center',
+                              fontWeight: 'bold',
+                              width: '100%'
+                            }
+                          }}
+                        >
+                          <span>
+                            {nutritionSummary.alerts[key.replace('_mg', '')] === 'excess' ? 'Exceso' : 'Normal'}
+                          </span>
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Stack>
+                </Box>
+              </Stack>
+            </Box>
+          ) : (
+            <Typography color="error">
+              No se pudieron cargar los datos del resumen nutricional
+            </Typography>
+          )}
+        </DialogContent>
       </Dialog>
     </Box>
   );
