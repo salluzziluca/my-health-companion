@@ -12,14 +12,26 @@ export interface WaterIntake {
     updated_at?: string;
 }
 
+export interface WaterIntakeSummary {
+    id: number;
+    amount_ml: number;
+    amount_glasses: number;
+    time: string; // Solo la hora en formato HH:MM
+    notes?: string;
+}
+
 export interface DailyWaterSummary {
     date: string;
     total_consumed_ml: number;
-    total_glasses: number;
-    intakes_count: number;
+    total_consumed_glasses: number;
+    goal_ml: number;
+    goal_glasses: number;
+    progress_percentage: number;
     remaining_ml: number;
     remaining_glasses: number;
-    intakes: WaterIntake[];
+    is_goal_achieved: boolean;
+    intakes_count: number;
+    intakes: WaterIntakeSummary[];
 }
 
 export interface WeeklyWaterSummary {

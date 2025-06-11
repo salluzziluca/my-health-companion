@@ -27,7 +27,7 @@ import {
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import WaterGlass from './WaterGlass';
-import { waterService, DailyWaterSummary, WaterIntake } from '../services/water';
+import { waterService, DailyWaterSummary, WaterIntakeSummary } from '../services/water';
 import { GoalProgress } from '../services/goals';
 
 interface WaterDashboardProps {
@@ -255,11 +255,11 @@ const WaterDashboard: React.FC<WaterDashboardProps> = ({
                 <DialogContent>
                     {dailySummary && dailySummary.intakes.length > 0 ? (
                         <List>
-                            {dailySummary.intakes.map((intake: WaterIntake) => (
+                            {dailySummary.intakes.map((intake: WaterIntakeSummary) => (
                                 <ListItem key={intake.id} divider>
                                     <ListItemText
                                         primary={`${intake.amount_ml}ml (${intake.amount_glasses} vasos)`}
-                                        secondary={`${formatTime(intake.intake_time)}${intake.notes ? ` - ${intake.notes}` : ''}`}
+                                        secondary={`${intake.time}${intake.notes ? ` - ${intake.notes}` : ''}`}
                                     />
                                     {isPatientView && (
                                         <ListItemSecondaryAction>
