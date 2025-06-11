@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 class GoalType(str, Enum):
     WEIGHT = "weight"
     CALORIES = "calories"
-    WATER = "water"
+    BOTH = "both"
 
 
 class GoalStatus(str, Enum):
@@ -25,8 +25,7 @@ class GoalStatus(str, Enum):
 class GoalBase(SQLModel):
     goal_type: GoalType
     target_weight: Optional[float] = None  # en kg
-    target_calories: Optional[int] = None  
-    target_milliliters: Optional[int] = None  # mililitros de agua diarios
+    target_calories: Optional[int] = None  # calorías diarias
     start_date: date
     target_date: Optional[date] = None
     status: GoalStatus = GoalStatus.ACTIVE
@@ -49,15 +48,6 @@ class GoalBase(SQLModel):
             raise ValueError('Las calorías objetivo no pueden exceder las 10000')
         return value
     
-    @field_validator('target_milliliters')
-    @classmethod
-    def validate_target_milliliters(cls, value):
-        if value is not None and value <= 0:
-            raise ValueError('Los mililitros de agua objetivos deben ser positivos')
-        if value is not None and value > 10000:
-            raise ValueError('Los mililitros de agua objetivos no pueden exceder los 10000')
-        return value
-
     @field_validator('target_date')
     @classmethod
     def validate_target_date(cls, value, info):
@@ -92,8 +82,8 @@ class GoalCreate(GoalBase):
             raise ValueError('Se requiere target_weight para objetivos de peso')
         if self.goal_type == GoalType.CALORIES and self.target_calories is None:
             raise ValueError('Se requiere target_calories para objetivos de calorías')
-        if self.goal_type == GoalType.WATER and self.target_milliliters is None:
-            raise ValueError('Se requiere target_milliliters para objetivos de hidratación')
+        if self.goal_type == GoalType.BOTH and (self.target_weight is None or self.target_calories is None):
+            raise ValueError('Se requieren tanto target_weight como target_calories para objetivos mixtos')
         
         return self
 
@@ -111,7 +101,6 @@ class GoalUpdate(SQLModel):
     goal_type: Optional[GoalType] = None
     target_weight: Optional[float] = None
     target_calories: Optional[int] = None
-    target_milliliters: Optional[int] = None
     target_date: Optional[date] = None
     status: Optional[GoalStatus] = None
     
@@ -131,13 +120,4 @@ class GoalUpdate(SQLModel):
             raise ValueError('Las calorías objetivo deben ser positivas')
         if value is not None and value > 10000:
             raise ValueError('Las calorías objetivo no pueden exceder las 10000')
-        return value
-    
-    @field_validator('target_milliliters')
-    @classmethod
-    def validate_target_milliliters(cls, value):
-        if value is not None and value <= 0:
-            raise ValueError('Los mililitros de agua objetivos deben ser positivos')
-        if value is not None and value > 10000:
-            raise ValueError('Los mililitros de agua objetivos no pueden exceder los 10000')
         return value

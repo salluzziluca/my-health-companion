@@ -10,7 +10,6 @@ from models.patients import Patient
 from models.professionals import Professional
 from models.weight_logs import WeightLog
 from models.meals import Meal
-from models.water_intake import WaterIntake
 from utils.security import get_current_patient, get_current_professional
 from utils.notifications import create_notification
 
@@ -38,11 +37,10 @@ def create_goal(
     if patient.professional_id != current_professional.id:
         raise HTTPException(status_code=403, detail="No tienes permisos para asignar objetivos a este paciente")
     
-    # Cancelar objetivos activos anteriores del mismo tipo
+    # Cancelar objetivos activos anteriores 
     existing_goals = session.exec(
         select(Goal)
         .where(Goal.patient_id == goal.patient_id)
-        .where(Goal.goal_type == goal.goal_type)
         .where(Goal.status == GoalStatus.ACTIVE)
     ).all()
     
@@ -67,7 +65,7 @@ def create_goal(
     goal_type_messages = {
         GoalType.WEIGHT: f"🎯 Tu nutricionista te ha asignado un nuevo objetivo de peso: {goal.target_weight} kg para el {goal.target_date}.",
         GoalType.CALORIES: f"🎯 Tu nutricionista te ha asignado un nuevo objetivo de calorías: {goal.target_calories} kcal/día para el {goal.target_date}.",
-        GoalType.WATER: f"💧 Tu nutricionista te ha asignado un nuevo objetivo de hidratación: {goal.target_milliliters} ml/día para el {goal.target_date}."
+        GoalType.BOTH: f"🎯 Tu nutricionista te ha asignado nuevos objetivos: {goal.target_weight} kg y {goal.target_calories} kcal/día para el {goal.target_date}."
     }
     
     message = goal_type_messages.get(goal.goal_type, "🎯 Tu nutricionista te ha asignado un nuevo objetivo.")
@@ -84,7 +82,6 @@ def get_patient_goals(
     current_professional = Depends(get_current_professional),
     patient_id: int = Path(..., description="ID del paciente"),
     status: Optional[GoalStatus] = None,
-    goal_type: Optional[GoalType] = None,
 ):
     """Obtener objetivos de un paciente (solo profesionales)"""
     # Verificar que el paciente existe y pertenece al profesional
@@ -99,8 +96,6 @@ def get_patient_goals(
     
     if status:
         query = query.where(Goal.status == status)
-    if goal_type:
-        query = query.where(Goal.goal_type == goal_type)
     
     query = query.order_by(Goal.created_at.desc())
     goals = session.exec(query).all()
@@ -114,15 +109,12 @@ def get_my_goals(
     session: Session = Depends(get_session),
     current_patient = Depends(get_current_patient),
     status: Optional[GoalStatus] = None,
-    goal_type: Optional[GoalType] = None,
 ):
     """Obtener mis objetivos (solo pacientes)"""
     query = select(Goal).where(Goal.patient_id == current_patient.id)
     
     if status:
         query = query.where(Goal.status == status)
-    if goal_type:
-        query = query.where(Goal.goal_type == goal_type)
     
     query = query.order_by(Goal.created_at.desc())
     goals = session.exec(query).all()
@@ -170,7 +162,7 @@ def get_my_goals_progress(
         progress = GoalProgress(goal=goal)
         
         # Calcular progreso de peso
-        if goal.goal_type in GoalType.WEIGHT and goal.target_weight:
+        if goal.goal_type in [GoalType.WEIGHT, GoalType.BOTH] and goal.target_weight:
             # Obtener el peso más reciente
             latest_weight = session.exec(
                 select(WeightLog)
@@ -190,7 +182,7 @@ def get_my_goals_progress(
                 progress.is_weight_achieved = abs(latest_weight.weight - goal.target_weight) <= 0.5
         
         # Calcular progreso de calorías (promedio entre start_date y target_date)
-        if goal.goal_type in GoalType.CALORIES and goal.target_calories:
+        if goal.goal_type in [GoalType.CALORIES, GoalType.BOTH] and goal.target_calories:
             # Definir el rango de fechas para el cálculo
             start_date = goal.start_date
             end_date = goal.target_date if goal.target_date else date.today()
@@ -228,57 +220,16 @@ def get_my_goals_progress(
                     tolerance = goal.target_calories * 0.05
                     progress.is_calories_achieved = abs(avg_calories - goal.target_calories) <= tolerance
         
-        # Calcular progreso de hidratación (promedio diario de agua)
-        if goal.goal_type == GoalType.WATER and goal.target_milliliters:
-            # Definir el rango de fechas para el cálculo
-            start_date = goal.start_date
-            end_date = goal.target_date if goal.target_date else date.today()
-            
-            # Asegurar que no calculemos más allá de hoy
-            end_date = min(end_date, date.today())
-            
-            # Obtener consumo de agua entre start_date y end_date
-            water_intakes = session.exec(
-                select(WaterIntake)
-                .where(
-                    WaterIntake.patient_id == current_patient.id,
-                    func.date(WaterIntake.intake_time) >= start_date,
-                    func.date(WaterIntake.intake_time) <= end_date
-                )
-            ).all()
-            
-            if water_intakes:
-                # Agrupar por día y sumar mililitros
-                daily_water = {}
-                for intake in water_intakes:
-                    intake_date = intake.intake_time.date()
-                    if intake_date not in daily_water:
-                        daily_water[intake_date] = 0
-                    daily_water[intake_date] += intake.amount_ml
-                
-                if daily_water:
-                    avg_water = sum(daily_water.values()) / len(daily_water)
-                    progress.current_daily_water = int(avg_water)
-                    
-                    # Calcular diferencia de agua (positivo = exceso, negativo = déficit)
-                    progress.water_progress_difference = int(avg_water - goal.target_milliliters)
-                    
-                    # Verificar si se alcanzó el objetivo de agua (con tolerancia del 10%)
-                    tolerance = goal.target_milliliters * 0.10
-                    progress.is_water_achieved = abs(avg_water - goal.target_milliliters) <= tolerance
-        
         # Verificar si el objetivo está completamente alcanzado
         if goal.goal_type == GoalType.WEIGHT:
             progress.is_fully_achieved = progress.is_weight_achieved or False
         elif goal.goal_type == GoalType.CALORIES:
             progress.is_fully_achieved = progress.is_calories_achieved or False
-        elif goal.goal_type == GoalType.WATER:
-            progress.is_fully_achieved = progress.is_water_achieved or False
-
+        elif goal.goal_type == GoalType.BOTH:
+            progress.is_fully_achieved = (progress.is_weight_achieved or False) and (progress.is_calories_achieved or False)
 
         # Si el objetivo está completamente alcanzado y aún está activo, marcar como completado
-        # Excepto si es de hidratación
-        if progress.is_fully_achieved and goal.status == GoalStatus.ACTIVE and not goal.goal_type == GoalType.WATER:
+        if progress.is_fully_achieved and goal.status == GoalStatus.ACTIVE:
             goal.status = GoalStatus.COMPLETED
             goal.achieved_at = datetime.now()
             goal.updated_at = datetime.now()
@@ -288,7 +239,7 @@ def get_my_goals_progress(
             goal_type_messages = {
                 GoalType.WEIGHT: f"🎯 ¡Felicidades! Alcanzaste tu peso objetivo de {goal.target_weight} kg.",
                 GoalType.CALORIES: f"🎯 ¡Felicidades! Lograste tu meta de {goal.target_calories} kcal/día.",
-                GoalType.WATER: f"💧 ¡Felicidades! Cumpliste tu meta de hidratación de {goal.target_milliliters} ml/día.",
+                GoalType.BOTH: "🎯 ¡Felicidades! Cumpliste tus metas de peso y calorías."
             }
 
             message = goal_type_messages.get(goal.goal_type, "🎯 ¡Felicidades! Alcanzaste tu objetivo.")
@@ -329,13 +280,11 @@ def get_patient_goals_progress(
     ).all()
     if not active_goals:
         return []
-    
     progress_list = []
     for goal in active_goals:
         progress = GoalProgress(goal=goal)
-        
         # Calcular progreso de peso
-        if goal.goal_type in GoalType.WEIGHT and goal.target_weight:
+        if goal.goal_type in [GoalType.WEIGHT, GoalType.BOTH] and goal.target_weight:
             latest_weight = session.exec(
                 select(WeightLog)
                 .where(WeightLog.patient_id == patient_id)
@@ -347,9 +296,8 @@ def get_patient_goals_progress(
                 progress.current_weight = latest_weight.weight
                 progress.weight_progress_difference = latest_weight.weight - goal.target_weight
                 progress.is_weight_achieved = abs(latest_weight.weight - goal.target_weight) <= 0.5
-        
         # Calcular progreso de calorías
-        if goal.goal_type in GoalType.CALORIES and goal.target_calories:
+        if goal.goal_type in [GoalType.CALORIES, GoalType.BOTH] and goal.target_calories:
             start_date = goal.start_date
             end_date = goal.target_date if goal.target_date else date.today()
             end_date = min(end_date, date.today())
@@ -372,44 +320,15 @@ def get_patient_goals_progress(
                     avg_calories = sum(daily_calories.values()) / len(daily_calories)
                     progress.current_daily_calories = int(avg_calories)
                     progress.calories_progress_difference = int(avg_calories - goal.target_calories)
-                    tolerance = goal.target_calories * 0.1 # 10% de tolerancia
+                    tolerance = goal.target_calories * 0.05
                     progress.is_calories_achieved = abs(avg_calories - goal.target_calories) <= tolerance
-        
-        # Calcular progreso de hidratación
-        if goal.goal_type == GoalType.WATER and goal.target_milliliters:
-            start_date = goal.start_date
-            end_date = goal.target_date if goal.target_date else date.today()
-            end_date = min(end_date, date.today())
-            water_intakes = session.exec(
-                select(WaterIntake)
-                .where(
-                    WaterIntake.patient_id == patient_id,
-                    func.date(WaterIntake.intake_time) >= start_date,
-                    func.date(WaterIntake.intake_time) <= end_date
-                )
-            ).all()
-            if water_intakes:
-                daily_water = {}
-                for intake in water_intakes:
-                    intake_date = intake.intake_time.date()
-                    if intake_date not in daily_water:
-                        daily_water[intake_date] = 0
-                    daily_water[intake_date] += intake.amount_ml
-                if daily_water:
-                    avg_water = sum(daily_water.values()) / len(daily_water)
-                    progress.current_daily_water = int(avg_water)
-                    progress.water_progress_difference = int(avg_water - goal.target_milliliters)
-                    tolerance = goal.target_milliliters * 0.15 # 15% de tolerancia 
-                    progress.is_water_achieved = abs(avg_water - goal.target_milliliters) <= tolerance
-        
         # Verificar si el objetivo está completamente alcanzado
         if goal.goal_type == GoalType.WEIGHT:
             progress.is_fully_achieved = progress.is_weight_achieved or False
         elif goal.goal_type == GoalType.CALORIES:
             progress.is_fully_achieved = progress.is_calories_achieved or False
-        elif goal.goal_type == GoalType.WATER:
-            progress.is_fully_achieved = progress.is_water_achieved or False
-       
+        elif goal.goal_type == GoalType.BOTH:
+            progress.is_fully_achieved = (progress.is_weight_achieved or False) and (progress.is_calories_achieved or False)
         if goal.target_date:
             days_remaining = (goal.target_date - date.today()).days
             progress.days_remaining = max(days_remaining, 0)
