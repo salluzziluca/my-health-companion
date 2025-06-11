@@ -2,9 +2,10 @@ import api from './api';
 
 export interface Goal {
     id: number;
-    goal_type: 'weight' | 'calories' | 'both';
+    goal_type: 'weight' | 'calories' | 'water';
     target_weight?: number;
     target_calories?: number;
+    target_milliliters?: number;
     start_date: string;
     target_date: string;
     status: 'active' | 'completed' | 'cancelled';
@@ -19,10 +20,13 @@ export interface GoalProgress {
     goal: Goal;
     current_weight?: number | null;
     current_daily_calories?: number | null;
+    current_daily_water?: number | null;
     weight_progress_difference?: number | null;
     calories_progress_difference?: number | null;
+    water_progress_difference?: number | null;
     is_weight_achieved?: boolean | null;
     is_calories_achieved?: boolean | null;
+    is_water_achieved?: boolean | null;
     is_fully_achieved: boolean;
     days_remaining?: number | null;
 }

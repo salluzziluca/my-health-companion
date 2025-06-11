@@ -5,6 +5,7 @@ import re
 from datetime import date
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from models.foods import Food
     from models.meals import Meal
@@ -12,6 +13,8 @@ if TYPE_CHECKING:
     from models.weight_logs import WeightLog
     from models.weekly_notes import WeeklyNote
     from models.goals import Goal
+    from models.water_intake import WaterIntake
+    from models.water_reminders import WaterReminder
 
 class PatientBase(SQLModel):
     email: EmailStr
@@ -89,12 +92,14 @@ class Patient(PatientBase, table=True):
         sa_relationship_kwargs={"foreign_keys": "Patient.professional_id"}
     )
     
-    # Relaciones one-to-many
+    # Relaciones one-to-many existentes
     custom_foods: List["Food"] = Relationship(back_populates="patient")
     meals: List["Meal"] = Relationship(back_populates="patient")
     weight_logs: List["WeightLog"] = Relationship(back_populates="patient")
     weekly_notes: List["WeeklyNote"] = Relationship(back_populates="patient")
     goals: List["Goal"] = Relationship(back_populates="patient")
+    water_intakes: List["WaterIntake"] = Relationship(back_populates="patient")
+    water_reminder: List["WaterReminder"] = Relationship(back_populates="patient")
 
 
 class PatientCreate(PatientBase):

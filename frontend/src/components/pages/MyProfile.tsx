@@ -365,7 +365,7 @@ const MyProfile = () => {
 
   // Obtener metas activas de peso para el gráfico
   const weightGoals = goalProgress.filter(g =>
-    g.goal.goal_type === 'weight' || g.goal.goal_type === 'both'
+    g.goal.goal_type === 'weight'
   );
 
   if (loading) {
