@@ -31,7 +31,6 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { jwtDecode } from 'jwt-decode';
 import { useTheme } from '@mui/material/styles';
 import { goalsService, GoalProgress } from '../../services/goals';
-import WaterDashboard from '../WaterDashboard';
 
 interface JwtPayload {
   sub: string;
@@ -249,13 +248,6 @@ const Dashboard = () => {
     return Math.round(Math.min(progress, 150)); // Limitamos a 150% para no mostrar valores extremos
   };
 
-  const calculateWaterProgress = (goalProgress: GoalProgress): number => {
-    if (!goalProgress.goal.target_milliliters || !goalProgress.current_daily_water) return 0;
-
-    const progress = (goalProgress.current_daily_water / goalProgress.goal.target_milliliters) * 100;
-    return Math.round(Math.min(progress, 150)); // Limitamos a 150% para no mostrar valores extremos
-  };
-
   // Función para obtener el color del progreso
   const getProgressColor = (progress: number, isCompleted: boolean = false) => {
     if (isCompleted) return 'success';
@@ -267,13 +259,10 @@ const Dashboard = () => {
 
   // Obtener metas activas para los gráficos
   const weightGoals = goalProgress.filter(g =>
-    g.goal.goal_type === 'weight'
+    g.goal.goal_type === 'weight' || g.goal.goal_type === 'both'
   );
   const calorieGoals = goalProgress.filter(g =>
-    g.goal.goal_type === 'calories'
-  );
-  const waterGoals = goalProgress.filter(g =>
-    g.goal.goal_type === 'water'
+    g.goal.goal_type === 'calories' || g.goal.goal_type === 'both'
   );
 
   if (loading) {
@@ -657,56 +646,56 @@ const Dashboard = () => {
             </Stack>
             <Stack spacing={2} sx={{ mt: 3 }}>
               <Stack direction="row" spacing={2}>
-                <Button
-                  variant="contained"
-                  fullWidth
-                  startIcon={<RestaurantIcon />}
-                  onClick={() => navigate('/weekly-diet')}
-                  sx={{
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    fontSize: '1rem',
-                    boxShadow: 'none',
-                    transition: 'all 0.2s',
-                    '&:hover': { boxShadow: 2, transform: 'translateY(-2px)' }
+                <Button 
+                  variant="contained" 
+                  fullWidth 
+                  startIcon={<RestaurantIcon />} 
+                  onClick={() => navigate('/weekly-diet')} 
+                  sx={{ 
+                    borderRadius: 2, 
+                    textTransform: 'none', 
+                    fontWeight: 600, 
+                    fontSize: '1rem', 
+                    boxShadow: 'none', 
+                    transition: 'all 0.2s', 
+                    '&:hover': { boxShadow: 2, transform: 'translateY(-2px)' } 
                   }}
                 >
                   Gestionar Dietas
                 </Button>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  onClick={() => navigate('/meals?add=true')}
-                  sx={{
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    fontSize: '1rem',
-                    borderColor: theme.palette.primary.main,
-                    color: theme.palette.primary.main,
-                    '&:hover': {
-                      bgcolor: theme.palette.primary.light + '10',
-                      borderColor: theme.palette.primary.dark
-                    }
+                <Button 
+                  variant="outlined" 
+                  fullWidth 
+                  onClick={() => navigate('/meals?add=true')} 
+                  sx={{ 
+                    borderRadius: 2, 
+                    textTransform: 'none', 
+                    fontWeight: 600, 
+                    fontSize: '1rem', 
+                    borderColor: theme.palette.primary.main, 
+                    color: theme.palette.primary.main, 
+                    '&:hover': { 
+                      bgcolor: theme.palette.primary.light + '10', 
+                      borderColor: theme.palette.primary.dark 
+                    } 
                   }}
                 >
                   Gestionar Comidas
                 </Button>
               </Stack>
-              <Button
-                variant="contained"
-                startIcon={<TrendingUpIcon />}
-                onClick={() => navigate('/goals')}
-                sx={{
+              <Button 
+                variant="contained" 
+                startIcon={<TrendingUpIcon />} 
+                onClick={() => navigate('/goals')} 
+                sx={{ 
                   width: '100%',
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  fontSize: '1rem',
-                  boxShadow: 'none',
-                  transition: 'all 0.2s',
-                  '&:hover': { boxShadow: 2, transform: 'translateY(-2px)' }
+                  borderRadius: 2, 
+                  textTransform: 'none', 
+                  fontWeight: 600, 
+                  fontSize: '1rem', 
+                  boxShadow: 'none', 
+                  transition: 'all 0.2s', 
+                  '&:hover': { boxShadow: 2, transform: 'translateY(-2px)' } 
                 }}
               >
                 Gestionar Objetivos Asignados
@@ -715,10 +704,31 @@ const Dashboard = () => {
           </Paper>
         </Box>
         <Box sx={{ flex: 1, display: 'flex' }}>
-          <WaterDashboard
-            waterGoals={waterGoals}
-            onWaterAdded={fetchGoalProgress}
-          />
+          <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}`, background: 'white', minHeight: 260, height: '100%', width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 1 }}>Distribución de Comidas</Typography>
+            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', minHeight: 180, height: '100%' }}>
+              <ResponsiveContainer width="100%" height={180}>
+                <PieChart>
+                  <Pie
+                    data={Object.entries(weeklySummary.meal_trends.meal_distribution).map(([key, value]) => ({ name: mealLabelsES[key] || key, value }))}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={false}
+                    isAnimationActive
+                  >
+                    {Object.entries(weeklySummary.meal_trends.meal_distribution).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={[theme.palette.primary.main, theme.palette.secondary.main, theme.palette.success.main, theme.palette.warning.main][index % 4]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ background: 'white', borderRadius: 8, border: `1px solid ${theme.palette.divider}` }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </Box>
+          </Paper>
         </Box>
       </Stack>
 

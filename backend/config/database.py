@@ -10,7 +10,6 @@ from models.meals import Meal
 from models.weekly_notes import WeeklyNote
 from models.weight_logs import WeightLog
 from models.notification import Notification
-from models.water_intake import WaterIntake
 
 sqlite_file_name = "../health_app.sqlite"
 base_dir = os.path.dirname(os.path.realpath(__file__))
@@ -21,20 +20,9 @@ connect_args = {"check_same_thread": False}
 engine = create_engine(DATABASE_URL, echo=False, connect_args=connect_args)
 
 
-# Función para usar como dependencia en FastAPI
 def get_session():
-    """Función generadora para usar como dependencia en FastAPI"""
-    session = Session(engine)
-    try:
+    with Session(engine) as session:
         yield session
-    finally:
-        session.close()
-
-
-# Función simple para crear sesiones fuera de FastAPI
-def create_session():
-    """Crear una nueva sesión para usar fuera de FastAPI"""
-    return Session(engine)
 
 
 def create_db_and_tables():

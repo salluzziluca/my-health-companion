@@ -22,17 +22,15 @@ import axios from '../../services/axiosConfig';
 
 interface Goal {
   id: number;
-  goal_type: 'weight' | 'calories' | 'water' | 'both';
+  goal_type: 'weight' | 'calories' | 'both';
   target_weight?: number;
   target_calories?: number;
-  target_milliliters?: number;
   start_date: string;
   target_date?: string;
   status: 'active' | 'completed' | 'expired';
   progress: {
     current_weight?: number;
     current_daily_calories?: number;
-    current_daily_water?: number;
     weight_progress?: number;
     calories_progress?: number;
     weight_progress_difference?: number;
@@ -81,7 +79,6 @@ const PatientGoals: React.FC = () => {
     const types: { [key: string]: string } = {
       'weight': 'Peso',
       'calories': 'Calorías',
-      'water': 'Hidratación',
       'both': 'Peso y Calorías'
     };
     return types[goal_type] || goal_type;
@@ -129,9 +126,6 @@ const PatientGoals: React.FC = () => {
     }
     if (goal.goal_type === 'calories') {
       return goal.target_calories ? `Consumir ${goal.target_calories} kcal/día` : 'Objetivo de calorías sin valor asignado';
-    }
-    if (goal.goal_type === 'water') {
-      return goal.target_milliliters ? `Consumir ${goal.target_milliliters} ml de agua al día (${(goal.target_milliliters / 250).toFixed(0)} vasos)` : 'Objetivo de hidratación sin valor asignado';
     }
     if (goal.goal_type === 'both') {
       let desc = '';
@@ -196,9 +190,6 @@ const PatientGoals: React.FC = () => {
             } else if ((goal.goal_type === 'calories' || goal.goal_type === 'both') && goal.progress.current_daily_calories !== undefined) {
               estadoActual = `${goal.progress.current_daily_calories} kcal/día`;
               objetivo = goal.target_calories ? `${goal.target_calories} kcal/día` : '';
-            } else if (goal.goal_type === 'water' && goal.progress.current_daily_water !== undefined) {
-              estadoActual = `${goal.progress.current_daily_water} ml/día`;
-              objetivo = goal.target_milliliters ? `${goal.target_milliliters} ml/día` : '';
             }
             return (
               <Paper key={goal.id} elevation={1} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
@@ -207,7 +198,6 @@ const PatientGoals: React.FC = () => {
                     <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 0.5, textAlign: { xs: 'center', md: 'left' } }}>
                       {goal.goal_type === 'weight' && 'Objetivo de Peso'}
                       {goal.goal_type === 'calories' && 'Objetivo de Calorías'}
-                      {goal.goal_type === 'water' && 'Objetivo de Hidratación'}
                       {goal.goal_type === 'both' && 'Objetivo de Peso y Calorías'}
                     </Typography>
                     <Typography variant="subtitle1" sx={{ color: 'text.secondary', mb: 1, textAlign: { xs: 'center', md: 'left' } }}>
