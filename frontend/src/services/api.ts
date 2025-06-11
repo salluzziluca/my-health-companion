@@ -3,25 +3,34 @@ import { WeightLog, WeeklySummary, WeeklyNote } from '../types/health';
 import { LoginCredentials, RegisterData, AuthResponse, User, Role, Specialization } from '../types/auth';
 import { jwtDecode } from 'jwt-decode';
 
-const API_URL = 'http://localhost:8000';
-
 interface JwtPayload {
-    sub: string;
     user_type?: string;
     type?: string;
     role?: string;
-    exp: number;
-    [key: string]: any; // Para permitir cualquier otro campo que pueda contener el token
+    exp?: number;
+    iat?: number;
+    sub?: string;
+}
+
+interface NutrientInfo {
+    name: string;
+    amount: number;
+    unit: string;
+    status: 'deficit' | 'within_range' | 'excess';
+}
+
+interface MealNutrition {
+    macronutrients: NutrientInfo[];
+    micronutrients: NutrientInfo[];
 }
 
 const api = axios.create({
-    baseURL: API_URL,
+    baseURL: 'http://localhost:8000',
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
-// Add token to requests if it exists
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -30,8 +39,7 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-// Función para decodificar el token JWT y obtener el tipo de usuario
-const getUserTypeFromToken = (): string | null => {
+export const getUserTypeFromToken = (): string | null => {
     try {
         const token = localStorage.getItem('token');
         if (!token) return null;
@@ -261,6 +269,11 @@ export const healthService = {
 
         return response.json();
     },
+
+    getNutrientSummary: async (): Promise<any> => {
+        const response = await api.get('/nutrient-summary/daily');
+        return response.data;
+    }
 };
 
 // Weekly Diet API functions
@@ -328,6 +341,11 @@ export const deleteWeeklyDiet = async (weeklyDietId: number) => {
 
 export const getCurrentWeeklyDiet = async () => {
     const response = await api.get('/patients/current-weekly-diet');
+    return response.data;
+};
+
+export const getMealNutrition = async (mealId: number): Promise<MealNutrition> => {
+    const response = await api.get(`/nutrient-summary/${mealId}`);
     return response.data;
 };
 

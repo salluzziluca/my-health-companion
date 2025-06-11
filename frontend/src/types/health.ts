@@ -42,4 +42,25 @@ export interface WeeklySummary {
 export interface WeeklyNote {
     week_start_date: string;
     notes: string;
+}
+
+export interface NutrientSummaryResponse {
+  total_macros: {
+    protein_g: number;
+    carbs_g: number;
+    fat_g: number;
+  };
+  total_micros: {
+    iron_mg: number;
+    vitamin_c_mg: number;
+    calcium_mg: number;
+  };
+  alerts: {
+    protein: 'deficit' | 'within range' | 'excess';
+    carbs: 'deficit' | 'within range' | 'excess';
+    fat: 'deficit' | 'within range' | 'excess';
+    iron: 'deficit' | 'within range' | 'excess';
+    vitamin_c: 'deficit' | 'within range' | 'excess';
+    calcium: 'deficit' | 'within range' | 'excess';
+  };
 } 
