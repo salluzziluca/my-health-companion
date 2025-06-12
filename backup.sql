@@ -54,7 +54,7 @@ ALTER TYPE public.goalstatus OWNER TO postgres;
 CREATE TYPE public.goaltype AS ENUM (
     'WEIGHT',
     'CALORIES',
-    'BOTH'
+    'WATER'
 );
 
 
@@ -121,6 +121,7 @@ CREATE TABLE public.goals (
     goal_type public.goaltype NOT NULL,
     target_weight double precision,
     target_calories integer,
+    target_milliliters integer,
     start_date date NOT NULL,
     target_date date,
     status public.goalstatus NOT NULL,
@@ -395,6 +396,85 @@ ALTER SEQUENCE public.professionals_id_seq OWNED BY public.professionals.id;
 
 
 --
+-- Name: water_intake; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.water_intake (
+    amount_ml integer NOT NULL,
+    intake_time timestamp without time zone NOT NULL,
+    notes character varying,
+    id integer NOT NULL,
+    patient_id integer NOT NULL,
+    created_at timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public.water_intake OWNER TO postgres;
+
+--
+-- Name: water_intake_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.water_intake_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.water_intake_id_seq OWNER TO postgres;
+
+--
+-- Name: water_intake_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.water_intake_id_seq OWNED BY public.water_intake.id;
+
+
+--
+-- Name: water_reminders; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.water_reminders (
+    is_enabled boolean NOT NULL,
+    interval_minutes integer NOT NULL,
+    start_time time without time zone NOT NULL,
+    end_time time without time zone NOT NULL,
+    custom_message character varying(200),
+    id integer NOT NULL,
+    patient_id integer NOT NULL,
+    created_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public.water_reminders OWNER TO postgres;
+
+--
+-- Name: water_reminders_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.water_reminders_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.water_reminders_id_seq OWNER TO postgres;
+
+--
+-- Name: water_reminders_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.water_reminders_id_seq OWNED BY public.water_reminders.id;
+
+
+--
 -- Name: weekly_notes; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -602,6 +682,20 @@ ALTER TABLE ONLY public.professionals ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: water_intake id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.water_intake ALTER COLUMN id SET DEFAULT nextval('public.water_intake_id_seq'::regclass);
+
+
+--
+-- Name: water_reminders id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.water_reminders ALTER COLUMN id SET DEFAULT nextval('public.water_reminders_id_seq'::regclass);
+
+
+--
 -- Name: weekly_notes id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -652,7 +746,7 @@ Ensalada de frutas	11	\N
 -- Data for Name: goals; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.goals (goal_type, target_weight, target_calories, start_date, target_date, status, id, patient_id, professional_id, achieved_at, created_at, updated_at) FROM stdin;
+COPY public.goals (goal_type, target_weight, target_calories, target_milliliters, start_date, target_date, status, id, patient_id, professional_id, achieved_at, created_at, updated_at) FROM stdin;
 \.
 
 
@@ -750,7 +844,7 @@ COPY public.notifications (id, patient_id, message, is_read, created_at) FROM st
 --
 
 COPY public.patients (email, first_name, last_name, weight, height, birth_date, gender, id, password_hash, professional_id) FROM stdin;
-celesdbenedetto@gmail.com	Celes	paciente	\N	\N	\N	\N	1	$2b$12$gPUCODIwxFQBWgHszk4P6umCWeT3.ZSVI6qlKB.CzcFLgf4uJjnAe	\N
+celesdbenedetto@gmail.com	Celes	Paciente	44	\N	\N	\N	1	$2b$12$v2p1BzHraUAz2u5rZuYj/.LJDU.Vxyn2Y9XLtcx048SzRMOgKud7O	\N
 \.
 
 
@@ -759,6 +853,24 @@ celesdbenedetto@gmail.com	Celes	paciente	\N	\N	\N	\N	1	$2b$12$gPUCODIwxFQBWgHszk
 --
 
 COPY public.professionals (email, first_name, last_name, specialization, id, uuid_code, password_hash) FROM stdin;
+\.
+
+
+--
+-- Data for Name: water_intake; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.water_intake (amount_ml, intake_time, notes, id, patient_id, created_at) FROM stdin;
+250	2025-06-12 00:34:24.278		1	1	2025-06-12 00:34:24.304819
+250	2025-06-12 00:34:25.045		2	1	2025-06-12 00:34:25.066352
+\.
+
+
+--
+-- Data for Name: water_reminders; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.water_reminders (is_enabled, interval_minutes, start_time, end_time, custom_message, id, patient_id, created_at, updated_at) FROM stdin;
 \.
 
 
@@ -791,6 +903,9 @@ COPY public.weeklydiets (id, week_start_date, created_at, updated_at, patient_id
 --
 
 COPY public.weight_logs (weight, "timestamp", id, patient_id) FROM stdin;
+42	2025-06-12 00:34:11.322893	1	1
+43	2025-06-12 00:34:14.884574	2	1
+44	2025-06-12 00:34:17.946882	3	1
 \.
 
 
@@ -851,6 +966,20 @@ SELECT pg_catalog.setval('public.professionals_id_seq', 1, false);
 
 
 --
+-- Name: water_intake_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.water_intake_id_seq', 2, true);
+
+
+--
+-- Name: water_reminders_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.water_reminders_id_seq', 1, false);
+
+
+--
 -- Name: weekly_notes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -875,7 +1004,7 @@ SELECT pg_catalog.setval('public.weeklydiets_id_seq', 1, false);
 -- Name: weight_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.weight_logs_id_seq', 1, false);
+SELECT pg_catalog.setval('public.weight_logs_id_seq', 3, true);
 
 
 --
@@ -940,6 +1069,30 @@ ALTER TABLE ONLY public.patients
 
 ALTER TABLE ONLY public.professionals
     ADD CONSTRAINT professionals_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: water_intake water_intake_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.water_intake
+    ADD CONSTRAINT water_intake_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: water_reminders water_reminders_patient_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.water_reminders
+    ADD CONSTRAINT water_reminders_patient_id_key UNIQUE (patient_id);
+
+
+--
+-- Name: water_reminders water_reminders_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.water_reminders
+    ADD CONSTRAINT water_reminders_pkey PRIMARY KEY (id);
 
 
 --
@@ -1051,6 +1204,22 @@ ALTER TABLE ONLY public.notifications
 
 ALTER TABLE ONLY public.patients
     ADD CONSTRAINT patients_professional_id_fkey FOREIGN KEY (professional_id) REFERENCES public.professionals(id);
+
+
+--
+-- Name: water_intake water_intake_patient_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.water_intake
+    ADD CONSTRAINT water_intake_patient_id_fkey FOREIGN KEY (patient_id) REFERENCES public.patients(id);
+
+
+--
+-- Name: water_reminders water_reminders_patient_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.water_reminders
+    ADD CONSTRAINT water_reminders_patient_id_fkey FOREIGN KEY (patient_id) REFERENCES public.patients(id);
 
 
 --
