@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import { Badge, IconButton, Menu, MenuItem, Typography, Box, List, ListItem, ListItemText, Divider, Snackbar, Alert, Button } from '@mui/material';
+import { Badge, IconButton, Menu, MenuItem, Typography, Box, Divider, Snackbar, Alert, Button } from '@mui/material';
 import { Notifications as NotificationsIcon } from '@mui/icons-material';
 import { notificationsService, Notification } from '../services/notifications';
-import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -17,6 +16,7 @@ const NotificationsContext = createContext<{
   markAsRead: (id: number) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   deleteNotification: (id: number) => Promise<void>;
+  deleteAllNotifications: () => Promise<void>;
   refreshNotifications: () => Promise<void>;
 }>({
   notifications: [],
@@ -24,6 +24,7 @@ const NotificationsContext = createContext<{
   markAsRead: async () => {},
   markAllAsRead: async () => {},
   deleteNotification: async () => {},
+  deleteAllNotifications: async () => {},
   refreshNotifications: async () => {},
 });
 
@@ -32,7 +33,7 @@ export const useNotifications = () => useContext(NotificationsContext);
 export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<NotificationWithRead[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const lastNotificationIdRef = useRef<number | null>(null);
+  const lastShownNotificationIdRef = useRef<number | null>(null);
 
   const refreshNotifications = useCallback(async () => {
     try {
@@ -85,9 +86,19 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
+  const deleteAllNotifications = useCallback(async () => {
+    try {
+      await Promise.all(notifications.map(n => notificationsService.deleteNotification(n.id)));
+      setNotifications([]);
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Error deleting all notifications:', error);
+    }
+  }, [notifications]);
+
   useEffect(() => {
     refreshNotifications();
-    const interval = setInterval(refreshNotifications, 1000);
+    const interval = setInterval(refreshNotifications, 300000); // 1 minuto
     return () => clearInterval(interval);
   }, [refreshNotifications]);
 
@@ -98,6 +109,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       markAsRead,
       markAllAsRead,
       deleteNotification,
+      deleteAllNotifications,
       refreshNotifications,
     }}>
       {children}
@@ -110,7 +122,7 @@ interface GoalNotificationsProps {
 }
 
 export const NotificationsBell: React.FC<GoalNotificationsProps> = ({ onNotificationClick }) => {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, deleteAllNotifications } = useNotifications();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [newNotification, setNewNotification] = useState<NotificationWithRead | null>(null);
@@ -140,17 +152,25 @@ export const NotificationsBell: React.FC<GoalNotificationsProps> = ({ onNotifica
       if (!newNotification.read) {
         await markAsRead(newNotification.id);
       }
-      navigate('/weekly-diet');
+      if (newNotification.message.toLowerCase().includes('agua')) {
+        navigate('/goals');
+      } else {
+        navigate('/weekly-diet');
+      }
     }
   };
 
   const handleNotificationClick = async (event: React.MouseEvent<HTMLElement>, notification: NotificationWithRead) => {
-    // Si el click no fue en un botón, navegar a weekly-diet y marcar como leída
+    // Si el click no fue en un botón, navegar según el tipo de notificación y marcar como leída
     if (event.target && !(event.target as HTMLElement).closest('button')) {
       if (!notification.read) {
         await markAsRead(notification.id);
       }
-      navigate('/weekly-diet');
+      if (notification.message.toLowerCase().includes('agua')) {
+        navigate('/goals');
+      } else {
+        navigate('/weekly-diet');
+      }
       handleClose();
     }
   };
@@ -167,6 +187,11 @@ export const NotificationsBell: React.FC<GoalNotificationsProps> = ({ onNotifica
 
   const handleMarkAllAsRead = async () => {
     await markAllAsRead();
+    handleClose();
+  };
+
+  const handleDeleteAll = async () => {
+    await deleteAllNotifications();
     handleClose();
   };
 
@@ -209,10 +234,10 @@ export const NotificationsBell: React.FC<GoalNotificationsProps> = ({ onNotifica
         PaperProps={{
           elevation: 0,
           sx: {
-            maxHeight: 300,
-            width: 360,
-            maxWidth: '100%',
-            overflow: 'visible',
+            maxHeight: '80vh',
+            width: 320,
+            maxWidth: '90vw',
+            overflow: 'auto',
             filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
             mt: 1.5,
             '&:before': {
@@ -234,15 +259,33 @@ export const NotificationsBell: React.FC<GoalNotificationsProps> = ({ onNotifica
       >
         <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6">Notificaciones</Typography>
-          {unreadCount > 0 && (
-            <Button
-              size="small"
-              onClick={handleMarkAllAsRead}
-              sx={{ textTransform: 'none' }}
-            >
-              Marcar todas como leídas
-            </Button>
-          )}
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            {notifications.length > 0 && (
+              <Button
+                size="small"
+                onClick={handleDeleteAll}
+                sx={{ 
+                  textTransform: 'none',
+                  color: 'error.main',
+                  '&:hover': {
+                    backgroundColor: 'error.light',
+                    color: 'white'
+                  }
+                }}
+              >
+                Borrar todas
+              </Button>
+            )}
+            {unreadCount > 0 && (
+              <Button
+                size="small"
+                onClick={handleMarkAllAsRead}
+                sx={{ textTransform: 'none' }}
+              >
+                Marcar todas como leídas
+              </Button>
+            )}
+          </Box>
         </Box>
         <Divider />
         {notifications.length === 0 ? (
@@ -263,48 +306,52 @@ export const NotificationsBell: React.FC<GoalNotificationsProps> = ({ onNotifica
                 },
               }}
             >
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                 <Typography
                   variant="body2"
                   sx={{
                     fontWeight: notification.read ? 400 : 600,
                     color: notification.read ? 'text.secondary' : 'text.primary',
+                    wordBreak: 'break-word',
+                    pr: 1
                   }}
                 >
                   {notification.message}
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 0.5 }}>
-                  {!notification.read && (
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="caption" color="text.secondary">
+                    {new Date(notification.created_at).toLocaleString()}
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 0.5 }}>
+                    {!notification.read && (
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMarkAsRead(notification);
+                        }}
+                        sx={{ p: 0.5 }}
+                      >
+                        <Typography variant="caption" color="primary">
+                          Marcar como leída
+                        </Typography>
+                      </IconButton>
+                    )}
                     <IconButton
                       size="small"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleMarkAsRead(notification);
+                        handleDelete(notification);
                       }}
                       sx={{ p: 0.5 }}
                     >
-                      <Typography variant="caption" color="primary">
-                        Marcar como leída
+                      <Typography variant="caption" color="error">
+                        Eliminar
                       </Typography>
                     </IconButton>
-                  )}
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(notification);
-                    }}
-                    sx={{ p: 0.5 }}
-                  >
-                    <Typography variant="caption" color="error">
-                      Eliminar
-                    </Typography>
-                  </IconButton>
+                  </Box>
                 </Box>
               </Box>
-              <Typography variant="caption" color="text.secondary">
-                {new Date(notification.created_at).toLocaleString()}
-              </Typography>
             </MenuItem>
           ))
         )}
@@ -366,7 +413,7 @@ export const NotificationsBell: React.FC<GoalNotificationsProps> = ({ onNotifica
                   px: 3
                 }}
               >
-                Ver Dieta
+                {newNotification?.message.toLowerCase().includes('agua') ? 'Ver Objetivos' : 'Ver Dieta'}
               </Button>
             </Box>
           }
