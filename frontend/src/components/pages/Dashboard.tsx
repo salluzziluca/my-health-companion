@@ -22,8 +22,13 @@ import {
   ListItemAvatar,
   Avatar,
   Chip,
+  Grid,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Restaurant as RestaurantIcon, Person as PersonIcon, Delete as DeleteIcon, TrendingUp as TrendingUpIcon } from '@mui/icons-material';
+import { Add as AddIcon, Edit as EditIcon, Restaurant as RestaurantIcon, Person as PersonIcon, Delete as DeleteIcon, TrendingUp as TrendingUpIcon, Close as CloseIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { healthService, professionalService } from '../../services/api';
 import { WeightLog, WeeklySummary, WeeklyNote } from '../../types/health';
@@ -31,6 +36,9 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { jwtDecode } from 'jwt-decode';
 import { useTheme } from '@mui/material/styles';
 import { goalsService, GoalProgress } from '../../services/goals';
+import WaterDashboard from '../WaterDashboard';
+import { format, subWeeks, addWeeks, startOfWeek, endOfWeek } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface JwtPayload {
   sub: string;
@@ -76,7 +84,11 @@ const Dashboard = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
   const [goalProgress, setGoalProgress] = useState<GoalProgress[]>([]);
+  const [openNutritionSummary, setOpenNutritionSummary] = useState(false);
+  const [nutritionSummary, setNutritionSummary] = useState<any>(null);
+  const [loadingNutrition, setLoadingNutrition] = useState(false);
   const theme = useTheme();
+  const [selectedPeriod, setSelectedPeriod] = useState<number>(0); // Un solo estado para ambos gráficos
 
   // Función para obtener el tipo de usuario del token
   const getUserTypeFromToken = (): string | null => {
@@ -115,9 +127,46 @@ const Dashboard = () => {
     }
   };
 
-  const fetchWeeklySummary = async () => {
+  // Función para obtener el rango de fechas basado en el período seleccionado
+  const getDateRange = (periodOffset: number) => {
+    const today = new Date();
+    const startDate = startOfWeek(addWeeks(today, periodOffset), { weekStartsOn: 1 }); // Comienza en lunes
+    const endDate = endOfWeek(addWeeks(today, periodOffset), { weekStartsOn: 1 });
+    return {
+      start: format(startDate, 'yyyy-MM-dd'),
+      end: format(endDate, 'yyyy-MM-dd'),
+      displayStart: format(startDate, "d 'de' MMMM", { locale: es }),
+      displayEnd: format(endDate, "d 'de' MMMM 'de' yyyy", { locale: es })
+    };
+  };
+
+  // Función para filtrar datos según el período seleccionado
+  const filterDataByPeriod = (data: any[], periodOffset: number) => {
+    if (!data) return [];
+    const { start, end } = getDateRange(periodOffset);
+    return data.filter(item => {
+      const itemDate = new Date(item.date);
+      return itemDate >= new Date(start) && itemDate <= new Date(end);
+    });
+  };
+
+  // Función para obtener opciones de período
+  const getPeriodOptions = () => {
+    const options = [];
+    for (let i = -4; i <= 0; i++) {
+      const { displayStart, displayEnd } = getDateRange(i);
+      options.push({
+        value: i,
+        label: i === 0 ? 'Esta semana' : `${displayStart} - ${displayEnd}`
+      });
+    }
+    return options;
+  };
+
+  const fetchWeeklySummary = async (periodOffset: number = 0) => {
     try {
-      const summary = await healthService.getWeeklySummary();
+      const { start, end } = getDateRange(periodOffset);
+      const summary = await healthService.getWeeklySummary(start, end);
       setWeeklySummary(summary);
       if (summary.notes) {
         setWeeklyNote(summary.notes);
@@ -127,6 +176,19 @@ const Dashboard = () => {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchNutritionSummary = async () => {
+    try {
+      setLoadingNutrition(true);
+      const response = await healthService.getNutrientSummary();
+      console.log('Nutrition Summary Response:', response);
+      setNutritionSummary(response);
+    } catch (error) {
+      console.error('Error fetching nutrition summary:', error);
+    } finally {
+      setLoadingNutrition(false);
     }
   };
 
@@ -141,6 +203,12 @@ const Dashboard = () => {
       fetchGoalProgress();
     }
   }, []);
+
+  useEffect(() => {
+    if (openNutritionSummary) {
+      fetchNutritionSummary();
+    }
+  }, [openNutritionSummary]);
 
   const handleWeightSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -248,6 +316,13 @@ const Dashboard = () => {
     return Math.round(Math.min(progress, 150)); // Limitamos a 150% para no mostrar valores extremos
   };
 
+  const calculateWaterProgress = (goalProgress: GoalProgress): number => {
+    if (!goalProgress.goal.target_milliliters || !goalProgress.current_daily_water) return 0;
+
+    const progress = (goalProgress.current_daily_water / goalProgress.goal.target_milliliters) * 100;
+    return Math.round(Math.min(progress, 150)); // Limitamos a 150% para no mostrar valores extremos
+  };
+
   // Función para obtener el color del progreso
   const getProgressColor = (progress: number, isCompleted: boolean = false) => {
     if (isCompleted) return 'success';
@@ -259,11 +334,21 @@ const Dashboard = () => {
 
   // Obtener metas activas para los gráficos
   const weightGoals = goalProgress.filter(g =>
-    g.goal.goal_type === 'weight' || g.goal.goal_type === 'both'
+    g.goal.goal_type === 'weight'
   );
   const calorieGoals = goalProgress.filter(g =>
-    g.goal.goal_type === 'calories' || g.goal.goal_type === 'both'
+    g.goal.goal_type === 'calories'
   );
+  const waterGoals = goalProgress.filter(g =>
+    g.goal.goal_type === 'water'
+  );
+
+  // Modificar el manejador para que actualice ambos gráficos
+  const handlePeriodChange = (event: any) => {
+    const newPeriod = event.target.value;
+    setSelectedPeriod(newPeriod);
+    fetchWeeklySummary(newPeriod);
+  };
 
   if (loading) {
     return (
@@ -417,49 +502,120 @@ const Dashboard = () => {
         </Stack>
       </Paper>
 
+      {/* Filtro de período */}
+      <Paper elevation={0} sx={{ p: 2, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}`, background: 'white' }}>
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <Typography variant="subtitle1" color="text.secondary" sx={{ fontWeight: 500 }}>
+            Ver datos de:
+          </Typography>
+          <FormControl size="small" sx={{ minWidth: 280 }}>
+            <Select
+              value={selectedPeriod}
+              onChange={handlePeriodChange}
+              sx={{
+                borderRadius: 2,
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: theme.palette.divider,
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: theme.palette.primary.main,
+                },
+              }}
+            >
+              {getPeriodOptions().map(option => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Stack>
+      </Paper>
+
       {/* Progreso de peso (arriba, ancho completo) */}
-      <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}`, background: 'white', minHeight: 340, mb: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'primary.main', letterSpacing: '-0.5px' }}>
+      <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}`, background: 'white', mb: 3 }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', letterSpacing: '-0.5px', mb: 2 }}>
           Progreso de Peso
         </Typography>
-        <Box sx={{ height: 220 }}>
+        <Box sx={{ height: 280, position: 'relative' }}>
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={weeklySummary.weight_data.weight_logs}>
-              <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
-              <XAxis dataKey="date" stroke={theme.palette.text.secondary} tick={{ fill: theme.palette.text.secondary, fontSize: 13 }} />
+            <LineChart
+              data={weeklySummary?.weight_data?.weight_logs || []}
+              margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+            >
+              <defs>
+                <linearGradient id="weightGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.2} />
+                  <stop offset="95%" stopColor={theme.palette.primary.main} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke={theme.palette.divider}
+                vertical={false}
+                opacity={0.5}
+              />
+              <XAxis
+                dataKey="date"
+                stroke={theme.palette.text.secondary}
+                tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
+                tickLine={false}
+                axisLine={{ stroke: theme.palette.divider }}
+                tickFormatter={(value) => format(new Date(value), 'EEE d', { locale: es })}
+              />
               <YAxis
                 stroke={theme.palette.text.secondary}
-                tick={{ fill: theme.palette.text.secondary, fontSize: 13 }}
+                tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
+                tickLine={false}
+                axisLine={{ stroke: theme.palette.divider }}
                 domain={(() => {
-                  // Obtener el rango de pesos de los datos
                   const weights = weeklySummary.weight_data.weight_logs.map(log => log.weight);
-
-                  // Obtener los pesos objetivo de las metas activas
                   const targetWeights = weightGoals
                     .map(goal => goal.goal.target_weight)
                     .filter(weight => weight !== null && weight !== undefined) as number[];
-
-                  // Combinar todos los pesos (actuales + objetivos)
                   const allWeights = [...weights, ...targetWeights];
-
                   if (allWeights.length === 0) return ['auto', 'auto'];
-
                   const minWeight = Math.min(...allWeights);
                   const maxWeight = Math.max(...allWeights);
-
-                  // Agregar un margen del 10% arriba y abajo para que el gráfico se vea mejor
-                  const margin = (maxWeight - minWeight) * 0.1 || 5; // Mínimo 5kg de margen si todos los pesos son iguales
-
+                  const margin = (maxWeight - minWeight) * 0.1 || 5;
                   return [
-                    Math.max(0, minWeight - margin), // No permitir pesos negativos
+                    Math.max(0, minWeight - margin),
                     maxWeight + margin
                   ];
                 })()}
               />
-              <Tooltip contentStyle={{ background: 'white', borderRadius: 8, border: `1px solid ${theme.palette.divider}` }} />
-              <Line type="monotone" dataKey="weight" stroke={theme.palette.primary.main} strokeWidth={3} dot={{ r: 5, fill: theme.palette.primary.main, stroke: 'white', strokeWidth: 2 }} activeDot={{ r: 7 }} isAnimationActive />
-              {/* Líneas de meta de peso */}
-              {weightGoals.map((goalProgress, index) => (
+              <Tooltip
+                contentStyle={{
+                  background: 'white',
+                  borderRadius: 8,
+                  border: `1px solid ${theme.palette.divider}`,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }}
+                formatter={(value: number) => [`${value.toFixed(1)} kg`, 'Peso']}
+                labelFormatter={(label) => format(new Date(label), "EEEE d 'de' MMMM", { locale: es })}
+              />
+              <Line
+                type="monotone"
+                dataKey="weight"
+                stroke={theme.palette.primary.main}
+                strokeWidth={3}
+                dot={{
+                  r: 4,
+                  fill: theme.palette.primary.main,
+                  stroke: 'white',
+                  strokeWidth: 2,
+                  opacity: 0.8
+                }}
+                activeDot={{
+                  r: 6,
+                  fill: theme.palette.primary.main,
+                  stroke: 'white',
+                  strokeWidth: 2,
+                  filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.2))'
+                }}
+                isAnimationActive
+              />
+              {weightGoals.map((goalProgress) => (
                 goalProgress.goal.target_weight && (
                   <ReferenceLine
                     key={`weight-goal-${goalProgress.goal.id}`}
@@ -470,7 +626,8 @@ const Dashboard = () => {
                     label={{
                       value: `Meta: ${goalProgress.goal.target_weight}kg`,
                       position: "top",
-                      style: { fill: theme.palette.success.main, fontWeight: 600 }
+                      fill: theme.palette.success.main,
+                      fontSize: 12
                     }}
                   />
                 )
@@ -478,12 +635,20 @@ const Dashboard = () => {
             </LineChart>
           </ResponsiveContainer>
         </Box>
-        <Stack direction="row" spacing={2} alignItems="center" sx={{ mt: 2 }}>
-          <Chip label={`Cambio: ${weeklySummary.weight_data.weight_change} kg`} color={weeklySummary.weight_data.weight_change >= 0 ? 'success' : 'error'} size="small" sx={{ borderRadius: 1, fontWeight: 600 }} />
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ mt: 2 }} flexWrap="wrap">
+          <Chip
+            label={`Cambio: ${weeklySummary.weight_data.weight_change} kg`}
+            color={weeklySummary.weight_data.weight_change >= 0 ? 'success' : 'error'}
+            size="small"
+            sx={{
+              borderRadius: 1,
+              fontWeight: 600,
+              boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+            }}
+          />
           {weightGoals.map((goalProgress) => {
             const progress = calculateWeightProgress(goalProgress);
             const difference = goalProgress.weight_progress_difference;
-
             return goalProgress.goal.target_weight && (
               <Chip
                 key={`weight-goal-chip-${goalProgress.goal.id}`}
@@ -504,104 +669,134 @@ const Dashboard = () => {
                       : 'default'
                 }
                 size="small"
-                sx={{ borderRadius: 1, fontWeight: 600 }}
+                sx={{
+                  borderRadius: 1,
+                  fontWeight: 600,
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                }}
               />
             );
           })}
         </Stack>
       </Paper>
 
-      {/* Gráfico de Calorías Diarias (si hay más de 1 día con datos O si hay metas activas) */}
-      {(weeklySummary.calorie_data.daily_breakdown && weeklySummary.calorie_data.daily_breakdown.length > 1) ||
-        (calorieGoals.length > 0 && weeklySummary.calorie_data.daily_breakdown && weeklySummary.calorie_data.daily_breakdown.length > 0) ? (
-        <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}`, background: 'white', minHeight: 340, mb: 3 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'primary.main', letterSpacing: '-0.5px' }}>
-            Calorías Diarias
-          </Typography>
-          <Box sx={{ height: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weeklySummary.calorie_data.daily_breakdown}>
-                <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
-                <XAxis dataKey="date" stroke={theme.palette.text.secondary} tick={{ fill: theme.palette.text.secondary, fontSize: 13 }} />
-                <YAxis stroke={theme.palette.text.secondary} tick={{ fill: theme.palette.text.secondary, fontSize: 13 }} />
-                <Tooltip contentStyle={{ background: 'white', borderRadius: 8, border: `1px solid ${theme.palette.divider}` }} />
-                <Bar dataKey="calories" fill={theme.palette.secondary.main} radius={[4, 4, 0, 0]} />
-                {/* Líneas de meta de calorías */}
-                {calorieGoals.map((goalProgress, index) => (
-                  goalProgress.goal.target_calories && (
-                    <ReferenceLine
-                      key={`calorie-goal-${goalProgress.goal.id}`}
-                      y={goalProgress.goal.target_calories}
-                      stroke={theme.palette.warning.main}
-                      strokeDasharray="5 5"
-                      strokeWidth={2}
-                      label={{
-                        value: `Meta: ${goalProgress.goal.target_calories} cal`,
-                        position: "top",
-                        style: { fill: theme.palette.warning.main, fontWeight: 600 }
-                      }}
-                    />
-                  )
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
-          </Box>
-          <Stack direction="row" spacing={2} alignItems="center" sx={{ mt: 2 }}>
-            <Chip label={`Promedio: ${weeklySummary.calorie_data.average_daily_calories.toFixed(0)} cal/día`} color="primary" size="small" sx={{ borderRadius: 1, fontWeight: 600 }} />
-            {calorieGoals.map((goalProgress) => {
-              const progress = calculateCalorieProgress(goalProgress);
-              return goalProgress.goal.target_calories && (
-                <Chip
-                  key={`calorie-goal-chip-${goalProgress.goal.id}`}
-                  label={
-                    goalProgress.is_calories_achieved
-                      ? `✓ Meta alcanzada (${progress}%)`
-                      : progress > 0
-                        ? `Meta: ${goalProgress.goal.target_calories} cal (${progress}%)`
-                        : `Meta: ${goalProgress.goal.target_calories} cal`
-                  }
-                  color={getProgressColor(progress, goalProgress.is_calories_achieved || false) as any}
-                  size="small"
-                  sx={{ borderRadius: 1, fontWeight: 600 }}
-                />
-              );
-            })}
-          </Stack>
-        </Paper>
-      ) : null}
-
-      {/* Mostrar metas de calorías incluso si no hay gráfico */}
-      {calorieGoals.length > 0 && (!weeklySummary.calorie_data.daily_breakdown || weeklySummary.calorie_data.daily_breakdown.length === 0) && (
-        <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}`, background: 'white', mb: 3 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'primary.main', letterSpacing: '-0.5px' }}>
-            Metas de Calorías
-          </Typography>
-          <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
-            {calorieGoals.map((goalProgress) => {
-              const progress = calculateCalorieProgress(goalProgress);
-              return goalProgress.goal.target_calories && (
-                <Box key={`calorie-goal-info-${goalProgress.goal.id}`} sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2, bgcolor: 'background.paper' }}>
-                  <Typography variant="body2" color="text.secondary">Meta diaria</Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.warning.main }}>
-                    {goalProgress.goal.target_calories} cal
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {goalProgress.is_calories_achieved ? '✓ Alcanzada' : 'Pendiente'}
-                  </Typography>
-                  {progress > 0 && (
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: getProgressColor(progress, goalProgress.is_calories_achieved || false) === 'success' ? 'success.main' : 'warning.main', mt: 0.5 }}>
-                      Progreso: {progress}%
-                    </Typography>
-                  )}
-                </Box>
-              );
-            })}
-            <Alert severity="info" sx={{ mt: 2 }}>
-              Registra comidas para ver tu progreso hacia las metas de calorías.
+      {/* Gráfico de Calorías Diarias (siempre visible) */}
+      <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}`, background: 'white', minHeight: 340, mb: 3 }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', letterSpacing: '-0.5px', mb: 2 }}>
+          Calorías Diarias
+        </Typography>
+        <Box sx={{ height: 280, position: 'relative' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={weeklySummary?.calorie_data?.daily_breakdown || []}
+              margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+            >
+              <defs>
+                <linearGradient id="calorieGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={theme.palette.secondary.main} stopOpacity={0.8} />
+                  <stop offset="95%" stopColor={theme.palette.secondary.main} stopOpacity={0.4} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke={theme.palette.divider}
+                vertical={false}
+                opacity={0.5}
+              />
+              <XAxis
+                dataKey="date"
+                stroke={theme.palette.text.secondary}
+                tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
+                tickLine={false}
+                axisLine={{ stroke: theme.palette.divider }}
+                tickFormatter={(value) => format(new Date(value), 'EEE d', { locale: es })}
+              />
+              <YAxis
+                stroke={theme.palette.text.secondary}
+                tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
+                tickLine={false}
+                axisLine={{ stroke: theme.palette.divider }}
+                tickFormatter={(value) => `${value.toLocaleString()} cal`}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: 'white',
+                  borderRadius: 8,
+                  border: `1px solid ${theme.palette.divider}`,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }}
+                formatter={(value: number) => [`${value.toLocaleString()} cal`, 'Calorías']}
+                labelFormatter={(label) => format(new Date(label), "EEEE d 'de' MMMM", { locale: es })}
+              />
+              <Bar
+                dataKey="calories"
+                fill="url(#calorieGradient)"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={60}
+                animationDuration={1500}
+              />
+              {calorieGoals.map((goalProgress) => (
+                goalProgress.goal.target_calories && (
+                  <ReferenceLine
+                    key={`calorie-goal-${goalProgress.goal.id}`}
+                    y={goalProgress.goal.target_calories}
+                    stroke={theme.palette.warning.main}
+                    strokeDasharray="5 5"
+                    strokeWidth={2}
+                    label={{
+                      value: `Meta: ${goalProgress.goal.target_calories.toLocaleString()} cal`,
+                      position: "top",
+                      fill: theme.palette.warning.main,
+                      fontSize: 12
+                    }}
+                  />
+                )
+              ))}
+            </BarChart>
+          </ResponsiveContainer>
+        </Box>
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ mt: 2 }} flexWrap="wrap">
+          {weeklySummary?.calorie_data?.average_daily_calories && (
+            <Chip
+              label={`Promedio: ${weeklySummary.calorie_data.average_daily_calories.toFixed(0)} cal/día`}
+              color="primary"
+              size="small"
+              sx={{
+                borderRadius: 1,
+                fontWeight: 600,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+              }}
+            />
+          )}
+          {calorieGoals.map((goalProgress) => {
+            const progress = calculateCalorieProgress(goalProgress);
+            return goalProgress.goal.target_calories && (
+              <Chip
+                key={`calorie-goal-chip-${goalProgress.goal.id}`}
+                label={
+                  goalProgress.is_calories_achieved
+                    ? `✓ Meta alcanzada (${progress}%)`
+                    : progress > 0
+                      ? `Meta: ${goalProgress.goal.target_calories.toLocaleString()} cal (${progress}%)`
+                      : `Meta: ${goalProgress.goal.target_calories.toLocaleString()} cal`
+                }
+                color={getProgressColor(progress, goalProgress.is_calories_achieved || false) as any}
+                size="small"
+                sx={{
+                  borderRadius: 1,
+                  fontWeight: 600,
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                }}
+              />
+            );
+          })}
+          {(!weeklySummary?.calorie_data?.daily_breakdown || weeklySummary.calorie_data.daily_breakdown.length === 0) && (
+            <Alert severity="info" sx={{ mt: 2, width: '100%' }}>
+              Registra comidas para ver tu progreso de calorías.
             </Alert>
-          </Stack>
-        </Paper>
-      )}
+          )}
+        </Stack>
+      </Paper>
 
       {/* Segunda fila: Resumen de Calorías | Distribución de Comidas (misma altura) */}
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} mb={3} sx={{ alignItems: 'stretch' }}>
@@ -612,8 +807,30 @@ const Dashboard = () => {
               <Typography variant="h3" color="primary" sx={{ fontWeight: 700, letterSpacing: '-1px' }}>{weeklySummary.calorie_data.total_calories.toFixed(0)}</Typography>
               <Typography variant="body2" color="text.secondary">calorías totales</Typography>
               <Divider />
-              <Typography variant="h5" sx={{ fontWeight: 600 }}>{weeklySummary.calorie_data.average_daily_calories.toFixed(0)}</Typography>
-              <Typography variant="body2" color="text.secondary">promedio diario</Typography>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
+                  Promedio diario
+                </Typography>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
+                  {Math.round(weeklySummary.calorie_data.average_daily_calories)} kcal
+                </Typography>
+                <Button
+                  variant="contained"
+                  onClick={() => setOpenNutritionSummary(true)}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                    px: 2,
+                    boxShadow: 'none',
+                    transition: 'all 0.2s',
+                    '&:hover': { boxShadow: 2, transform: 'translateY(-2px)' }
+                  }}
+                >
+                  Resumen Nutricional
+                </Button>
+              </Stack>
               <Typography variant="body2" color="text.secondary">{weeklySummary.calorie_data.days_logged} días registrados</Typography>
               {/* Agregar información de metas en el resumen */}
               {calorieGoals.length > 0 && (
@@ -646,56 +863,56 @@ const Dashboard = () => {
             </Stack>
             <Stack spacing={2} sx={{ mt: 3 }}>
               <Stack direction="row" spacing={2}>
-                <Button 
-                  variant="contained" 
-                  fullWidth 
-                  startIcon={<RestaurantIcon />} 
-                  onClick={() => navigate('/weekly-diet')} 
-                  sx={{ 
-                    borderRadius: 2, 
-                    textTransform: 'none', 
-                    fontWeight: 600, 
-                    fontSize: '1rem', 
-                    boxShadow: 'none', 
-                    transition: 'all 0.2s', 
-                    '&:hover': { boxShadow: 2, transform: 'translateY(-2px)' } 
+                <Button
+                  variant="contained"
+                  fullWidth
+                  startIcon={<RestaurantIcon />}
+                  onClick={() => navigate('/weekly-diet')}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    fontSize: '1rem',
+                    boxShadow: 'none',
+                    transition: 'all 0.2s',
+                    '&:hover': { boxShadow: 2, transform: 'translateY(-2px)' }
                   }}
                 >
                   Gestionar Dietas
                 </Button>
-                <Button 
-                  variant="outlined" 
-                  fullWidth 
-                  onClick={() => navigate('/meals?add=true')} 
-                  sx={{ 
-                    borderRadius: 2, 
-                    textTransform: 'none', 
-                    fontWeight: 600, 
-                    fontSize: '1rem', 
-                    borderColor: theme.palette.primary.main, 
-                    color: theme.palette.primary.main, 
-                    '&:hover': { 
-                      bgcolor: theme.palette.primary.light + '10', 
-                      borderColor: theme.palette.primary.dark 
-                    } 
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  onClick={() => navigate('/meals?add=true')}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    fontSize: '1rem',
+                    borderColor: theme.palette.primary.main,
+                    color: theme.palette.primary.main,
+                    '&:hover': {
+                      bgcolor: theme.palette.primary.light + '10',
+                      borderColor: theme.palette.primary.dark
+                    }
                   }}
                 >
                   Gestionar Comidas
                 </Button>
               </Stack>
-              <Button 
-                variant="contained" 
-                startIcon={<TrendingUpIcon />} 
-                onClick={() => navigate('/goals')} 
-                sx={{ 
+              <Button
+                variant="contained"
+                startIcon={<TrendingUpIcon />}
+                onClick={() => navigate('/goals')}
+                sx={{
                   width: '100%',
-                  borderRadius: 2, 
-                  textTransform: 'none', 
-                  fontWeight: 600, 
-                  fontSize: '1rem', 
-                  boxShadow: 'none', 
-                  transition: 'all 0.2s', 
-                  '&:hover': { boxShadow: 2, transform: 'translateY(-2px)' } 
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '1rem',
+                  boxShadow: 'none',
+                  transition: 'all 0.2s',
+                  '&:hover': { boxShadow: 2, transform: 'translateY(-2px)' }
                 }}
               >
                 Gestionar Objetivos Asignados
@@ -704,31 +921,10 @@ const Dashboard = () => {
           </Paper>
         </Box>
         <Box sx={{ flex: 1, display: 'flex' }}>
-          <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}`, background: 'white', minHeight: 260, height: '100%', width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 1 }}>Distribución de Comidas</Typography>
-            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', minHeight: 180, height: '100%' }}>
-              <ResponsiveContainer width="100%" height={180}>
-                <PieChart>
-                  <Pie
-                    data={Object.entries(weeklySummary.meal_trends.meal_distribution).map(([key, value]) => ({ name: mealLabelsES[key] || key, value }))}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    labelLine={false}
-                    isAnimationActive
-                  >
-                    {Object.entries(weeklySummary.meal_trends.meal_distribution).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={[theme.palette.primary.main, theme.palette.secondary.main, theme.palette.success.main, theme.palette.warning.main][index % 4]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ background: 'white', borderRadius: 8, border: `1px solid ${theme.palette.divider}` }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </Box>
-          </Paper>
+          <WaterDashboard
+            waterGoals={waterGoals}
+            onWaterAdded={fetchGoalProgress}
+          />
         </Box>
       </Stack>
 
@@ -793,6 +989,136 @@ const Dashboard = () => {
           <Button onClick={() => setIsNoteDialogOpen(false)} sx={{ borderRadius: 2, textTransform: 'none', px: 3 }}>Cancelar</Button>
           <Button onClick={handleNoteSubmit} variant="contained" sx={{ borderRadius: 2, textTransform: 'none', px: 3, boxShadow: 'none', transition: 'all 0.2s', '&:hover': { boxShadow: 2, transform: 'translateY(-2px)', bgcolor: 'primary.dark' } }}>Guardar</Button>
         </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={openNutritionSummary}
+        onClose={() => setOpenNutritionSummary(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            Resumen Nutricional
+            <IconButton
+              edge="end"
+              color="inherit"
+              onClick={() => setOpenNutritionSummary(false)}
+              aria-label="close"
+            >
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {loadingNutrition ? (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+              <CircularProgress />
+            </Box>
+          ) : nutritionSummary ? (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Resumen Diario
+              </Typography>
+              <Stack spacing={3}>
+                <Box>
+                  <Typography variant="subtitle1" color="primary" gutterBottom>
+                    Calorías
+                  </Typography>
+                  <Typography variant="h5" align="center">
+                    {Math.round(nutritionSummary.total_macros.protein_g * 4 +
+                      nutritionSummary.total_macros.carbs_g * 4 +
+                      nutritionSummary.total_macros.fat_g * 9)} kcal
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle1" color="primary" gutterBottom>
+                    Macronutrientes
+                  </Typography>
+                  <Stack spacing={1}>
+                    {Object.entries(nutritionSummary.total_macros).map(([key, value]) => (
+                      <Box key={key} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="body1" sx={{ width: '40%' }}>
+                          {key.replace('_g', '').charAt(0).toUpperCase() + key.replace('_g', '').slice(1)}:
+                        </Typography>
+                        <Typography variant="body1" sx={{ width: '30%', textAlign: 'center' }}>
+                          {Math.round(Number(value))}g
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            width: '30%',
+                            textAlign: 'right',
+                            '& > span': {
+                              backgroundColor: nutritionSummary.alerts[key.replace('_g', '')] === 'excess' ? 'error.main' : 'success.main',
+                              color: 'white',
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              display: 'inline-block',
+                              textAlign: 'center',
+                              fontWeight: 'bold',
+                              width: '100%'
+                            }
+                          }}
+                        >
+                          <span>
+                            {nutritionSummary.alerts[key.replace('_g', '')] === 'excess' ? 'Exceso' : 'Normal'}
+                          </span>
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Stack>
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle1" color="primary" gutterBottom>
+                    Micronutrientes
+                  </Typography>
+                  <Stack spacing={1}>
+                    {Object.entries(nutritionSummary.total_micros).map(([key, value]) => (
+                      <Box key={key} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="body1" sx={{ width: '40%' }}>
+                          {key.replace('_mg', '').split('_').map(word =>
+                            word.charAt(0).toUpperCase() + word.slice(1)
+                          ).join(' ')}:
+                        </Typography>
+                        <Typography variant="body1" sx={{ width: '30%', textAlign: 'center' }}>
+                          {Math.round(Number(value))}mg
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            width: '30%',
+                            textAlign: 'right',
+                            '& > span': {
+                              backgroundColor: nutritionSummary.alerts[key.replace('_mg', '')] === 'excess' ? 'error.main' : 'success.main',
+                              color: 'white',
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              display: 'inline-block',
+                              textAlign: 'center',
+                              fontWeight: 'bold',
+                              width: '100%'
+                            }
+                          }}
+                        >
+                          <span>
+                            {nutritionSummary.alerts[key.replace('_mg', '')] === 'excess' ? 'Exceso' : 'Normal'}
+                          </span>
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Stack>
+                </Box>
+              </Stack>
+            </Box>
+          ) : (
+            <Typography color="error">
+              No se pudieron cargar los datos del resumen nutricional
+            </Typography>
+          )}
+        </DialogContent>
       </Dialog>
     </Box>
   );

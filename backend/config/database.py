@@ -10,6 +10,7 @@ from models.meals import Meal
 from models.weekly_notes import WeeklyNote
 from models.weight_logs import WeightLog
 from models.notification import Notification
+from models.water_intake import WaterIntake
 
 #sqlite_file_name = "../health_app.sqlite"
 #base_dir = os.path.dirname(os.path.realpath(__file__))
@@ -23,9 +24,20 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:1527@localhost:5
 #engine = create_engine(DATABASE_URL, echo=False, connect_args=connect_args)
 engine = create_engine(DATABASE_URL, echo=False)
 
+# Función para usar como dependencia en FastAPI
 def get_session():
-    with Session(engine) as session:
+    """Función generadora para usar como dependencia en FastAPI"""
+    session = Session(engine)
+    try:
         yield session
+    finally:
+        session.close()
+
+
+# Función simple para crear sesiones fuera de FastAPI
+def create_session():
+    """Crear una nueva sesión para usar fuera de FastAPI"""
+    return Session(engine)
 
 
 def create_db_and_tables():
