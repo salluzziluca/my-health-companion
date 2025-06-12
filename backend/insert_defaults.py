@@ -12,7 +12,7 @@ cursor = conn.cursor()
 
 # SQL en múltiples sentencias separadas por punto y coma
 sql_script = '''
--- Insertar ingredientes (1ra parte)
+-- Insertar ingredientes 
 INSERT INTO ingredients (name, category, grams, calories_kcal, protein_g, fat_g, carbs_g, iron_mg, calcium_mg, vitamin_c_mg) VALUES
 ('Pechuga de pollo', 'animal', 100, 165, 31, 3.6, 0, 1.0, 15, 0),
 ('Muslo de pollo', 'animal', 100, 177, 24, 8.0, 0, 1.3, 11, 0),
@@ -22,7 +22,7 @@ INSERT INTO ingredients (name, category, grams, calories_kcal, protein_g, fat_g,
 ('Costilla de cerdo', 'animal', 100, 291, 20, 24, 0, 1.1, 18, 0),
 ('Salmón', 'animal', 100, 208, 20, 13, 0, 0.5, 9, 0),
 ('Atún', 'animal', 100, 132, 28, 1.0, 0, 1.0, 10, 0),
-('Huevo', 'animal', 100, 155, 6, 5, 0.6, 1.2, 25, 0);
+('Huevo', 'animal', 100, 155, 13, 5, 0.6, 1.2, 25, 0);
 
 -- Ingredientes - verduras
 INSERT INTO ingredients (name, category, grams, calories_kcal, protein_g, fat_g, carbs_g, iron_mg, calcium_mg, vitamin_c_mg) VALUES
@@ -65,7 +65,10 @@ INSERT INTO foods (food_name) VALUES
 ('Hamburguesa'),
 ('Pizza margarita'),
 ('Guiso de lentejas'),
-('Sopa de verduras');
+('Sopa de verduras'),
+('Omelette de huevo'),
+('Pollo al horno'),
+('Ensalada de frutas');
 
 -- Relación ingredientes-alimentos
 INSERT INTO ingredients_foods (ingredient_id, food_id, grams) VALUES
@@ -88,7 +91,12 @@ INSERT INTO ingredients_foods (ingredient_id, food_id, grams) VALUES
 (10, 7, 80),
 (11, 8, 100),
 (12, 8, 80),
-(13, 8, 100);
+(13, 8, 100),
+(9, 9, 150),   
+(1, 10, 200),  
+(23, 11, 100), 
+(24, 11, 100), 
+(25, 11, 100); 
 '''
 
 # Ejecutar múltiples sentencias separadas por punto y coma

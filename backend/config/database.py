@@ -15,6 +15,8 @@ from models.notification import Notification
 #base_dir = os.path.dirname(os.path.realpath(__file__))
 
 #DATABASE_URL = f"sqlite:///{os.path.join(base_dir, sqlite_file_name)}"
+
+# Acá deben poner su usuario (postgres el mio) y su clave (1527 la mía), 5432 es el puerto
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:1527@localhost:5432/health_app")
 
 #connect_args = {"check_same_thread": False}
