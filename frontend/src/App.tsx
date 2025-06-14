@@ -16,6 +16,7 @@ import { NotificationsProvider } from './components/GoalNotifications';
 import GoalManagement from './components/GoalManagement';
 import PatientGoals from './components/pages/PatientGoals';
 import { jwtDecode } from 'jwt-decode';
+import DashboardEntrenador from './components/pages/DashboardEntrenador';
 
 
 // Create a theme context
@@ -279,6 +280,7 @@ function App() {
                 <Route path="nutricionista" element={<NutricionistaDashboard />} />
                 <Route path="nutricionista/goals" element={<NutricionistaDashboard />} />
                 <Route path="goals" element={<PatientGoals />} />
+                <Route path="dashboard-entrenador" element={<DashboardEntrenador />} />
               </Route>
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>

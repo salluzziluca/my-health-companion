@@ -19,6 +19,7 @@ import RestaurantIcon from '@mui/icons-material/Restaurant';
 import MoreIcon from '@mui/icons-material/MoreVert';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { NotificationsBell } from './GoalNotifications';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -230,6 +231,14 @@ export default function PrimarySearchAppBar() {
           </Typography>
           <Box sx={{ flexGrow: 1 }} />
           <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
+            <IconButton
+              size="large"
+              color="inherit"
+              onClick={() => navigate('/dashboard-entrenador')}
+              sx={{ mr: 1 }}
+            >
+              <FitnessCenterIcon />
+            </IconButton>
             <IconButton
               size="large"
               color="inherit"

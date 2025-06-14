@@ -50,6 +50,7 @@ const MyProfile = () => {
   } | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [goalProgress, setGoalProgress] = useState<GoalProgress[]>([]);
+  const [trainerCode, setTrainerCode] = useState('');
   const theme = useTheme();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -518,28 +519,54 @@ const MyProfile = () => {
         </Card>
 
         {!professionalInfo && (
-          <Card>
-            <CardContent>
-              <Stack spacing={3} alignItems="center">
-                <Typography variant="h6">Vincular Profesional</Typography>
-                <TextField
-                  label="Código del Profesional"
-                  value={professionalCode}
-                  onChange={(e) => setProfessionalCode(e.target.value)}
-                  fullWidth
-                  placeholder="Ingresa el código de vinculación"
-                />
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleAssignProfessional}
-                  disabled={!professionalCode}
-                >
-                  Vincular Profesional
-                </Button>
-              </Stack>
-            </CardContent>
-          </Card>
+          <>
+            <Card>
+              <CardContent>
+                <Stack spacing={3} alignItems="center">
+                  <Typography variant="h6">Vincular Profesional</Typography>
+                  <TextField
+                    label="Código del Profesional"
+                    value={professionalCode}
+                    onChange={(e) => setProfessionalCode(e.target.value)}
+                    fullWidth
+                    placeholder="Ingresa el código de vinculación"
+                  />
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleAssignProfessional}
+                    disabled={!professionalCode}
+                  >
+                    Vincular Profesional
+                  </Button>
+                </Stack>
+              </CardContent>
+            </Card>
+
+            {/* MOCK: Vincular Entrenador */}
+            <Card>
+              <CardContent>
+                <Stack spacing={3} alignItems="center">
+                  <Typography variant="h6">Vincular Entrenador</Typography>
+                  <TextField
+                    label="Código del Entrenador"
+                    value={trainerCode}
+                    onChange={e => setTrainerCode(e.target.value)}
+                    fullWidth
+                    placeholder="Ingresa el código de vinculación"
+                  />
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    disabled={!trainerCode}
+                    onClick={() => { /* mock: no hacer nada */ }}
+                  >
+                    Vincular Entrenador
+                  </Button>
+                </Stack>
+              </CardContent>
+            </Card>
+          </>
         )}
 
         {professionalInfo && (
