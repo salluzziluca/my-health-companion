@@ -11,9 +11,20 @@ services:
         fromDatabase:
           name: health-app-db
           property: connectionString
+      - key: FRONTEND_URL
+        value: https://my-health-companion.onrender.com
+
+  - type: web
+    name: my-health-companion-frontend
+    env: node
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: cd frontend && npm start
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://my-health-companion-backend.onrender.com
 
 databases:
   - name: health-app-db
     databaseName: health_app
-    user: postgres
+    user: health_app_user
     plan: free 
