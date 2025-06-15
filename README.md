@@ -1,45 +1,116 @@
 # My Health Companion
 
-Aplicación de salud y nutrición con sistema de usuarios y perfiles.
+Aplicación de seguimiento de salud y nutrición que permite a profesionales de la salud gestionar pacientes y sus objetivos nutricionales.
 
-## Requisitos Previos
+## 🚀 Inicio Rápido
 
--   Node.js (v14 o superior)
--   Python (v3.8 o superior)
--   pip (gestor de paquetes de Python)
+### Requisitos Previos
+- Node.js (v14 o superior)
+- Python 3.8 o superior
+- PostgreSQL
 
-## Instalación
+### Instalación Automática (Recomendada)
 
-Instalar dependencias:
-
+#### En Linux/macOS:
+1. Clona el repositorio:
 ```bash
-# Instalar todas las dependencias (backend y frontend)
-npm run install:all
+git clone https://github.com/tu-usuario/my-health-companion.git
+cd my-health-companion
 ```
 
-## Desarrollo
+2. Ejecuta el script de setup:
+```bash
+./setup.sh
+```
 
-Para iniciar el servidor de desarrollo (tanto backend como frontend):
-
+3. Inicia la aplicación:
 ```bash
 npm run dev
 ```
 
-Esto iniciará:
+#### En Windows:
+1. Clona el repositorio:
+```bash
+git clone https://github.com/tu-usuario/my-health-companion.git
+cd my-health-companion
+```
 
--   Backend en http://localhost:8000
--   Frontend en http://localhost:3000
+2. Ejecuta el script de setup en PowerShell (como administrador):
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process -Force
+.\setup.ps1
+```
 
-Si van a http://localhost:8000/docs van a ver la una documentacion interactiva de la API.
+3. Inicia la aplicación:
+```bash
+npm run dev
+```
 
-## Scripts Disponibles
+### Instalación Manual
 
--   `npm run install:all`: Instala todas las dependencias (backend y frontend)
--   `npm run install:backend`: Instala solo las dependencias del backend
--   `npm run install:frontend`: Instala solo las dependencias del frontend
--   `npm run start:backend`: Inicia solo el servidor backend
--   `npm run start:frontend`: Inicia solo el servidor frontend
--   `npm run dev`: Inicia ambos servidores simultáneamente
+#### En Linux/macOS:
+1. Instala PostgreSQL y crea la base de datos:
+```bash
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+sudo -u postgres psql -c "CREATE DATABASE health_app;"
+sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD '1527';"
+```
+
+2. Instala las dependencias:
+```bash
+npm run install:all
+```
+
+3. Pobla la base de datos:
+```bash
+npm run setup:db
+```
+
+4. Inicia la aplicación:
+```bash
+npm run dev
+```
+
+#### En Windows:
+1. Instala PostgreSQL desde [postgresql.org](https://www.postgresql.org/download/windows/)
+2. Abre pgAdmin y crea una nueva base de datos llamada `health_app`
+3. Configura la contraseña del usuario `postgres` como `1527`
+4. Instala las dependencias:
+```bash
+npm run install:all
+```
+5. Pobla la base de datos:
+```bash
+npm run setup:db
+```
+6. Inicia la aplicación:
+```bash
+npm run dev
+```
+
+## 📦 Scripts Disponibles
+
+- `npm run dev`: Inicia la aplicación en modo desarrollo
+- `npm run start:prod`: Inicia la aplicación en modo producción
+- `npm run setup:db`: Pobla la base de datos con datos iniciales
+- `npm run install:all`: Instala todas las dependencias
+
+## 🔧 Configuración de la Base de Datos
+
+- **Host**: localhost
+- **Puerto**: 5432
+- **Base de datos**: health_app
+- **Usuario**: postgres
+- **Contraseña**: 1527
+
+## 🚀 Despliegue
+
+La aplicación está configurada para ser desplegada en Render. El archivo `render.yaml` contiene la configuración necesaria.
+
+## 📝 Licencia
+
+Este proyecto está bajo la Licencia MIT.
 
 ## Estructura del Proyecto
 

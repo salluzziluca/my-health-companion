@@ -8,7 +8,10 @@
         "install:frontend": "cd frontend && npm install",
         "start:backend": "cd backend && python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000",
         "start:frontend": "cd frontend && npm start",
-        "dev": "concurrently -n \"backend,frontend\" -c \"auto,blue\" \"npm run start:backend\" \"npm run start:frontend\""
+        "dev": "concurrently -n \"backend,frontend\" -c \"auto,blue\" \"npm run start:backend\" \"npm run start:frontend\"",
+        "setup:db": "cd backend && python insert_defaults.py",
+        "start:prod": "ENV=production concurrently -n \"backend,frontend\" -c \"auto,blue\" \"npm run start:backend\" \"npm run start:frontend\"",
+        "start:dev": "ENV=development concurrently -n \"backend,frontend\" -c \"auto,blue\" \"npm run start:backend\" \"npm run start:frontend\""
     },
     "devDependencies": {
         "concurrently": "^8.2.2"

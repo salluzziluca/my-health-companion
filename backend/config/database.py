@@ -12,13 +12,18 @@ from models.weight_logs import WeightLog
 from models.notification import Notification
 from models.water_intake import WaterIntake
 
-#sqlite_file_name = "../health_app.sqlite"
-#base_dir = os.path.dirname(os.path.realpath(__file__))
+# Configuración de la base de datos según el entorno
+ENV = os.getenv("ENV", "development")
 
-#DATABASE_URL = f"sqlite:///{os.path.join(base_dir, sqlite_file_name)}"
-
-# Acá deben poner su usuario (postgres el mio) y su clave (1527 la mía), 5432 es el puerto
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:1527@localhost:5432/health_app")
+if ENV == "production":
+    # En producción, Render proporciona DATABASE_URL
+    DATABASE_URL = os.getenv("DATABASE_URL")
+    if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+        # Render usa postgres:// pero SQLAlchemy necesita postgresql://
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+else:
+    # En desarrollo, usar configuración local
+    DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:1527@localhost:5432/health_app")
 
 #connect_args = {"check_same_thread": False}
 #engine = create_engine(DATABASE_URL, echo=False, connect_args=connect_args)
@@ -41,4 +46,5 @@ def create_session():
 
 
 def create_db_and_tables():
+    """Crear todas las tablas en la base de datos"""
     SQLModel.metadata.create_all(engine)
