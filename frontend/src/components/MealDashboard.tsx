@@ -15,19 +15,39 @@ const MealDashboard = () => {
   const [mealToEdit, setMealToEdit] = useState<Meal | undefined>(undefined);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [mealToDelete, setMealToDelete] = useState<number | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [allMeals, setAllMeals] = useState<Meal[]>([]);
 
+  // Cargar todas las comidas al inicio
   useEffect(() => {
-    getMeals()
-      .then(meals => {
-        setMeals(meals);
-      })
-      .catch((err) => console.error('Error al obtener las comidas:', err.response?.data || err.message));
+    const loadMeals = async () => {
+      try {
+        const meals = await getMeals();
+        setAllMeals(meals);
+      } catch (err) {
+        console.error('Error al obtener las comidas:', err);
+      }
+    };
+    loadMeals();
   }, []);
+
+  // Filtrar comidas cuando cambia la fecha seleccionada
+  useEffect(() => {
+    const filteredMeals = allMeals.filter((meal: Meal) => {
+      const mealDate = new Date(meal.timestamp);
+      const selectedDateStart = new Date(selectedDate);
+      selectedDateStart.setHours(0, 0, 0, 0);
+      const selectedDateEnd = new Date(selectedDate);
+      selectedDateEnd.setHours(23, 59, 59, 999);
+      return mealDate >= selectedDateStart && mealDate <= selectedDateEnd;
+    });
+    setMeals(filteredMeals);
+  }, [selectedDate, allMeals]);
 
   const handleAddMeal = async (newMeal: NewMeal) => {
     try {
       const created = await createMeal(newMeal);
-      setMeals([...meals, created]);
+      setAllMeals(prevMeals => [...prevMeals, created]);
     } catch (err: any) {
       console.error('Error al crear comida:', err.response?.data || err.message);
     }
@@ -36,8 +56,9 @@ const MealDashboard = () => {
   const handleEditMeal = async (mealId: number, updatedMeal: NewMeal) => {
     try {
       const updated = await updateMeal(mealId, updatedMeal);
-      const updatedMeals = meals.map((m) => (m.id === mealId ? updated : m));
-      setMeals(updatedMeals);
+      setAllMeals(prevMeals => 
+        prevMeals.map(meal => meal.id === mealId ? updated : meal)
+      );
     } catch (err: any) {
       console.error('Error al editar comida:', err.response?.data || err.message);
     }
@@ -52,7 +73,7 @@ const MealDashboard = () => {
     if (mealToDelete) {
       try {
         await deleteMeal(mealToDelete);
-        setMeals(meals.filter(meal => meal.id !== mealToDelete));
+        setAllMeals(prevMeals => prevMeals.filter(meal => meal.id !== mealToDelete));
       } catch (err: any) {
         console.error('Error al eliminar comida:', err.response?.data || err.message);
       }
@@ -66,11 +87,42 @@ const MealDashboard = () => {
     setMealToDelete(null);
   };
 
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('es-ES', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const formatDateForInput = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   return (
     <Box p={4}>
       <Typography variant="h4" gutterBottom>
-        Tus comidas de hoy
+        Tus comidas del {formatDate(selectedDate)}
       </Typography>
+
+      <Box sx={{ mb: 3 }}>
+        <TextField
+          type="date"
+          label="Seleccionar fecha"
+          value={formatDateForInput(selectedDate)}
+          onChange={(e) => {
+            const [year, month, day] = e.target.value.split('-').map(Number);
+            const newDate = new Date(year, month - 1, day);
+            setSelectedDate(newDate);
+          }}
+          InputLabelProps={{ shrink: true }}
+          sx={{ width: '200px' }}
+        />
+      </Box>
 
       <AlertBanner totalCalories={meals.reduce((acc, m) => acc + m.calories, 0)} userTarget={2000} />
 
@@ -108,7 +160,7 @@ const MealDashboard = () => {
         <Divider sx={{ mb: 2 }} />
         <Stack spacing={2}>
           {meals.length === 0 ? (
-            <Typography variant="body2" color="text.secondary" align="center">No has registrado comidas hoy.</Typography>
+            <Typography variant="body2" color="text.secondary" align="center">No has registrado comidas para este día.</Typography>
           ) : (
             meals.map((meal) => (
               <Fade in key={meal.id}>
@@ -134,6 +186,7 @@ const MealDashboard = () => {
         onAdd={handleAddMeal}
         onEdit={handleEditMeal}
         initialMeal={mealToEdit}
+        initialDate={selectedDate}
       />
 
       <Dialog
