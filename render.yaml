@@ -24,6 +24,8 @@ services:
         fromDatabase:
           name: my-health-companion-db
           property: port
+      - key: PYTHON_VERSION
+        value: 3.9.18
 
   - type: web
     plan: free
