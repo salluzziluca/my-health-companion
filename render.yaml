@@ -1,6 +1,7 @@
 services:
   - type: web
     name: my-health-companion-backend
+    plan: free
     runtime: python
     buildCommand: pip install -r backend/requirements.txt
     startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
@@ -25,6 +26,7 @@ services:
           property: port
 
   - type: web
+    plan: free
     name: my-health-companion-frontend
     runtime: node
     buildCommand: cd frontend && npm install && npm run build
@@ -37,3 +39,4 @@ databases:
   - name: my-health-companion-db
     databaseName: health_companion
     user: health_companion_user 
+    plan: free
