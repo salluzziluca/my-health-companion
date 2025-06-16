@@ -12,7 +12,7 @@ services:
       - key: POSTGRES_DB
         value: health_companion
       - key: POSTGRES_USER
-        value: postgres
+        value: health_companion_user
       - key: POSTGRES_PASSWORD
         sync: false
       - key: POSTGRES_HOST
@@ -36,4 +36,4 @@ services:
 databases:
   - name: my-health-companion-db
     databaseName: health_companion
-    user: postgres 
+    user: health_companion_user 
