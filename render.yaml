@@ -31,8 +31,8 @@ services:
     name: my-health-companion-frontend
     runtime: node
     plan: free
-    buildCommand: cd frontend && npm install && npm install -g serve && npm run build
-    startCommand: cd frontend && serve -s build -l $PORT
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: cd frontend && npx serve -s build -l $PORT
     envVars:
       - key: REACT_APP_API_URL
         value: https://my-health-companion-backend.onrender.com
