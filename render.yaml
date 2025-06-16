@@ -3,28 +3,37 @@ services:
     name: my-health-companion-backend
     env: python
     buildCommand: pip install -r backend/requirements.txt
-    startCommand: cd backend && python -m uvicorn main:app --host 0.0.0.0 --port $PORT
+    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
-      - key: ENV
-        value: production
       - key: DATABASE_URL
         fromDatabase:
-          name: health-app-db
+          name: my-health-companion-db
           property: connectionString
-      - key: FRONTEND_URL
-        value: https://my-health-companion.onrender.com
+      - key: POSTGRES_DB
+        value: health_companion
+      - key: POSTGRES_USER
+        value: postgres
+      - key: POSTGRES_PASSWORD
+        sync: false
+      - key: POSTGRES_HOST
+        fromDatabase:
+          name: my-health-companion-db
+          property: host
+      - key: POSTGRES_PORT
+        fromDatabase:
+          name: my-health-companion-db
+          property: port
 
   - type: web
     name: my-health-companion-frontend
     env: node
     buildCommand: cd frontend && npm install && npm run build
-    startCommand: cd frontend && npm start
+    startCommand: cd frontend && serve -s build -l $PORT
     envVars:
       - key: REACT_APP_API_URL
         value: https://my-health-companion-backend.onrender.com
 
 databases:
-  - name: health-app-db
-    databaseName: health_app
-    user: health_app_user
-    plan: free 
+  - name: my-health-companion-db
+    databaseName: health_companion
+    user: postgres 
