@@ -28,10 +28,10 @@ services:
         value: 3.9.18
 
   - type: web
-    plan: free
     name: my-health-companion-frontend
     runtime: node
-    buildCommand: cd frontend && npm install && npm run build
+    plan: free
+    buildCommand: cd frontend && npm install && npm install -g serve && npm run build
     startCommand: cd frontend && serve -s build -l $PORT
     envVars:
       - key: REACT_APP_API_URL
