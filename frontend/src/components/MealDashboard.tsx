@@ -8,8 +8,13 @@ import { getMeals, deleteMeal, createMeal, updateMeal } from '../services/meals'
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
+import api from '../services/api';
 
-const MealDashboard = () => {
+interface Props {
+  onMealsChange?: () => void;
+}
+
+const MealDashboard: React.FC<Props> = ({ onMealsChange }) => {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [mealToEdit, setMealToEdit] = useState<Meal | undefined>(undefined);
@@ -44,23 +49,23 @@ const MealDashboard = () => {
     setMeals(filteredMeals);
   }, [selectedDate, allMeals]);
 
-  const handleAddMeal = async (newMeal: NewMeal) => {
+  const handleAddMeal = async (meal: NewMeal) => {
     try {
-      const created = await createMeal(newMeal);
-      setAllMeals(prevMeals => [...prevMeals, created]);
-    } catch (err: any) {
-      console.error('Error al crear comida:', err.response?.data || err.message);
+      const response = await api.post('/meals', meal);
+      setAllMeals(prev => [...prev, response.data]);
+      setTimeout(() => onMealsChange?.(), 0);
+    } catch (error) {
+      console.error('Error adding meal:', error);
     }
   };
 
-  const handleEditMeal = async (mealId: number, updatedMeal: NewMeal) => {
+  const handleEditMeal = async (mealId: number, meal: NewMeal) => {
     try {
-      const updated = await updateMeal(mealId, updatedMeal);
-      setAllMeals(prevMeals => 
-        prevMeals.map(meal => meal.id === mealId ? updated : meal)
-      );
-    } catch (err: any) {
-      console.error('Error al editar comida:', err.response?.data || err.message);
+      const response = await api.put(`/meals/${mealId}`, meal);
+      setAllMeals(prev => prev.map(m => m.id === mealId ? response.data : m));
+      setTimeout(() => onMealsChange?.(), 0);
+    } catch (error) {
+      console.error('Error editing meal:', error);
     }
   };
 
@@ -70,16 +75,17 @@ const MealDashboard = () => {
   };
 
   const handleConfirmDelete = async () => {
-    if (mealToDelete) {
-      try {
-        await deleteMeal(mealToDelete);
-        setAllMeals(prevMeals => prevMeals.filter(meal => meal.id !== mealToDelete));
-      } catch (err: any) {
-        console.error('Error al eliminar comida:', err.response?.data || err.message);
-      }
+    if (!mealToDelete) return;
+    try {
+      await api.delete(`/meals/${mealToDelete}`);
+      setAllMeals(prev => prev.filter(m => m.id !== mealToDelete));
+      setTimeout(() => onMealsChange?.(), 0);
+    } catch (error) {
+      console.error('Error deleting meal:', error);
+    } finally {
+      setShowDeleteDialog(false);
+      setMealToDelete(null);
     }
-    setShowDeleteDialog(false);
-    setMealToDelete(null);
   };
 
   const handleCancelDelete = () => {
