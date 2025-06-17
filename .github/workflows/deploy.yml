@@ -17,6 +17,9 @@ jobs:
           username: root                        # o el usuario que uses
           key: ${{ secrets.DIGITAL_OCEAN }}    # acá usás tu secreto
           script: |
-            cd /root/my-health-companion        # ruta donde clonaste el repo
+            if [ ! -d "/root/my-health-companion" ]; then
+              git clone git@github.com:salluzziluca/my-health-companion.git /root/my-health-companion
+            fi
+            cd /root/my-health-companion
             git pull
             docker compose up -d --build
