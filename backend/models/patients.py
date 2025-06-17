@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from models.goals import Goal
     from models.water_intake import WaterIntake
     from models.water_reminders import WaterReminder
+    from models.shopping_lists import ShoppingList
 
 class PatientBase(SQLModel):
     email: EmailStr
@@ -38,29 +39,29 @@ class PatientBase(SQLModel):
     def validate_name(cls, value):
         if len(value) > 40:
             raise ValueError('El nombre no puede exceder los 40 caracteres')
-        if not value.isalpha():
-            raise ValueError('El nombre debe contener solo letras')
+        if not re.match(r'^(?:[A-Z][a-z]+[-\s]?)+$', value):
+            raise ValueError('El nombre solo puede contener letras')
         return value
     
     @field_validator('weight', 'height')
     @classmethod
     def validate_positive_numbers(cls, value):
         if value is not None and value <= 0:
-            raise ValueError('El valor debe ser positivo')
+            raise ValueError('Los valores deben ser positivos')
         return value
     
     @field_validator('weight')
     @classmethod
     def validate_weight(cls, value):
         if value is not None and value >= 1000:
-            raise ValueError('El peso no puede exceder los 3 dígitos')
+            raise ValueError('El peso debe ser menor a 1000 kg')
         return value
     
     @field_validator('height')
     @classmethod
     def validate_height(cls, value):
         if value is not None and value >= 1000:
-            raise ValueError('La altura no puede exceder los 3 dígitos')
+            raise ValueError('La altura debe ser menor a 1000 cm')
         return value
     
     @field_validator('gender')
@@ -74,7 +75,7 @@ class PatientBase(SQLModel):
     @classmethod
     def validate_birth_date(cls, value):
         if value is not None and value > date.today():
-            raise ValueError('La fecha de nacimiento no puede ser mayor a hoy')
+            raise ValueError('La fecha de nacimiento no puede ser futura')
         return value
 
 
@@ -92,7 +93,6 @@ class Patient(PatientBase, table=True):
         sa_relationship_kwargs={"foreign_keys": "Patient.professional_id"}
     )
     
-    # Relaciones one-to-many existentes
     custom_foods: List["Food"] = Relationship(back_populates="patient")
     meals: List["Meal"] = Relationship(back_populates="patient")
     weight_logs: List["WeightLog"] = Relationship(back_populates="patient")
@@ -100,6 +100,7 @@ class Patient(PatientBase, table=True):
     goals: List["Goal"] = Relationship(back_populates="patient")
     water_intakes: List["WaterIntake"] = Relationship(back_populates="patient")
     water_reminder: List["WaterReminder"] = Relationship(back_populates="patient")
+    shopping_lists: List["ShoppingList"] = Relationship(back_populates="patient")
 
 
 class PatientCreate(PatientBase):
@@ -121,59 +122,3 @@ class PatientUpdate(SQLModel):
     birth_date: Optional[date] = None
     gender: Optional[str] = None
     professional_id: Optional[int] = None
-    
-    @field_validator('email')
-    @classmethod
-    def validate_email(cls, value):
-        if value is None:
-            return value
-        pattern = re.compile(r'^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
-        if not pattern.match(value):
-            raise ValueError('El correo electrónico contiene caracteres no permitidos')
-        return value
-    
-    @field_validator('first_name', 'last_name')
-    @classmethod
-    def validate_name(cls, value):
-        if value is None:
-            return value
-        if len(value) > 40:
-            raise ValueError('El nombre no puede exceder los 40 caracteres')
-        if not value.isalpha():
-            raise ValueError('El nombre debe contener solo letras')
-        return value
-    
-    @field_validator('weight', 'height')
-    @classmethod
-    def validate_positive_numbers(cls, value):
-        if value is not None and value <= 0:
-            raise ValueError('El valor debe ser positivo')
-        return value
-    
-    @field_validator('weight')
-    @classmethod
-    def validate_weight(cls, value):
-        if value is not None and value >= 1000:
-            raise ValueError('El peso no puede exceder los 3 dígitos')
-        return value
-    
-    @field_validator('height')
-    @classmethod
-    def validate_height(cls, value):
-        if value is not None and value >= 1000:
-            raise ValueError('La altura no puede exceder los 3 dígitos')
-        return value
-    
-    @field_validator('gender')
-    @classmethod
-    def validate_gender(cls, value):
-        if value is not None and value not in ["male", "female", "other", "prefer not to say"]:
-            raise ValueError('Valor de género no válido')
-        return value
-
-    @field_validator('birth_date')
-    @classmethod
-    def validate_birth_date(cls, value):
-        if value is not None and value > date.today():
-            raise ValueError('La fecha de nacimiento no puede ser mayor a hoy')
-        return value
