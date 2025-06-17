@@ -39,11 +39,10 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "3000:3000"
-    environment:
-      - REACT_APP_API_URL=http://206.81.9.180:8000
+      - "3000:80"  # Cambiamos el puerto interno a 80 porque nginx sirve ahí
     depends_on:
       - backend
+
 
 volumes:
   postgres_data: 
