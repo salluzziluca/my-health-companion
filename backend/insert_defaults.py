@@ -47,6 +47,19 @@ INSERT INTO ingredients (name, category, grams, calories_kcal, protein_g, fat_g,
 ('Porotos negros cocidos', 'proteína vegetal', 100, 132, 8.9, 0.5, 23.7, 2.1, 27, 0.0),
 ('Soja cocida', 'proteína vegetal', 100, 173, 16.6, 9.0, 9.9, 2.5, 102, 6.0),
 ('Seitán', 'proteína vegetal', 100, 121, 21, 2.0, 4.0, 1.2, 14, 0);
+                     
+-- Nuevos ingredientes
+INSERT INTO ingredients (name, category, grams, calories_kcal, protein_g, fat_g, carbs_g, iron_mg, calcium_mg, vitamin_c_mg) VALUES
+('Avena cocida', 'cereal', 100, 71, 2.5, 1.5, 12, 0.9, 14, 0.0),
+('Masa de tarta', 'cereal', 100, 310, 6.0, 18, 32, 1.2, 15, 0.0),
+('Leche descremada', 'lácteo', 100, 36, 3.5, 0.2, 5, 0.1, 120, 0.0),
+('Aceite de oliva', 'grasa', 100, 884, 0.0, 100.0, 0, 0.0, 1, 0.0);
+('Arroz blanco cocido', 'cereal', 100, 130, 2.4, 0.3, 28, 1.0, 10, 0.0),
+('Pan de hamburguesa', 'cereal', 100, 265, 8.0, 3.5, 49, 2.0, 30, 0.0),
+('Masa de pizza', 'cereal', 100, 270, 7.0, 4.0, 45, 1.5, 20, 0.0),
+('Queso mozzarella', 'lácteo', 100, 280, 18.0, 17.0, 3, 0.5, 505, 0.0);
+('Miel', 'azúcar', 100, 304, 0.3, 0.0, 82, 0.4, 6, 0.5),
+('Yogur natural', 'lácteo', 100, 61, 3.5, 3.3, 4.7, 0.1, 121, 0.5);
 
 -- Alimentos (foods)
 INSERT INTO foods (food_name) VALUES
@@ -58,36 +71,87 @@ INSERT INTO foods (food_name) VALUES
 ('Pizza margarita'),
 ('Guiso de lentejas'),
 ('Sopa de verduras');
+                     
+-- Nuevas comidas
+INSERT INTO foods (food_name) VALUES
+('Tarta de espinaca'),
+('Ensalada vegana de tofu'),
+('Desayuno de avena con banana');
+('Yogur con frutas');
 
 -- Relación ingredientes-alimentos (ingredients_foods) con gramos
 INSERT INTO ingredients_foods (ingredient_id, food_id, grams) VALUES
-(2, 1, 100),  -- Ensalada César: Muslo de pollo
-(10, 1, 50),  -- Ensalada César: Zanahoria
-(12, 1, 50),  -- Ensalada César: Espinaca
+-- Ensalada César (pollo, espinaca, zanahoria)
+(2, 1, 100),  -- Muslo de pollo (id=2)
+(12, 1, 50),  -- Espinaca (id=12)
+(10, 1, 30),  -- Zanahoria (id=10)
 
-(1, 2, 150),  -- Milanesa de pollo: Pechuga de pollo
-(17, 2, 60),  -- Milanesa de pollo: Huevo
-(15, 2, 100), -- Milanesa de pollo: Papa
+-- Milanesa de pollo (pechuga, huevo, batata en vez de pan rallado)
+(1, 2, 150),  -- Pechuga de pollo (id=1)
+(9, 2, 60),   -- Huevo (id=9)
+(14, 2, 50),  -- Batata (id=14)
+(34, 2, 30),  -- Masa de tarta como empanado
+(36, 2, 10),  -- Aceite de oliva
 
-(15, 3, 250), -- Tortilla de papa: Papa
-(17, 3, 100), -- Tortilla de papa: Huevo
+-- Tortilla de papa (papa, huevo, cebolla)
+(13, 3, 250), -- Papa (id=13)
+(9, 3, 100),  -- Huevo (id=9)
+(16, 3, 30),  -- Cebolla (id=16)
 
-(1, 4, 100),  -- Arroz con pollo: Pechuga de pollo
-(15, 4, 100), -- Arroz con pollo: Papa
-(18, 4, 150), -- Arroz con pollo: Batata
+-- Arroz con pollo (pollo, zanahoria, cebolla)
+(1, 4, 100),  -- Pechuga de pollo (id=1)
+(10, 4, 50),  -- Zanahoria (id=10)
+(16, 4, 30),  -- Cebolla (id=16)
+(37, 4, 150), -- Arroz blanco cocido
 
-(3, 5, 120),  -- Hamburguesa: Carne de vaca
-(7, 5, 80),   -- Hamburguesa: Salmón
+-- Hamburguesa (carne, cebolla)
+(3, 5, 120),  -- Carne de vaca (id=3)
+(16, 5, 30),  -- Cebolla (id=16)
+(38, 5, 60),  -- Pan de hamburguesa
+(15, 5, 30),  -- Tomate
 
-(14, 6, 100), -- Pizza margarita: Tomate
-(17, 6, 50),  -- Pizza margarita: Huevo
+-- Pizza margarita (tomate, morrón rojo)
+(15, 6, 100), -- Tomate (id=15)
+(17, 6, 30),  -- Morrón rojo (id=17)
+(39, 6, 100),  -- Masa de pizza
+(40, 6, 80);   -- Queso mozzarella
 
-(20, 7, 150), -- Guiso de lentejas: Lentejas cocidas
-(10, 7, 80),  -- Guiso de lentejas: Zanahoria
+-- Guiso de lentejas (lentejas, zanahoria, cebolla, papa)
+(28, 7, 150), -- Lentejas cocidas (id=28)
+(10, 7, 60),  -- Zanahoria (id=10)
+(16, 7, 50),  -- Cebolla (id=16)
+(13, 7, 80),  -- Papa (id=13)
 
-(11, 8, 100), -- Sopa de verduras: Brócoli
-(12, 8, 80),  -- Sopa de verduras: Espinaca
-(13, 8, 100); -- Sopa de verduras: Papa
+-- Sopa de verduras (brócoli, espinaca, zanahoria, papa)
+(11, 8, 100), -- Brócoli (id=11)
+(12, 8, 80),  -- Espinaca (id=12)
+(10, 8, 50),  -- Zanahoria (id=10)
+(13, 8, 60);  -- Papa (id=13)
+                     
+-- Tarta de espinaca (masa, espinaca, huevo, cebolla)
+(34, 9, 100), -- Masa de tarta
+(12, 9, 100), -- Espinaca
+(9, 9, 50),   -- Huevo
+(16, 9, 30),  -- Cebolla
+
+-- Ensalada vegana de tofu (tofu, tomate, espinaca, aceite)
+(27, 10, 100), -- Tofu
+(15, 10, 50),  -- Tomate
+(12, 10, 50),  -- Espinaca
+(36, 10, 10),  -- Aceite de oliva
+
+-- Desayuno de avena con banana y leche
+(33, 11, 100), -- Avena cocida
+(20, 11, 80),  -- Banana
+(35, 11, 100); -- Leche descremada
+                     
+-- Yogur con frutas (yogur, frutilla, banana, kiwi, miel, avena cocida)
+(42, 12, 100), -- Yogur natural (nuevo)
+(24, 12, 50),  -- Frutilla
+(20, 12, 50),  -- Banana
+(25, 12, 50),  -- Kiwi
+(33, 12, 50),  -- Avena cocida
+(41, 12, 10);  -- Miel
 ''')
 
 conn.commit()
