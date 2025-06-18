@@ -416,6 +416,9 @@ export const shoppingListService = {
         const response = await api.delete(`/shopping-lists/${listId}`);
         return response.data;
     },
+    updateItemInList: (listId: number, itemId: number, data: { is_purchased: boolean }) => {
+        return api.patch(`/shopping-lists/${listId}/items/${itemId}`, data);
+    },
 };
 
 export const dietService = {

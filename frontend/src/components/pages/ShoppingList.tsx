@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Paper, Button, Stack, CircularProgress, List, ListItemText, ListItemButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Tooltip, MenuItem, Fab, IconButton, Select, FormControl, InputLabel, Alert, Snackbar } from '@mui/material';
+import { Box, Typography, Paper, Button, Stack, CircularProgress, List, ListItemText, ListItemButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Tooltip, MenuItem, Fab, IconButton, Select, FormControl, InputLabel, Alert, Snackbar, Checkbox } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { shoppingListService, dietService } from '../../services/api';
 import AddIcon from '@mui/icons-material/Add';
@@ -73,6 +73,7 @@ const ShoppingLists: React.FC = () => {
     message: '',
     severity: 'success'
   });
+  const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, listId: number | null }>({ open: false, listId: null });
 
   const fetchLists = async () => {
     try {
@@ -241,23 +242,38 @@ const ShoppingLists: React.FC = () => {
     }
   };
 
-  const handleDeleteList = async (listId: number) => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar esta lista de compras?')) {
-      return;
-    }
+  const handleDeleteList = (listId: number) => {
+    setConfirmDelete({ open: true, listId });
+  };
 
-    setDeletingList(listId);
+  const confirmDeleteList = async () => {
+    if (!confirmDelete.listId) return;
+    setDeletingList(confirmDelete.listId);
     try {
-      await shoppingListService.deleteShoppingList(listId);
-      setLists(prevLists => prevLists.filter(list => list.id !== listId));
-      if (selectedList?.id === listId) {
+      await shoppingListService.deleteShoppingList(confirmDelete.listId);
+      setLists(prevLists => prevLists.filter(list => list.id !== confirmDelete.listId));
+      if (selectedList?.id === confirmDelete.listId) {
         setSelectedList(null);
       }
+      setSnackbar({
+        open: true,
+        message: 'Lista eliminada correctamente.',
+        severity: 'success'
+      });
     } catch (err) {
-      console.error('Error al eliminar la lista:', err);
+      setSnackbar({
+        open: true,
+        message: 'Error al eliminar la lista.',
+        severity: 'error'
+      });
     } finally {
       setDeletingList(null);
+      setConfirmDelete({ open: false, listId: null });
     }
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setConfirmDelete({ open: false, listId: null });
   };
 
   const handleCreateFromDiet = async () => {
@@ -314,11 +330,14 @@ const ShoppingLists: React.FC = () => {
     doc.setFontSize(10);
     doc.text(`Generado el ${new Date().toLocaleDateString()}`, 14, 40);
     
+    // Asegurarse de que items sea un array
+    const items = Array.isArray(list.items) ? list.items : [];
+    
     // Tabla de items
     autoTable(doc, {
       startY: 50,
       head: [['Ítem', 'Cantidad', 'Unidad', 'Comprado']],
-      body: list.items.map(item => [
+      body: items.map(item => [
         item.name,
         item.quantity.toString(),
         item.unit,
@@ -340,6 +359,33 @@ const ShoppingLists: React.FC = () => {
     
     // Guardar el PDF
     doc.save(`lista-compras-${list.name.toLowerCase().replace(/\s+/g, '-')}.pdf`);
+  };
+
+  // Nueva función para actualizar el estado de comprado de un ítem
+  const handleTogglePurchased = async (itemId: number, currentValue: boolean) => {
+    if (!selectedList) return;
+    try {
+      // Llamada al endpoint PATCH para actualizar el ítem
+      await shoppingListService.updateItemInList(selectedList.id, itemId, {
+        is_purchased: !currentValue,
+      });
+      // Actualizar el estado local con el nuevo valor
+      setSelectedList((prev: ShoppingList | null) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          items: prev.items.map(item =>
+            item.id === itemId ? { ...item, is_purchased: !currentValue } : item
+          ),
+        };
+      });
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: 'No se pudo actualizar el estado del ítem.',
+        severity: 'error'
+      });
+    }
   };
 
   return (
@@ -570,10 +616,22 @@ const ShoppingLists: React.FC = () => {
                         py: 1
                       }}
                     >
-                      <ListItemText
-                        primary={item.name}
-                        secondary={`${item.quantity} ${item.unit}`}
-                      />
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Checkbox
+                          checked={item.is_purchased}
+                          onChange={() => handleTogglePurchased(item.id, item.is_purchased)}
+                          color="primary"
+                          disabled={deletingItem === item.id}
+                        />
+                        <ListItemText
+                          primary={item.name}
+                          secondary={`${item.quantity} ${item.unit}`}
+                          sx={{
+                            textDecoration: item.is_purchased ? 'line-through' : 'none',
+                            color: item.is_purchased ? 'text.secondary' : 'inherit'
+                          }}
+                        />
+                      </Box>
                       <IconButton
                         onClick={() => handleDeleteItem(item.id)}
                         disabled={deletingItem === item.id}
@@ -672,6 +730,28 @@ const ShoppingLists: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDetailModal}>Cerrar</Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={confirmDelete.open}
+        onClose={handleCloseDeleteDialog}
+      >
+        <DialogTitle>¿Eliminar lista de compras?</DialogTitle>
+        <DialogContent>
+          <Typography>
+            ¿Estás seguro de que deseas eliminar esta lista de compras? Esta acción no se puede deshacer.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDeleteDialog} disabled={deletingList !== null}>Cancelar</Button>
+          <Button
+            onClick={confirmDeleteList}
+            color="error"
+            variant="contained"
+            disabled={deletingList !== null}
+          >
+            {deletingList !== null ? <CircularProgress size={20} /> : 'Eliminar'}
+          </Button>
         </DialogActions>
       </Dialog>
       <Snackbar
