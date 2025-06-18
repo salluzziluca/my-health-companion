@@ -16,6 +16,8 @@
     "dependencies": {
         "@mui/icons-material": "^7.1.0",
         "@mui/material": "^7.1.0",
+        "@mui/x-date-pickers": "^8.5.2",
+        "date-fns": "^4.1.0",
         "jwt-decode": "^4.0.0"
     }
 }
