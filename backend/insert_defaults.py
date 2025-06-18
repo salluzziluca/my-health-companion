@@ -1,7 +1,7 @@
 import sqlite3
 
 # Conexión a la base de datos
-conn = sqlite3.connect('backend\health_app.sqlite')
+conn = sqlite3.connect('health_app.sqlite')
 cursor = conn.cursor()
 
 cursor.executescript('''
@@ -53,11 +53,11 @@ INSERT INTO ingredients (name, category, grams, calories_kcal, protein_g, fat_g,
 ('Avena cocida', 'cereal', 100, 71, 2.5, 1.5, 12, 0.9, 14, 0.0),
 ('Masa de tarta', 'cereal', 100, 310, 6.0, 18, 32, 1.2, 15, 0.0),
 ('Leche descremada', 'lácteo', 100, 36, 3.5, 0.2, 5, 0.1, 120, 0.0),
-('Aceite de oliva', 'grasa', 100, 884, 0.0, 100.0, 0, 0.0, 1, 0.0);
+('Aceite de oliva', 'grasa', 100, 884, 0.0, 100.0, 0, 0.0, 1, 0.0),
 ('Arroz blanco cocido', 'cereal', 100, 130, 2.4, 0.3, 28, 1.0, 10, 0.0),
 ('Pan de hamburguesa', 'cereal', 100, 265, 8.0, 3.5, 49, 2.0, 30, 0.0),
 ('Masa de pizza', 'cereal', 100, 270, 7.0, 4.0, 45, 1.5, 20, 0.0),
-('Queso mozzarella', 'lácteo', 100, 280, 18.0, 17.0, 3, 0.5, 505, 0.0);
+('Queso mozzarella', 'lácteo', 100, 280, 18.0, 17.0, 3, 0.5, 505, 0.0),
 ('Miel', 'azúcar', 100, 304, 0.3, 0.0, 82, 0.4, 6, 0.5),
 ('Yogur natural', 'lácteo', 100, 61, 3.5, 3.3, 4.7, 0.1, 121, 0.5);
 
@@ -76,7 +76,7 @@ INSERT INTO foods (food_name) VALUES
 INSERT INTO foods (food_name) VALUES
 ('Tarta de espinaca'),
 ('Ensalada vegana de tofu'),
-('Desayuno de avena con banana');
+('Desayuno de avena con banana'),
 ('Yogur con frutas');
 
 -- Relación ingredientes-alimentos (ingredients_foods) con gramos
@@ -114,7 +114,7 @@ INSERT INTO ingredients_foods (ingredient_id, food_id, grams) VALUES
 (15, 6, 100), -- Tomate (id=15)
 (17, 6, 30),  -- Morrón rojo (id=17)
 (39, 6, 100),  -- Masa de pizza
-(40, 6, 80);   -- Queso mozzarella
+(40, 6, 80),   -- Queso mozzarella
 
 -- Guiso de lentejas (lentejas, zanahoria, cebolla, papa)
 (28, 7, 150), -- Lentejas cocidas (id=28)
@@ -126,7 +126,7 @@ INSERT INTO ingredients_foods (ingredient_id, food_id, grams) VALUES
 (11, 8, 100), -- Brócoli (id=11)
 (12, 8, 80),  -- Espinaca (id=12)
 (10, 8, 50),  -- Zanahoria (id=10)
-(13, 8, 60);  -- Papa (id=13)
+(13, 8, 60),  -- Papa (id=13)
                      
 -- Tarta de espinaca (masa, espinaca, huevo, cebolla)
 (34, 9, 100), -- Masa de tarta
@@ -143,7 +143,7 @@ INSERT INTO ingredients_foods (ingredient_id, food_id, grams) VALUES
 -- Desayuno de avena con banana y leche
 (33, 11, 100), -- Avena cocida
 (20, 11, 80),  -- Banana
-(35, 11, 100); -- Leche descremada
+(35, 11, 100), -- Leche descremada
                      
 -- Yogur con frutas (yogur, frutilla, banana, kiwi, miel, avena cocida)
 (42, 12, 100), -- Yogur natural (nuevo)
