@@ -95,7 +95,7 @@ def get_template_diet(
     return template
 
 
-# Usar una plantilla para crear una dieta semanal personalizada
+# Asignar una plantilla de dieta a un paciente
 @router_template_diets.post("/{template_diet_id}/assign-to-patient")
 def assign_template_to_patient(
     template_diet_id: int,
@@ -170,7 +170,7 @@ def assign_template_to_patient(
     }
 
 
-
+# Crear una plantilla de dieta a partir de una dieta semanal existente
 @router_template_diets.post("/from-weekly/{weekly_diet_id}", response_model=TemplateDiet)
 def create_template_from_weekly_diet(
     weekly_diet_id: int,
