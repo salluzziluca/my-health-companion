@@ -57,6 +57,13 @@ dev:
 	@echo "Starting development environment..."
 	npm run dev
 
+# Start development environment with Docker database
+dev-docker:
+	@echo "Starting development environment with Docker database..."
+	sudo docker compose up -d db
+	sleep 5
+	concurrently -n "backend,frontend" -c "auto,blue" "npm run start:backend" "npm run start:frontend"
+
 # Start production environment
 prod:
 	@echo "Starting production environment..."
@@ -79,4 +86,18 @@ setup-mac:
 	brew install postgresql
 	brew services start postgresql
 	@echo "PostgreSQL installed and started on macOS!"
-	@echo "Now run 'make setup' to complete the setup" 
+	@echo "Now run 'make setup' to complete the setup"
+
+# Docker database commands
+db-up:
+	@echo "Starting database with Docker..."
+	sudo docker compose up -d db
+
+db-down:
+	@echo "Stopping database with Docker..."
+	sudo docker compose down
+
+db-reset:
+	@echo "Resetting database with Docker..."
+	sudo docker compose down -v
+	sudo docker compose up -d db 

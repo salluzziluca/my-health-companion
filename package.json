@@ -6,12 +6,15 @@
         "install:all": "npm run install:backend && npm run install:frontend",
         "install:backend": "cd backend && python -m pip install --break-system-packages -r requirements.txt",
         "install:frontend": "cd frontend && npm install",
-        "start:backend": "cd backend && python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000",
+        "start:backend": "cd backend && python3 -c \"import uvicorn; uvicorn.run('main:app', host='0.0.0.0', port=8000, reload=True)\"",
         "start:frontend": "cd frontend && npm start",
-        "dev": "concurrently -n \"backend,frontend\" -c \"auto,blue\" \"npm run start:backend\" \"npm run start:frontend\"",
+        "dev": "sudo docker compose up -d db && sleep 5 && concurrently -n \"backend,frontend\" -c \"auto,blue\" \"npm run start:backend\" \"npm run start:frontend\"",
         "setup:db": "cd backend && python insert_defaults.py",
         "start:prod": "ENV=production concurrently -n \"backend,frontend\" -c \"auto,blue\" \"npm run start:backend\" \"npm run start:frontend\"",
-        "start:dev": "ENV=development concurrently -n \"backend,frontend\" -c \"auto,blue\" \"npm run start:backend\" \"npm run start:frontend\""
+        "start:dev": "ENV=development concurrently -n \"backend,frontend\" -c \"auto,blue\" \"npm run start:backend\" \"npm run start:frontend\"",
+        "db:up": "sudo docker compose up -d db",
+        "db:down": "sudo docker compose down",
+        "db:reset": "sudo docker compose down -v && sudo docker compose up -d db"
     },
     "devDependencies": {
         "concurrently": "^8.2.2"

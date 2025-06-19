@@ -24,8 +24,8 @@ if ENV == "production":
         # Render usa postgres:// pero SQLAlchemy necesita postgresql://
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 else:
-    # En desarrollo, usar configuración local
-    DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:1527@localhost:5432/health_app")
+    # En desarrollo, usar configuración local o Docker
+    DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5433/health_companion")
 
 #connect_args = {"check_same_thread": False}
 #engine = create_engine(DATABASE_URL, echo=False, connect_args=connect_args)
