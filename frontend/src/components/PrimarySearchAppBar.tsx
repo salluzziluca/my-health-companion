@@ -18,6 +18,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import MoreIcon from '@mui/icons-material/MoreVert';
 import LogoutIcon from '@mui/icons-material/Logout';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { NotificationsBell } from './GoalNotifications';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 
@@ -168,13 +169,11 @@ export default function PrimarySearchAppBar() {
         </IconButton>
         <p>Mi Dieta</p>
       </MenuItem>
-      <MenuItem>
-        <IconButton size="large" aria-label="show 4 new mails" color="inherit">
-          <Badge badgeContent={4} color="error">
-            <MailIcon />
-          </Badge>
+      <MenuItem onClick={() => navigate('/shopping-list')}>
+        <IconButton size="large" color="inherit">
+          <ShoppingCartIcon />
         </IconButton>
-        <p>Messages</p>
+        <p>Lista de Compras</p>
       </MenuItem>
       <MenuItem>
         <NotificationsBell />
@@ -205,15 +204,6 @@ export default function PrimarySearchAppBar() {
     <Box sx={{ flexGrow: 1 }}>
       <AppBar position="static">
         <Toolbar>
-          <IconButton
-            size="large"
-            edge="start"
-            color="inherit"
-            aria-label="open drawer"
-            sx={{ mr: 2 }}
-          >
-            <MenuIcon />
-          </IconButton>
           <IconButton
             size="large"
             color="inherit"
@@ -247,10 +237,13 @@ export default function PrimarySearchAppBar() {
             >
               <RestaurantIcon />
             </IconButton>
-            <IconButton size="large" aria-label="show 4 new mails" color="inherit">
-              <Badge badgeContent={4} color="error">
-                <MailIcon />
-              </Badge>
+            <IconButton
+              size="large"
+              color="inherit"
+              onClick={() => navigate('/shopping-list')}
+              sx={{ mr: 1 }}
+            >
+              <ShoppingCartIcon />
             </IconButton>
             <NotificationsBell />
             <IconButton
@@ -263,18 +256,6 @@ export default function PrimarySearchAppBar() {
               color="inherit"
             >
               <AccountCircle />
-            </IconButton>
-          </Box>
-          <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
-            <IconButton
-              size="large"
-              aria-label="show more"
-              aria-controls={mobileMenuId}
-              aria-haspopup="true"
-              onClick={handleMobileMenuOpen}
-              color="inherit"
-            >
-              <MoreIcon />
             </IconButton>
           </Box>
         </Toolbar>

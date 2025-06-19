@@ -11,6 +11,8 @@ from models.weekly_notes import WeeklyNote
 from models.weight_logs import WeightLog
 from models.notification import Notification
 from models.water_intake import WaterIntake
+from models.shopping_lists import ShoppingList
+from models.shopping_list_items import ShoppingListItem
 
 sqlite_file_name = "../health_app.sqlite"
 base_dir = os.path.dirname(os.path.realpath(__file__))
