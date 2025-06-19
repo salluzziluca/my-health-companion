@@ -1,6 +1,146 @@
 # My Health Companion
 
-Aplicación de seguimiento de salud y nutrición que permite a profesionales de la salud gestionar pacientes y sus objetivos nutricionales.
+A comprehensive health tracking application with meal planning, weight monitoring, and shopping list features.
+
+## Quick Start
+
+### For New Developers (Ubuntu/Debian)
+
+1. **Install PostgreSQL and setup everything:**
+   ```bash
+   make install-postgres
+   make setup
+   make dev
+   ```
+
+### For Developers with PostgreSQL Already Installed
+
+1. **Quick setup:**
+   ```bash
+   make quick-start
+   make dev
+   ```
+
+### For macOS Users
+
+1. **Install PostgreSQL with Homebrew:**
+   ```bash
+   make setup-mac
+   make setup
+   make dev
+   ```
+
+## Manual Setup
+
+If you prefer to do things manually or the Makefile doesn't work for your system:
+
+### 1. Install PostgreSQL
+
+**Ubuntu/Debian:**
+```bash
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+```
+
+**macOS:**
+```bash
+brew install postgresql
+brew services start postgresql
+```
+
+**Windows:**
+Download and install from https://www.postgresql.org/download/windows/
+
+### 2. Setup Database
+
+```bash
+# Create user (when prompted, set password to '1527')
+sudo -u postgres createuser --interactive postgres
+
+# Create database
+sudo -u postgres createdb health_app
+```
+
+### 3. Install Dependencies
+
+```bash
+npm run install:all
+```
+
+### 4. Initialize Database
+
+```bash
+cd backend
+python init_db.py
+python insert_defaults.py
+```
+
+### 5. Start Development
+
+```bash
+npm run dev
+```
+
+## Available Make Commands
+
+- `make help` - Show all available commands
+- `make install-postgres` - Install PostgreSQL (Ubuntu/Debian)
+- `make setup-db` - Create database and user
+- `make install-deps` - Install all dependencies
+- `make init-db` - Initialize database tables
+- `make insert-data` - Insert default data
+- `make setup` - Complete setup (everything except PostgreSQL installation)
+- `make dev` - Start development environment
+- `make prod` - Start production environment
+- `make clean` - Clean up temporary files
+- `make quick-start` - Quick setup for developers with PostgreSQL already installed
+- `make setup-mac` - Setup PostgreSQL on macOS
+
+## Environment Variables
+
+The application uses the following environment variables (defaults shown):
+
+```bash
+POSTGRES_DB=health_app
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=1527
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+ENV=development
+```
+
+## Features
+
+- **Meal Planning**: Create and manage meals with nutritional information
+- **Weight Tracking**: Monitor weight changes over time
+- **Shopping Lists**: Generate shopping lists based on meal plans
+- **Nutritional Analysis**: Track calories, protein, fat, carbs, and vitamins
+- **Professional Dashboard**: Healthcare professionals can manage patients
+- **Patient Portal**: Patients can track their health metrics
+
+## Tech Stack
+
+- **Backend**: FastAPI, SQLModel, PostgreSQL
+- **Frontend**: React, TypeScript, Material-UI
+- **Database**: PostgreSQL (production), SQLite (development fallback)
+
+## Troubleshooting
+
+### PostgreSQL Connection Issues
+
+If you get connection errors, make sure:
+1. PostgreSQL is running: `sudo systemctl status postgresql`
+2. Database exists: `sudo -u postgres psql -l | grep health_app`
+3. User has correct permissions
+
+### Port Already in Use
+
+If ports 3000 (frontend) or 8000 (backend) are in use:
+```bash
+# Kill processes using these ports
+sudo lsof -ti:3000 | xargs kill -9
+sudo lsof -ti:8000 | xargs kill -9
+```
 
 ## 🚀 Inicio Rápido
 

@@ -2,12 +2,12 @@ import psycopg2
 import os
 
 def insert_default_data():
-    # Conexión usando variables de entorno
+    # Conexión usando la misma configuración que la aplicación principal
     conn = psycopg2.connect(
-        dbname=os.getenv("POSTGRES_DB", "health_companion"),
+        dbname=os.getenv("POSTGRES_DB", "health_app"),
         user=os.getenv("POSTGRES_USER", "postgres"),
-        password=os.getenv("POSTGRES_PASSWORD", "postgres"),
-        host=os.getenv("POSTGRES_HOST", "db"),
+        password=os.getenv("POSTGRES_PASSWORD", "1527"),
+        host=os.getenv("POSTGRES_HOST", "localhost"),
         port=os.getenv("POSTGRES_PORT", "5432")
     )
     cursor = conn.cursor()
