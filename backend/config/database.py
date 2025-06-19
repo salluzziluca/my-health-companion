@@ -11,6 +11,8 @@ from models.weekly_notes import WeeklyNote
 from models.weight_logs import WeightLog
 from models.notification import Notification
 from models.water_intake import WaterIntake
+from models.shopping_lists import ShoppingList
+from models.shopping_list_items import ShoppingListItem
 
 # Configuración de la base de datos según el entorno
 ENV = os.getenv("ENV", "development")

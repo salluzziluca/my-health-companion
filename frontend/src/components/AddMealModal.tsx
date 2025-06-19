@@ -5,6 +5,7 @@ import {
 } from '@mui/material';
 import { Meal, NewMeal } from '../types/Meal';
 import { getAllFoods } from '../services/foods';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 interface FoodOption {
   id: number;
@@ -17,6 +18,7 @@ interface Props {
   onAdd: (meal: NewMeal) => void;
   onEdit?: (mealId: number, meal: NewMeal) => void;
   initialMeal?: Meal;
+  initialDate?: Date;
 }
 
 const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
@@ -27,11 +29,12 @@ const mealTypeLabels: Record<string, string> = {
   snack: 'Snack',
 };
 
-const AddMealModal: React.FC<Props> = ({ open, onClose, onAdd, onEdit, initialMeal }) => {
+const AddMealModal: React.FC<Props> = ({ open, onClose, onAdd, onEdit, initialMeal, initialDate }) => {
   const [foods, setFoods] = useState<FoodOption[]>([]);
   const [selectedFood, setSelectedFood] = useState<FoodOption | null>(null);
   const [grams, setGrams] = useState('');
   const [mealType, setMealType] = useState('');
+  const [mealDate, setMealDate] = useState<Date>(initialDate || new Date());
 
   useEffect(() => {
     getAllFoods()
@@ -44,8 +47,12 @@ const AddMealModal: React.FC<Props> = ({ open, onClose, onAdd, onEdit, initialMe
       setSelectedFood({ id: initialMeal.food_id, food_name: initialMeal.meal_name });
       setGrams(initialMeal.grams.toString());
       setMealType(initialMeal.meal_of_the_day);
+      setMealDate(new Date(initialMeal.timestamp));
+    } else {
+      // Reset to initialDate or today when opening for a new meal
+      setMealDate(initialDate || new Date());
     }
-  }, [initialMeal]);
+  }, [initialMeal, initialDate]);
 
   const handleConfirm = () => {
     if (!selectedFood || !grams || !mealType) return;
@@ -58,7 +65,7 @@ const AddMealModal: React.FC<Props> = ({ open, onClose, onAdd, onEdit, initialMe
       grams: parsedGrams,
       meal_of_the_day: mealType,
       meal_name: selectedFood.food_name,
-      timestamp: new Date().toISOString(),
+      timestamp: mealDate.toISOString(),
     };
 
     if (initialMeal && onEdit) {
@@ -74,12 +81,24 @@ const AddMealModal: React.FC<Props> = ({ open, onClose, onAdd, onEdit, initialMe
     setSelectedFood(null);
     setGrams('');
     setMealType('');
+    setMealDate(new Date());
   };
 
   return (
     <Dialog open={open} onClose={handleClose}>
       <DialogTitle>{initialMeal ? 'Editar Comida' : 'Agregar Comida'}</DialogTitle>
       <DialogContent>
+        <TextField
+          type="date"
+          label="Fecha de la comida"
+          value={mealDate.toISOString().split('T')[0]}
+          onChange={(e) => setMealDate(new Date(e.target.value))}
+          InputLabelProps={{ shrink: true }}
+          fullWidth
+          margin="normal"
+          inputProps={{ max: new Date().toISOString().split('T')[0] }}
+        />
+
         <Autocomplete
           options={foods}
           getOptionLabel={(option) => option.food_name ?? ''}

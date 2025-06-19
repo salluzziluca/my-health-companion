@@ -236,10 +236,25 @@ my-health-companion/
 -   **PUT** `/water/reminders/`: Actualizar configuración de recordatorios de agua
 -   **DELETE** `/water/reminders/`: Eliminar configuración de recordatorios de agua
 -   **POST** `/water/reminders/send-now`: Enviar un recordatorio de agua inmediatamente (para pruebas)
-  
+
 ### Nutrient Summary
+
 -   **GET** `/nutrient-summary/daily`: Obtener resumen de macro y micronutrientes del paciente actual para una fecha específica (hoy por defecto)
 -   **GET** `/nutrient-summary/{meal_id}`: Obtener resumen de macro y micronutrientes de un plato específico del paciente actual
+
+### Shopping Lists
+
+-   **GET** `/shopping-lists/`: Obtener todas las listas de compras del usuario actual (con filtro opcional por estado)
+-   **GET** `/shopping-lists/{list_id}`: Obtener una lista de compras específica con todos sus items
+-   **POST** `/shopping-lists/`: Crear una nueva lista de compras
+-   **PATCH** `/shopping-lists/{list_id}`: Actualizar una lista de compras
+-   **DELETE** `/shopping-lists/{list_id}`: Eliminar una lista de compras y todos sus items
+-   **PATCH** `/shopping-lists/{list_id}/items/bulk-update`: Marcar múltiples items como comprados/no comprados
+-   **POST** `/shopping-lists/{list_id}/items`: Agregar un item manualmente a una lista de compras
+-   **PATCH** `/shopping-lists/{list_id}/items/{item_id}`: Actualizar un item de la lista de compras
+-   **DELETE** `/shopping-lists/{list_id}/items/{item_id}`: Eliminar un item específico de la lista de compras
+-   **POST** `/shopping-lists/{list_id}/items/from-diet`: Generar items en la lista de compras basados en una dieta semanal
+-   **GET**`shopping-lists/{list_id}/stats`: Obtener estadísticas de una lista de compras
 
 ## Notas para Desarrolladores
 
