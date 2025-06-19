@@ -127,11 +127,21 @@ const Dashboard = () => {
     }
   };
 
+  // Función para ajustar la fecha a la zona horaria local
+  const adjustDateToLocal = (dateString: string) => {
+    const date = new Date(dateString);
+    // Ajustar la fecha para que sea medianoche en la zona horaria local
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  };
+
   // Función para obtener el rango de fechas basado en el período seleccionado
   const getDateRange = (periodOffset: number) => {
     const today = new Date();
-    const startDate = startOfWeek(addWeeks(today, periodOffset), { weekStartsOn: 1 }); // Comienza en lunes
+    today.setHours(0, 0, 0, 0);
+    
+    const startDate = startOfWeek(addWeeks(today, periodOffset), { weekStartsOn: 1 });
     const endDate = endOfWeek(addWeeks(today, periodOffset), { weekStartsOn: 1 });
+    
     return {
       start: format(startDate, 'yyyy-MM-dd'),
       end: format(endDate, 'yyyy-MM-dd'),
@@ -146,7 +156,10 @@ const Dashboard = () => {
     const { start, end } = getDateRange(periodOffset);
     return data.filter(item => {
       const itemDate = new Date(item.date);
-      return itemDate >= new Date(start) && itemDate <= new Date(end);
+      itemDate.setHours(0, 0, 0, 0); // Normalizar la hora a 00:00:00
+      const startDate = new Date(start);
+      const endDate = new Date(end);
+      return itemDate >= startDate && itemDate <= endDate;
     });
   };
 
@@ -166,7 +179,10 @@ const Dashboard = () => {
   const fetchWeeklySummary = async (periodOffset: number = 0) => {
     try {
       const { start, end } = getDateRange(periodOffset);
+      console.log('Fetching weekly summary for period:', { start, end });
       const summary = await healthService.getWeeklySummary(start, end);
+      console.log('Received weekly summary:', summary);
+      console.log('Daily breakdown:', summary.calorie_data.daily_breakdown);
       setWeeklySummary(summary);
       if (summary.notes) {
         setWeeklyNote(summary.notes);
@@ -348,6 +364,35 @@ const Dashboard = () => {
     const newPeriod = event.target.value;
     setSelectedPeriod(newPeriod);
     fetchWeeklySummary(newPeriod);
+  };
+
+  const handleMealsChange = () => {
+    fetchWeeklySummary(selectedPeriod);
+    if (openNutritionSummary) {
+      fetchNutritionSummary();
+    }
+  };
+
+  // Función para procesar los datos del gráfico
+  const processChartData = (data: any[] | undefined) => {
+    if (!data) return [];
+    
+    // Agrupar las comidas por día
+    const mealsByDay = data.reduce((acc: { [key: string]: number }, item) => {
+      // La fecha ya viene en formato YYYY-MM-DD, no necesitamos convertirla
+      const dayKey = item.date;
+      // Sumar las calorías para ese día
+      acc[dayKey] = (acc[dayKey] || 0) + item.calories;
+      return acc;
+    }, {});
+
+    // Convertir el objeto a array y ordenar por fecha
+    return Object.entries(mealsByDay)
+      .map(([date, calories]) => ({
+        date,
+        calories
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
   };
 
   if (loading) {
@@ -680,7 +725,7 @@ const Dashboard = () => {
         </Stack>
       </Paper>
 
-      {/* Gráfico de Calorías Diarias (siempre visible) */}
+      {/* Gráfico de Calorías Diarias */}
       <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}`, background: 'white', minHeight: 340, mb: 3 }}>
         <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', letterSpacing: '-0.5px', mb: 2 }}>
           Calorías Diarias
@@ -688,7 +733,7 @@ const Dashboard = () => {
         <Box sx={{ height: 280, position: 'relative' }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={weeklySummary?.calorie_data?.daily_breakdown || []}
+              data={processChartData(weeklySummary?.calorie_data?.daily_breakdown)}
               margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
             >
               <defs>
@@ -709,7 +754,12 @@ const Dashboard = () => {
                 tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
                 tickLine={false}
                 axisLine={{ stroke: theme.palette.divider }}
-                tickFormatter={(value) => format(new Date(value), 'EEE d', { locale: es })}
+                tickFormatter={(value) => {
+                  // Crear la fecha usando el formato YYYY-MM-DD directamente
+                  const [year, month, day] = value.split('-').map(Number);
+                  const date = new Date(year, month - 1, day);
+                  return format(date, 'EEE d', { locale: es });
+                }}
               />
               <YAxis
                 stroke={theme.palette.text.secondary}
@@ -726,7 +776,12 @@ const Dashboard = () => {
                   boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                 }}
                 formatter={(value: number) => [`${value.toLocaleString()} cal`, 'Calorías']}
-                labelFormatter={(label) => format(new Date(label), "EEEE d 'de' MMMM", { locale: es })}
+                labelFormatter={(label) => {
+                  // Crear la fecha usando el formato YYYY-MM-DD directamente
+                  const [year, month, day] = label.split('-').map(Number);
+                  const date = new Date(year, month - 1, day);
+                  return format(date, "EEEE d 'de' MMMM", { locale: es });
+                }}
               />
               <Bar
                 dataKey="calories"
