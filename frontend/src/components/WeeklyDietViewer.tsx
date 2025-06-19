@@ -95,17 +95,32 @@ const WeeklyDietViewer: React.FC<WeeklyDietViewerProps> = ({ weeklyDietId, weekS
 
     const handleMealCompletion = async (mealId: number, completed: boolean, dayOfWeek: string) => {
         try {
-            // Calcular la fecha específica del día basada en week_start_date
-            const weekStart = new Date(weekStartDate);
+            // Calcular el lunes de la semana actual
+            const today = new Date();
+            const dayOfWeekToday = today.getDay(); // 0 = domingo, 1 = lunes, ..., 6 = sábado
+            const daysToMonday = dayOfWeekToday === 0 ? 6 : dayOfWeekToday - 1; // Si es domingo, retroceder 6 días
+            
+            const mondayOfWeek = new Date(today);
+            mondayOfWeek.setDate(today.getDate() - daysToMonday);
+            mondayOfWeek.setHours(0, 0, 0, 0);
+
+            // Calcular el índice del día de la semana
             const dayIndex = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'].indexOf(dayOfWeek);
 
-            // Crear la fecha del día específico manteniendo la hora actual
-            const now = new Date();
-            const targetDate = new Date(weekStart);
-            targetDate.setDate(weekStart.getDate() + dayIndex);
+            // Crear la fecha del día específico
+            const targetDate = new Date(mondayOfWeek);
+            targetDate.setDate(mondayOfWeek.getDate() + dayIndex);
+            targetDate.setHours(12, 0, 0, 0);
 
-            // Mantener la hora actual en lugar de medianoche
-            targetDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+            console.log('Debug - today:', today);
+            console.log('Debug - dayOfWeekToday:', dayOfWeekToday);
+            console.log('Debug - daysToMonday:', daysToMonday);
+            console.log('Debug - mondayOfWeek:', mondayOfWeek);
+            console.log('Debug - dayOfWeek:', dayOfWeek);
+            console.log('Debug - dayIndex:', dayIndex);
+            console.log('Debug - targetDate:', targetDate);
+            console.log('Debug - targetDate.toISOString():', targetDate.toISOString());
+            console.log('Debug - current date:', new Date().toISOString());
 
             await markMealAsCompleted(mealId, completed, weeklyDietId, 100, targetDate.toISOString());
             setMeals(meals.map(meal =>
