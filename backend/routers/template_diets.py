@@ -8,6 +8,9 @@ from models.template_diets import TemplateDiet, TemplateDietMeal
 from models.weekly_diet_meals import DayOfWeek, MealOfDay
 from models.foods import Food
 from models.professionals import Professional
+from models.patients import Patient
+from utils.notifications import create_notification
+from utils.email_notifications import send_full_diet_email
 from models.weekly_diets import WeeklyDiets
 from models.weekly_diet_meals import WeeklyDietMeals
 from datetime import date
@@ -73,6 +76,25 @@ def get_template_diets(
     return templates
 
 
+# Obtener una plantilla específica
+@router_template_diets.get("/{template_diet_id}", response_model=TemplateDiet)
+def get_template_diet(
+    template_diet_id: int,
+    session: Session = Depends(get_session),
+    current_professional: Professional = Depends(get_current_professional)
+):
+    """Obtener una plantilla de dieta por ID si fue creada por el profesional actual"""
+    template = session.exec(
+        select(TemplateDiet).where(
+            TemplateDiet.id == template_diet_id,
+            TemplateDiet.professional_id == current_professional.id
+        )
+    ).first()
+    if not template:
+        raise HTTPException(status_code=404, detail="Template diet not found")
+    return template
+
+
 # Usar una plantilla para crear una dieta semanal personalizada
 @router_template_diets.post("/{template_diet_id}/assign-to-patient")
 def assign_template_to_patient(
@@ -111,7 +133,42 @@ def assign_template_to_patient(
         session.add(new_meal)
 
     session.commit()
-    return {"message": "Template assigned successfully", "weekly_diet_id": new_diet.id}
+    
+    # Notificar al paciente
+    patient = session.get(Patient, patient_id)
+    if not patient or not patient.email:
+        raise HTTPException(status_code=404, detail="Patient not found or email not available")
+
+    # Agrupar comidas por día
+    meals_by_day = {}
+    for meal in meals:
+        if meal.day_of_week not in meals_by_day:
+            meals_by_day[meal.day_of_week] = []
+        meals_by_day[meal.day_of_week].append({
+            "meal_name": meal.meal_name,
+            "meal_of_the_day": meal.meal_of_the_day.value,
+        })
+
+    # Enviar email
+    try:
+        send_full_diet_email(patient.first_name, patient.email, week_start_date, meals_by_day)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error sending diet email: {str(e)}")
+
+    # Crear notificación interna
+    create_notification(
+        session=session,
+        patient_id=patient.id,
+        message="Se te ha asignado una nueva dieta semanal."
+    )
+    session.commit()
+
+    return {
+        "message": "Template assigned and patient notified",
+        "weekly_diet_id": new_diet.id,
+        "patient_email": patient.email
+    }
+
 
 
 @router_template_diets.post("/from-weekly/{weekly_diet_id}", response_model=TemplateDiet)
