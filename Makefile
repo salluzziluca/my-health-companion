@@ -39,13 +39,13 @@ install-deps:
 # Initialize database tables
 init-db:
 	@echo "Initializing database tables..."
-	cd backend && python init_db.py
+	cd backend && ENV=development DATABASE_URL=postgresql://postgres:1527@localhost:5433/health_app python init_db.py
 	@echo "Database tables created successfully!"
 
 # Insert default data
 insert-data:
 	@echo "Inserting default data..."
-	cd backend && python insert_defaults.py
+	cd backend && ENV=development DATABASE_URL=postgresql://postgres:1527@localhost:5433/health_app python insert_defaults.py
 	@echo "Default data inserted successfully!"
 
 # Complete setup (everything except PostgreSQL installation)
@@ -62,7 +62,7 @@ dev-docker:
 	@echo "Starting development environment with Docker database..."
 	sudo docker compose up -d db
 	sleep 5
-	concurrently -n "backend,frontend" -c "auto,blue" "npm run start:backend" "npm run start:frontend"
+	ENV=development DATABASE_URL=postgresql://postgres:1527@localhost:5433/health_app concurrently -n "backend,frontend" -c "auto,blue" "npm run start:backend" "npm run start:frontend"
 
 # Start production environment
 prod:
