@@ -13,6 +13,9 @@ from models.notification import Notification
 from models.water_intake import WaterIntake
 from models.shopping_lists import ShoppingList
 from models.shopping_list_items import ShoppingListItem
+from models.template_diets import TemplateDiet, TemplateDietMeal
+from models.weekly_diets import WeeklyDiets
+from models.weekly_diet_meals import WeeklyDietMeals
 
 # Configuración de la base de datos según el entorno
 ENV = os.getenv("ENV", "development")

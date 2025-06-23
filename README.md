@@ -396,6 +396,14 @@ my-health-companion/
 -   **POST** `/shopping-lists/{list_id}/items/from-diet`: Generar items en la lista de compras basados en una dieta semanal
 -   **GET**`shopping-lists/{list_id}/stats`: Obtener estadísticas de una lista de compras
 
+### Template Diets
+-   **POST** `/template-diets`: Crear un nuevo template de dieta
+-   **GET** `/template-diets`: Listar todos los templates de dieta del profesional actual
+-   **GET** `/template-diets/{template_diet_id}`: Obtener información de un template de dieta específico
+-   **POST** `/template-diets/{template_diet_id}/meals`: Agregar una comida a un template de dieta
+-   **POST** `/template-diets/{template_diet_id}/assign-to-patient`: Asignar un template de dieta a un paciente
+-   **POST** `/template-diets/from-weekly/{weekly_diet_id}`: Crear un template de dieta a partir de una dieta semanal existente
+
 ## Notas para Desarrolladores
 
 -   El backend usa SQLite como base de datos
