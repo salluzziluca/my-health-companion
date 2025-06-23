@@ -1,45 +1,256 @@
 # My Health Companion
 
-Aplicación de salud y nutrición con sistema de usuarios y perfiles.
+A comprehensive health tracking application with meal planning, weight monitoring, and shopping list features.
 
-## Requisitos Previos
+## Quick Start
 
--   Node.js (v14 o superior)
--   Python (v3.8 o superior)
--   pip (gestor de paquetes de Python)
+### For New Developers (Ubuntu/Debian)
 
-## Instalación
+1. **Install PostgreSQL and setup everything:**
+   ```bash
+   make install-postgres
+   make setup
+   make dev
+   ```
 
-Instalar dependencias:
+### For Developers with PostgreSQL Already Installed
+
+1. **Quick setup:**
+   ```bash
+   make quick-start
+   make dev
+   ```
+
+### For macOS Users
+
+1. **Install PostgreSQL with Homebrew:**
+   ```bash
+   make setup-mac
+   make setup
+   make dev
+   ```
+
+## Manual Setup
+
+If you prefer to do things manually or the Makefile doesn't work for your system:
+
+### 1. Install PostgreSQL
+
+**Ubuntu/Debian:**
+```bash
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+```
+
+**macOS:**
+```bash
+brew install postgresql
+brew services start postgresql
+```
+
+**Windows:**
+Download and install from https://www.postgresql.org/download/windows/
+
+### 2. Setup Database
 
 ```bash
-# Instalar todas las dependencias (backend y frontend)
+# Create user (when prompted, set password to '1527')
+sudo -u postgres createuser --interactive postgres
+
+# Create database
+sudo -u postgres createdb health_app
+```
+
+### 3. Install Dependencies
+
+```bash
 npm run install:all
 ```
 
-## Desarrollo
+### 4. Initialize Database
 
-Para iniciar el servidor de desarrollo (tanto backend como frontend):
+```bash
+cd backend
+python init_db.py
+python insert_defaults.py
+```
+
+### 5. Start Development
 
 ```bash
 npm run dev
 ```
 
-Esto iniciará:
+## Available Make Commands
 
--   Backend en http://localhost:8000
--   Frontend en http://localhost:3000
+- `make help` - Show all available commands
+- `make install-postgres` - Install PostgreSQL (Ubuntu/Debian)
+- `make setup-db` - Create database and user
+- `make install-deps` - Install all dependencies
+- `make init-db` - Initialize database tables
+- `make insert-data` - Insert default data
+- `make setup` - Complete setup (everything except PostgreSQL installation)
+- `make dev` - Start development environment
+- `make prod` - Start production environment
+- `make clean` - Clean up temporary files
+- `make quick-start` - Quick setup for developers with PostgreSQL already installed
+- `make setup-mac` - Setup PostgreSQL on macOS
 
-Si van a http://localhost:8000/docs van a ver la una documentacion interactiva de la API.
+## Environment Variables
 
-## Scripts Disponibles
+The application uses the following environment variables (defaults shown):
 
--   `npm run install:all`: Instala todas las dependencias (backend y frontend)
--   `npm run install:backend`: Instala solo las dependencias del backend
--   `npm run install:frontend`: Instala solo las dependencias del frontend
--   `npm run start:backend`: Inicia solo el servidor backend
--   `npm run start:frontend`: Inicia solo el servidor frontend
--   `npm run dev`: Inicia ambos servidores simultáneamente
+```bash
+POSTGRES_DB=health_app
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=1527
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+ENV=development
+```
+
+## Features
+
+- **Meal Planning**: Create and manage meals with nutritional information
+- **Weight Tracking**: Monitor weight changes over time
+- **Shopping Lists**: Generate shopping lists based on meal plans
+- **Nutritional Analysis**: Track calories, protein, fat, carbs, and vitamins
+- **Professional Dashboard**: Healthcare professionals can manage patients
+- **Patient Portal**: Patients can track their health metrics
+
+## Tech Stack
+
+- **Backend**: FastAPI, SQLModel, PostgreSQL
+- **Frontend**: React, TypeScript, Material-UI
+- **Database**: PostgreSQL (production), SQLite (development fallback)
+
+## Troubleshooting
+
+### PostgreSQL Connection Issues
+
+If you get connection errors, make sure:
+1. PostgreSQL is running: `sudo systemctl status postgresql`
+2. Database exists: `sudo -u postgres psql -l | grep health_app`
+3. User has correct permissions
+
+### Port Already in Use
+
+If ports 3000 (frontend) or 8000 (backend) are in use:
+```bash
+# Kill processes using these ports
+sudo lsof -ti:3000 | xargs kill -9
+sudo lsof -ti:8000 | xargs kill -9
+```
+
+## 🚀 Inicio Rápido
+
+### Requisitos Previos
+- Node.js (v14 o superior)
+- Python 3.8 o superior
+- PostgreSQL
+
+### Instalación Automática (Recomendada)
+
+#### En Linux/macOS:
+1. Clona el repositorio:
+```bash
+git clone https://github.com/tu-usuario/my-health-companion.git
+cd my-health-companion
+```
+
+2. Ejecuta el script de setup:
+```bash
+./setup.sh
+```
+
+3. Inicia la aplicación:
+```bash
+npm run dev
+```
+
+#### En Windows:
+1. Clona el repositorio:
+```bash
+git clone https://github.com/tu-usuario/my-health-companion.git
+cd my-health-companion
+```
+
+2. Ejecuta el script de setup en PowerShell (como administrador):
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process -Force
+.\setup.ps1
+```
+
+3. Inicia la aplicación:
+```bash
+npm run dev
+```
+
+### Instalación Manual
+
+#### En Linux/macOS:
+1. Instala PostgreSQL y crea la base de datos:
+```bash
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+sudo -u postgres psql -c "CREATE DATABASE health_app;"
+sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD '1527';"
+```
+
+2. Instala las dependencias:
+```bash
+npm run install:all
+```
+
+3. Pobla la base de datos:
+```bash
+npm run setup:db
+```
+
+4. Inicia la aplicación:
+```bash
+npm run dev
+```
+
+#### En Windows:
+1. Instala PostgreSQL desde [postgresql.org](https://www.postgresql.org/download/windows/)
+2. Abre pgAdmin y crea una nueva base de datos llamada `health_app`
+3. Configura la contraseña del usuario `postgres` como `1527`
+4. Instala las dependencias:
+```bash
+npm run install:all
+```
+5. Pobla la base de datos:
+```bash
+npm run setup:db
+```
+6. Inicia la aplicación:
+```bash
+npm run dev
+```
+
+## 📦 Scripts Disponibles
+
+- `npm run dev`: Inicia la aplicación en modo desarrollo
+- `npm run start:prod`: Inicia la aplicación en modo producción
+- `npm run setup:db`: Pobla la base de datos con datos iniciales
+- `npm run install:all`: Instala todas las dependencias
+
+## 🔧 Configuración de la Base de Datos
+
+- **Host**: localhost
+- **Puerto**: 5432
+- **Base de datos**: health_app
+- **Usuario**: postgres
+- **Contraseña**: 1527
+
+## 🚀 Despliegue
+
+La aplicación está configurada para ser desplegada en Render. El archivo `render.yaml` contiene la configuración necesaria.
+
+## 📝 Licencia
+
+Este proyecto está bajo la Licencia MIT.
 
 ## Estructura del Proyecto
 
