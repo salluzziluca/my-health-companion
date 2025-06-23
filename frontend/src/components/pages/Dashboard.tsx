@@ -583,107 +583,129 @@ const Dashboard = () => {
           Progreso de Peso
         </Typography>
         <Box sx={{ height: 280, position: 'relative' }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={weeklySummary?.weight_data?.weight_logs || []}
-              margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-            >
-              <defs>
-                <linearGradient id="weightGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.2} />
-                  <stop offset="95%" stopColor={theme.palette.primary.main} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke={theme.palette.divider}
-                vertical={false}
-                opacity={0.5}
-              />
-              <XAxis
-                dataKey="date"
-                stroke={theme.palette.text.secondary}
-                tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
-                tickLine={false}
-                axisLine={{ stroke: theme.palette.divider }}
-                tickFormatter={(value) => format(new Date(value), 'EEE d', { locale: es })}
-              />
-              <YAxis
-                stroke={theme.palette.text.secondary}
-                tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
-                tickLine={false}
-                axisLine={{ stroke: theme.palette.divider }}
-                domain={(() => {
-                  const weights = weeklySummary.weight_data.weight_logs.map(log => log.weight);
-                  const targetWeights = weightGoals
-                    .map(goal => goal.goal.target_weight)
-                    .filter(weight => weight !== null && weight !== undefined) as number[];
-                  const allWeights = [...weights, ...targetWeights];
-                  if (allWeights.length === 0) return ['auto', 'auto'];
-                  const minWeight = Math.min(...allWeights);
-                  const maxWeight = Math.max(...allWeights);
-                  const margin = (maxWeight - minWeight) * 0.1 || 5;
-                  return [
-                    Math.max(0, minWeight - margin),
-                    maxWeight + margin
-                  ];
-                })()}
-              />
-              <Tooltip
-                contentStyle={{
-                  background: 'white',
-                  borderRadius: 8,
-                  border: `1px solid ${theme.palette.divider}`,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                }}
-                formatter={(value: number) => [`${value.toFixed(1)} kg`, 'Peso']}
-                labelFormatter={(label) => format(new Date(label), "EEEE d 'de' MMMM", { locale: es })}
-              />
-              <Line
-                type="monotone"
-                dataKey="weight"
-                stroke={theme.palette.primary.main}
-                strokeWidth={3}
-                dot={{
-                  r: 4,
-                  fill: theme.palette.primary.main,
-                  stroke: 'white',
-                  strokeWidth: 2,
-                  opacity: 0.8
-                }}
-                activeDot={{
-                  r: 6,
-                  fill: theme.palette.primary.main,
-                  stroke: 'white',
-                  strokeWidth: 2,
-                  filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.2))'
-                }}
-                isAnimationActive
-              />
-              {weightGoals.map((goalProgress) => (
-                goalProgress.goal.target_weight && (
-                  <ReferenceLine
-                    key={`weight-goal-${goalProgress.goal.id}`}
-                    y={goalProgress.goal.target_weight}
-                    stroke={theme.palette.success.main}
-                    strokeDasharray="5 5"
-                    strokeWidth={2}
-                    label={{
-                      value: `Meta: ${goalProgress.goal.target_weight}kg`,
-                      position: "top",
-                      fill: theme.palette.success.main,
-                      fontSize: 12
-                    }}
-                  />
-                )
-              ))}
-            </LineChart>
-          </ResponsiveContainer>
+          {weeklySummary?.weight_data?.weight_logs?.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={weeklySummary.weight_data.weight_logs}
+                margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+              >
+                <defs>
+                  <linearGradient id="weightGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.2} />
+                    <stop offset="95%" stopColor={theme.palette.primary.main} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke={theme.palette.divider}
+                  vertical={false}
+                  opacity={0.5}
+                />
+                <XAxis
+                  dataKey="date"
+                  stroke={theme.palette.text.secondary}
+                  tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
+                  tickLine={false}
+                  axisLine={{ stroke: theme.palette.divider }}
+                  tickFormatter={(value) => format(new Date(value), 'EEE d', { locale: es })}
+                />
+                <YAxis
+                  stroke={theme.palette.text.secondary}
+                  tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
+                  tickLine={false}
+                  axisLine={{ stroke: theme.palette.divider }}
+                  domain={(() => {
+                    const weights = weeklySummary.weight_data.weight_logs.map(log => log.weight);
+                    const targetWeights = weightGoals
+                      .map(goal => goal.goal.target_weight)
+                      .filter(weight => weight !== null && weight !== undefined) as number[];
+                    const allWeights = [...weights, ...targetWeights];
+                    if (allWeights.length === 0) return ['auto', 'auto'];
+                    const minWeight = Math.min(...allWeights);
+                    const maxWeight = Math.max(...allWeights);
+                    const margin = (maxWeight - minWeight) * 0.1 || 5;
+                    return [
+                      Math.max(0, minWeight - margin),
+                      maxWeight + margin
+                    ];
+                  })()}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: 'white',
+                    borderRadius: 8,
+                    border: `1px solid ${theme.palette.divider}`,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                  }}
+                  formatter={(value: number) => [`${value.toFixed(1)} kg`, 'Peso']}
+                  labelFormatter={(label) => format(new Date(label), "EEEE d 'de' MMMM", { locale: es })}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="weight"
+                  stroke={theme.palette.primary.main}
+                  strokeWidth={3}
+                  dot={{
+                    r: 4,
+                    fill: theme.palette.primary.main,
+                    stroke: 'white',
+                    strokeWidth: 2,
+                    opacity: 0.8
+                  }}
+                  activeDot={{
+                    r: 6,
+                    fill: theme.palette.primary.main,
+                    stroke: 'white',
+                    strokeWidth: 2,
+                    filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.2))'
+                  }}
+                  isAnimationActive
+                />
+                {weightGoals.map((goalProgress) => (
+                  goalProgress.goal.target_weight && (
+                    <ReferenceLine
+                      key={`weight-goal-${goalProgress.goal.id}`}
+                      y={goalProgress.goal.target_weight}
+                      stroke={theme.palette.success.main}
+                      strokeDasharray="5 5"
+                      strokeWidth={2}
+                      label={{
+                        value: `Meta: ${goalProgress.goal.target_weight}kg`,
+                        position: "top",
+                        fill: theme.palette.success.main,
+                        fontSize: 12
+                      }}
+                    />
+                  )
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <Box sx={{ 
+              height: '100%', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              flexDirection: 'column',
+              gap: 2
+            }}>
+              <Typography variant="h6" color="text.secondary">
+                No hay registros de peso esta semana
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Ingresa tu peso usando el formulario arriba
+              </Typography>
+            </Box>
+          )}
         </Box>
         <Stack direction="row" spacing={2} alignItems="center" sx={{ mt: 2 }} flexWrap="wrap">
           <Chip
-            label={`Cambio: ${weeklySummary.weight_data.weight_change} kg`}
-            color={weeklySummary.weight_data.weight_change >= 0 ? 'success' : 'error'}
+            label={weeklySummary.weight_data.weight_logs.length > 0 
+              ? `Cambio: ${weeklySummary.weight_data.weight_change} kg`
+              : 'No hay registros de peso esta semana'}
+            color={weeklySummary.weight_data.weight_logs.length > 0 
+              ? (weeklySummary.weight_data.weight_change >= 0 ? 'success' : 'error')
+              : 'default'}
             size="small"
             sx={{
               borderRadius: 1,

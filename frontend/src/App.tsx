@@ -1,6 +1,8 @@
 import React, { createContext, useMemo, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import CssBaseline from '@mui/material/CssBaseline';
 import SignInSide from './components/auth/SignInSide';
 import SignUpSide from './components/auth/SignUpSide';
@@ -261,33 +263,35 @@ function App() {
     <ColorModeContext.Provider value={colorMode}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <NotificationsProvider>
-          <Router>
-            <Routes>
-              <Route path="/login" element={<SignInSide />} />
-              <Route path="/register" element={<SignUpSide />} />
-              <Route path="/" element={<Navigate to="/login" replace />} />
-              <Route path="/" element={<Layout />}>
-                <Route path="dashboard" element={
-                  getUserTypeFromToken() === 'professional' ? 
-                    <Navigate to="/nutricionista" replace /> : 
-                    <Dashboard />
-                } />
-                <Route path="myprofile" element={<MyProfile />} />
-                <Route path="myaccount" element={<MyAccount />} />
-                <Route path="meals" element={<MealDashboard />} />
-                <Route path="patient/:id" element={<PatientDetails />} />
-                <Route path="weekly-diet" element={<WeeklyDietPage />} />
-                <Route path="nutricionista" element={<NutricionistaDashboard />} />
-                <Route path="nutricionista/goals" element={<NutricionistaDashboard />} />
-                <Route path="goals" element={<PatientGoals />} />
-                <Route path="dashboard-entrenador" element={<DashboardEntrenador />} />
-                <Route path="shopping-list" element={<ShoppingList />} />
-              </Route>
-              <Route path="*" element={<Navigate to="/login" replace />} />
-            </Routes>
-          </Router>
-        </NotificationsProvider>
+        <LocalizationProvider dateAdapter={AdapterDateFns}>
+          <NotificationsProvider>
+            <Router>
+              <Routes>
+                <Route path="/login" element={<SignInSide />} />
+                <Route path="/register" element={<SignUpSide />} />
+                <Route path="/" element={<Navigate to="/login" replace />} />
+                <Route path="/" element={<Layout />}>
+                  <Route path="dashboard" element={
+                    getUserTypeFromToken() === 'professional' ? 
+                      <Navigate to="/nutricionista" replace /> : 
+                      <Dashboard />
+                  } />
+                  <Route path="myprofile" element={<MyProfile />} />
+                  <Route path="myaccount" element={<MyAccount />} />
+                  <Route path="meals" element={<MealDashboard />} />
+                  <Route path="patient/:id" element={<PatientDetails />} />
+                  <Route path="weekly-diet" element={<WeeklyDietPage />} />
+                  <Route path="nutricionista" element={<NutricionistaDashboard />} />
+                  <Route path="nutricionista/goals" element={<NutricionistaDashboard />} />
+                  <Route path="goals" element={<PatientGoals />} />
+                  <Route path="dashboard-entrenador" element={<DashboardEntrenador />} />
+                  <Route path="shopping-list" element={<ShoppingList />} />
+                </Route>
+                <Route path="*" element={<Navigate to="/login" replace />} />
+              </Routes>
+            </Router>
+          </NotificationsProvider>
+        </LocalizationProvider>
       </ThemeProvider>
     </ColorModeContext.Provider>
   );
