@@ -25,6 +25,6 @@ jobs:
               fi
               cd /root/my-health-companion
               git fetch
-              git checkout rama_cd
-              git pull origin rama_cd
+              git checkout main
+              git pull origin main
               docker compose up -d --build
