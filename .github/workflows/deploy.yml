@@ -1,0 +1,30 @@
+name: Deploy to DigitalOcean Droplet
+
+on:
+  push:
+    branches:
+      - rama_cd
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to droplet via SSH
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.DO_HOST }}           # la IP de tu droplet
+          username: root                        # o el usuario que uses
+          key: ${{ secrets.DIGITAL_OCEAN }}    # acá usás tu secreto
+          script: |
+              mkdir -p ~/.ssh
+              ssh-keyscan github.com >> ~/.ssh/known_hosts
+              ssh -T git@github.com || true
+              if [ ! -d "/root/my-health-companion" ]; then
+                git clone git@github.com:salluzziluca/my-health-companion.git /root/my-health-companion
+              fi
+              cd /root/my-health-companion
+              git fetch
+              git checkout rama_cd
+              git pull origin rama_cd
+              docker compose up -d --build

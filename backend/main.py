@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 import uvicorn
+import os
 from config.database import create_db_and_tables
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -21,8 +22,6 @@ from routers.water_router import router_water
 from routers.water_reminders import router_water_reminders, send_scheduled_water_reminders
 from routers.nutrient_summary import router_nutrient_summary
 from routers.shopping_lists import router_shopping_lists
-
-
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -60,7 +59,6 @@ app.include_router(router_shopping_lists)
 async def root():
     return {"message": "API de Nutrición y Salud está en línea"}
 
-
 # CORS
 app.add_middleware(
     CORSMiddleware,
@@ -70,6 +68,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 if __name__ == "__main__":
-    uvicorn.run("main:app", reload=True)
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
