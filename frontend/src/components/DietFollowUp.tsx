@@ -60,9 +60,7 @@ const SeguimientoDieta: React.FC<Props> = ({ dietId, triggerRefresh }) => {
   useEffect(() => {
     const fetchMeals = async () => {
       try {
-        console.log('Fetching meals for diet ID:', dietId);
         const response = await axios.get(`/weekly-diets/${dietId}/meals?include_status=true`);
-        console.log('Meals response:', response.data);
         setMeals(response.data);
       } catch (err) {
         console.error('Error al cargar comidas de la dieta', err);
@@ -82,8 +80,6 @@ const SeguimientoDieta: React.FC<Props> = ({ dietId, triggerRefresh }) => {
   }, {} as Record<string, DietMeal[]>);
 
   const dayOrder = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
-
-  console.log('SeguimientoDieta render - dietId:', dietId, 'meals:', meals.length);
 
   return (
     <Paper 

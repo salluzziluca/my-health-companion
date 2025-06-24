@@ -49,6 +49,9 @@ interface Diet {
     id: number;
     meal_type: string;
     completed: boolean;
+    meal_name: string;
+    day_of_week: string;
+    meal_of_the_day: string;
   }>;
 }
 
@@ -69,6 +72,7 @@ const DietasAsignadas: React.FC<DietasAsignadasProps> = ({
   const [expandedDiet, setExpandedDiet] = useState<number | null>(null);
   const [templates, setTemplates] = useState<TemplateDiet[]>([]);
   const [patients, setPatients] = useState<any[]>([]);
+  const [detailedMeals, setDetailedMeals] = useState<{[key: number]: any[]}>({});
   const theme = useTheme();
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -100,13 +104,21 @@ const DietasAsignadas: React.FC<DietasAsignadasProps> = ({
             const meals = mealsResponse.data.map((meal: any) => ({
               id: meal.id,
               meal_type: meal.meal_of_the_day,
-              completed: meal.completed
+              completed: meal.completed,
+              meal_name: meal.meal_name,
+              day_of_week: meal.day_of_week,
+              meal_of_the_day: meal.meal_of_the_day
             }));
             setDiets(prevDiets => 
               prevDiets.map(d => 
                 d.id === diet.id ? { ...d, meals } : d
               )
             );
+            // Almacenar las comidas detalladas
+            setDetailedMeals(prev => ({
+              ...prev,
+              [diet.id]: mealsResponse.data
+            }));
           } catch (error) {
             console.error(`Error al obtener comidas para la dieta ${diet.id}:`, error);
           }
@@ -167,10 +179,8 @@ const DietasAsignadas: React.FC<DietasAsignadasProps> = ({
   const handleDietClick = (dietId: number) => {
     if (expandedDiet === dietId) {
       setExpandedDiet(null);
-      onSelectDiet(null);
     } else {
       setExpandedDiet(dietId);
-      onSelectDiet(dietId);
     }
   };
 
@@ -217,6 +227,19 @@ const DietasAsignadas: React.FC<DietasAsignadasProps> = ({
       'snack': 'Merienda'
     };
     return types[type] || type;
+  };
+
+  const getDayLabel = (day: string) => {
+    const days: { [key: string]: string } = {
+      'lunes': 'Lunes',
+      'martes': 'Martes',
+      'miércoles': 'Miércoles',
+      'jueves': 'Jueves',
+      'viernes': 'Viernes',
+      'sábado': 'Sábado',
+      'domingo': 'Domingo'
+    };
+    return days[day] || day;
   };
 
   const getStatusColor = (status: string) => {
@@ -337,6 +360,66 @@ const DietasAsignadas: React.FC<DietasAsignadasProps> = ({
                     {expandedDiet === diet.id ? <ExpandLess /> : <ExpandMore />}
                   </ListItemSecondaryAction>
                 </ListItem>
+                <Collapse in={expandedDiet === diet.id} timeout="auto" unmountOnExit>
+                  <Box sx={{ px: 2, pb: 2 }}>
+                    {detailedMeals[diet.id] && detailedMeals[diet.id].length > 0 ? (
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary', fontWeight: 600 }}>
+                          Comidas de la dieta:
+                        </Typography>
+                        {['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'].map(day => {
+                          const dayMeals = detailedMeals[diet.id].filter((meal: any) => meal.day_of_week === day);
+                          if (dayMeals.length === 0) return null;
+                          
+                          return (
+                            <Box key={day} sx={{ mb: 2 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main', mb: 1 }}>
+                                {getDayLabel(day)}
+                              </Typography>
+                              <List dense sx={{ py: 0 }}>
+                                {dayMeals.map((meal: any, index: number) => (
+                                  <ListItem key={meal.id} sx={{ py: 0.5, px: 1 }}>
+                                    <ListItemText
+                                      primary={
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                          <Typography variant="body2">
+                                            {meal.meal_name}
+                                          </Typography>
+                                          <Chip
+                                            size="small"
+                                            label={getMealTypeLabel(meal.meal_of_the_day)}
+                                            sx={{ 
+                                              backgroundColor: theme.palette.primary.light + '40',
+                                              color: theme.palette.primary.main,
+                                              fontWeight: 'medium',
+                                              fontSize: '0.7rem'
+                                            }}
+                                          />
+                                        </Box>
+                                      }
+                                      secondary={
+                                        <Chip
+                                          size="small"
+                                          label={meal.completed ? 'Completada' : 'Pendiente'}
+                                          color={meal.completed ? 'success' : 'warning'}
+                                          sx={{ fontSize: '0.7rem' }}
+                                        />
+                                      }
+                                    />
+                                  </ListItem>
+                                ))}
+                              </List>
+                            </Box>
+                          );
+                        })}
+                      </Box>
+                    ) : (
+                      <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                        No hay comidas asignadas a esta dieta.
+                      </Typography>
+                    )}
+                  </Box>
+                </Collapse>
               </Paper>
               {index < diets.length - 1 && (
                 <Divider variant="inset" component="li" sx={{ my: 0.5 }} />
