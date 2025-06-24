@@ -24,7 +24,8 @@ def insert_default_data():
         )
         print("🏠 Conectando usando configuración local (desarrollo)")
     cursor = conn.cursor()
-    cursor.executescript('''
+    # SQL en múltiples sentencias separadas por punto y coma
+    sql_script = '''
     INSERT INTO ingredients (name, category, grams, calories_kcal, protein_g, fat_g, carbs_g, iron_mg, calcium_mg, vitamin_c_mg) VALUES
     ('Pechuga de pollo', 'animal', 100, 165, 31, 3.6, 0, 1.0, 15, 0),
     ('Muslo de pollo', 'animal', 100, 177, 24, 8.0, 0, 1.3, 11, 0),
@@ -171,9 +172,25 @@ def insert_default_data():
     (20, 12, 50),  -- Banana
     (25, 12, 50),  -- Kiwi
     (33, 12, 50),  -- Avena cocida
-    (41, 12, 10);  -- Miel
-    ''')
+         (41, 12, 10);  -- Miel
+     '''
 
-    conn.commit()
-    conn.close()
-    print('Datos insertados correctamente.')
+    try:
+        # Ejecutar múltiples sentencias separadas por punto y coma
+        for statement in sql_script.strip().split(';'):
+            if statement.strip():
+                cursor.execute(statement)
+
+        # Guardar cambios
+        conn.commit()
+        print("Datos insertados correctamente.")
+    except Exception as e:
+        print(f"Error al insertar datos: {e}")
+        conn.rollback()
+        raise
+    finally:
+        cursor.close()
+        conn.close()
+
+if __name__ == "__main__":
+    insert_default_data()
