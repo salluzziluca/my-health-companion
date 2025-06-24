@@ -143,16 +143,12 @@ const MyProfile = () => {
           },
         });
 
-        if (professionalResponse.status === 200) {
-          const professionalData = professionalResponse.data;
-          setProfessionalInfo({
-            first_name: professionalData.first_name,
-            last_name: professionalData.last_name,
-            specialization: professionalData.specialization
-          });
-        } else {
-          setProfessionalInfo(null);
-        }
+        const professionalData = professionalResponse.data;
+        setProfessionalInfo({
+          first_name: professionalData.first_name,
+          last_name: professionalData.last_name,
+          specialization: professionalData.specialization
+        });
       } catch (error) {
         console.error('Error fetching professional data:', error);
         setProfessionalInfo(null);
