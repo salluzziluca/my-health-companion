@@ -121,13 +121,32 @@ def get_template_diet(
     if not template:
         raise HTTPException(status_code=404, detail="Template diet not found")
     
-    # Obtener las comidas de la plantilla
+    return template
+    
+
+# Obtener comidas de una plantilla específica
+@router_template_diets.get("/{template_diet_id}/meals", response_model=List[TemplateDietMeal])
+def get_meals_from_template(
+    template_diet_id: int,
+    session: Session = Depends(get_session),
+    current_professional: Professional = Depends(get_current_professional)
+):
+    """Obtener todas las comidas de una plantilla de dieta específica"""
+    template = session.exec(
+        select(TemplateDiet).where(
+            TemplateDiet.id == template_diet_id,
+            TemplateDiet.professional_id == current_professional.id
+        )
+    ).first()
+    
+    if not template:
+        raise HTTPException(status_code=404, detail="Template diet not found")
+    
     meals = session.exec(
         select(TemplateDietMeal).where(TemplateDietMeal.template_diet_id == template_diet_id)
     ).all()
-    template.meals = meals
     
-    return template
+    return meals
 
 
 # Asignar una plantilla de dieta a un paciente
