@@ -357,7 +357,15 @@ const DietasAsignadas: React.FC<DietasAsignadasProps> = ({
                     >
                       <DeleteIcon />
                     </IconButton>
-                    {expandedDiet === diet.id ? <ExpandLess /> : <ExpandMore />}
+                    <IconButton
+                      edge="end"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDietClick(diet.id);
+                      }}
+                    >
+                      {expandedDiet === diet.id ? <ExpandLess /> : <ExpandMore />}
+                    </IconButton>
                   </ListItemSecondaryAction>
                 </ListItem>
                 <Collapse in={expandedDiet === diet.id} timeout="auto" unmountOnExit>
