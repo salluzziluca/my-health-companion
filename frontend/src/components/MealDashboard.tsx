@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, Button, Stack, Divider, TextField, IconButton, Paper, Fade, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
+import { useSearchParams } from 'react-router-dom';
 import AddMealModal from './AddMealModal';
 import MealCard from './MealCard';
 import AlertBanner from './AlertBanner';
@@ -15,6 +16,7 @@ interface Props {
 }
 
 const MealDashboard: React.FC<Props> = ({ onMealsChange }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [meals, setMeals] = useState<Meal[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [mealToEdit, setMealToEdit] = useState<Meal | undefined>(undefined);
@@ -35,6 +37,20 @@ const MealDashboard: React.FC<Props> = ({ onMealsChange }) => {
     };
     loadMeals();
   }, []);
+
+  // Manejar el parámetro add=true en la URL
+  useEffect(() => {
+    const shouldOpenModal = searchParams.get('add') === 'true';
+    if (shouldOpenModal) {
+      setShowModal(true);
+      setMealToEdit(undefined);
+      // Limpiar el parámetro de la URL
+      setSearchParams(params => {
+        params.delete('add');
+        return params;
+      });
+    }
+  }, [searchParams, setSearchParams]);
 
   // Filtrar comidas cuando cambia la fecha seleccionada
   useEffect(() => {
