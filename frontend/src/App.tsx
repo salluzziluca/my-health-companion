@@ -14,6 +14,7 @@ import MealDashboard from './components/MealDashboard';
 import PatientDetails from './components/pages/PatientDetails';
 import WeeklyDietPage from './components/pages/WeeklyDietPage';
 import NutricionistaDashboard from './components/pages/NutricionistaDashboard';
+import TemplateDietsPage from './components/pages/TemplateDietsPage';
 import { NotificationsProvider } from './components/GoalNotifications';
 import GoalManagement from './components/GoalManagement';
 import PatientGoals from './components/pages/PatientGoals';
@@ -283,6 +284,7 @@ function App() {
                   <Route path="weekly-diet" element={<WeeklyDietPage />} />
                   <Route path="nutricionista" element={<NutricionistaDashboard />} />
                   <Route path="nutricionista/goals" element={<NutricionistaDashboard />} />
+                  <Route path="template-diets" element={<TemplateDietsPage />} />
                   <Route path="goals" element={<PatientGoals />} />
                   <Route path="dashboard-entrenador" element={<DashboardEntrenador />} />
                   <Route path="shopping-list" element={<ShoppingList />} />

@@ -21,15 +21,23 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  Button
+  Button,
+  Stack,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { format, parseISO, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import axios from '../services/axiosConfig';
+import { templateDietsService, TemplateDiet } from '../services/templateDiets';
 
 interface Diet {
   id: number;
@@ -59,10 +67,15 @@ const DietasAsignadas: React.FC<DietasAsignadasProps> = ({
 }) => {
   const [diets, setDiets] = useState<Diet[]>([]);
   const [expandedDiet, setExpandedDiet] = useState<number | null>(null);
+  const [templates, setTemplates] = useState<TemplateDiet[]>([]);
+  const [patients, setPatients] = useState<any[]>([]);
   const theme = useTheme();
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dietToDelete, setDietToDelete] = useState<number | null>(null);
+  const [assignTemplateDialogOpen, setAssignTemplateDialogOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null);
+  const [selectedWeekStart, setSelectedWeekStart] = useState('');
 
   useEffect(() => {
     const fetchDiets = async () => {
@@ -105,6 +118,32 @@ const DietasAsignadas: React.FC<DietasAsignadasProps> = ({
 
     fetchDiets();
   }, [professionalId, patientId, triggerRefresh]);
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const data = await templateDietsService.getTemplates();
+        setTemplates(data);
+      } catch (error) {
+        console.error('Error al obtener plantillas:', error);
+      }
+    };
+
+    fetchTemplates();
+  }, []);
+
+  useEffect(() => {
+    const fetchPatients = async () => {
+      try {
+        const response = await axios.get('/professionals/my-patients');
+        setPatients(response.data);
+      } catch (error) {
+        console.error('Error al cargar pacientes:', error);
+      }
+    };
+
+    fetchPatients();
+  }, []);
 
   const formatDietDate = (dateStr: string) => {
     try {
@@ -150,6 +189,26 @@ const DietasAsignadas: React.FC<DietasAsignadasProps> = ({
     }
   };
 
+  const handleAssignTemplate = async () => {
+    if (!selectedTemplate || !selectedWeekStart) return;
+    
+    try {
+      await templateDietsService.assignToPatient(selectedTemplate, {
+        patient_id: parseInt(patientId),
+        week_start_date: selectedWeekStart
+      });
+      setSnackbar({ open: true, message: 'Plantilla asignada exitosamente', severity: 'success' });
+      setAssignTemplateDialogOpen(false);
+      setSelectedTemplate(null);
+      setSelectedWeekStart('');
+      // Recargar las dietas
+      window.location.reload();
+    } catch (error) {
+      console.error('Error al asignar plantilla:', error);
+      setSnackbar({ open: true, message: 'Error al asignar la plantilla', severity: 'error' });
+    }
+  };
+
   const getMealTypeLabel = (type: string) => {
     const types: { [key: string]: string } = {
       'breakfast': 'Desayuno',
@@ -175,15 +234,40 @@ const DietasAsignadas: React.FC<DietasAsignadasProps> = ({
         <Alert severity="info" sx={{ borderRadius: 2 }}>
           Este paciente no tiene dietas asignadas. Hacé clic en "Nueva Dieta" para crear una.
         </Alert>
+        {templates.length > 0 && (
+          <Box sx={{ mt: 2 }}>
+            <Button
+              variant="outlined"
+              startIcon={<ContentCopyIcon />}
+              onClick={() => setAssignTemplateDialogOpen(true)}
+              sx={{ borderRadius: 2, textTransform: 'none' }}
+            >
+              Asignar Plantilla
+            </Button>
+          </Box>
+        )}
       </Box>
     );
   }
 
   return (
     <Box>
-      <Typography variant="subtitle1" sx={{ mb: 2, color: 'text.secondary' }}>
-        Dietas asignadas
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="subtitle1" sx={{ color: 'text.secondary' }}>
+          Dietas asignadas
+        </Typography>
+        {templates.length > 0 && (
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<ContentCopyIcon />}
+            onClick={() => setAssignTemplateDialogOpen(true)}
+            sx={{ borderRadius: 2, textTransform: 'none' }}
+          >
+            Asignar Plantilla
+          </Button>
+        )}
+      </Box>
       <List sx={{ py: 0 }}>
         {diets.map((diet, index) => {
           const dates = formatDietDate(diet.start_date);
@@ -261,6 +345,48 @@ const DietasAsignadas: React.FC<DietasAsignadasProps> = ({
           );
         })}
       </List>
+
+      {/* Diálogo para asignar plantilla */}
+      <Dialog open={assignTemplateDialogOpen} onClose={() => setAssignTemplateDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Asignar Plantilla de Dieta</DialogTitle>
+        <DialogContent>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            <FormControl fullWidth>
+              <InputLabel>Plantilla</InputLabel>
+              <Select
+                value={selectedTemplate || ''}
+                onChange={(e) => setSelectedTemplate(e.target.value as number)}
+                label="Plantilla"
+              >
+                {templates.map((template) => (
+                  <MenuItem key={template.id} value={template.id}>
+                    {template.name} ({template.meals?.length || 0} comidas)
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <TextField
+              type="date"
+              label="Fecha de inicio de la semana"
+              fullWidth
+              value={selectedWeekStart}
+              onChange={(e) => setSelectedWeekStart(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAssignTemplateDialogOpen(false)}>Cancelar</Button>
+          <Button 
+            onClick={handleAssignTemplate} 
+            variant="contained" 
+            disabled={!selectedTemplate || !selectedWeekStart}
+          >
+            Asignar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}

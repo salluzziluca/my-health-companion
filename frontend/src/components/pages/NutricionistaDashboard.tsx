@@ -24,11 +24,13 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import axios from '../../services/axiosConfig';
 import CrearDieta from './CreateDiet';
 import DietasAsignadas from '../AssignedDiets';
 import SeguimientoDieta from '../DietFollowUp';
 import GoalManagement from '../GoalManagement';
+import TemplateDietManager from '../TemplateDietManager';
 import { useNavigate } from 'react-router-dom';
 
 interface Patient {
@@ -46,6 +48,7 @@ const NutricionistaDashboard: React.FC = () => {
   const [showingDiets, setShowingDiets] = useState<boolean>(false);
   const [creatingDiet, setCreatingDiet] = useState<boolean>(false);
   const [managingGoals, setManagingGoals] = useState<boolean>(false);
+  const [managingTemplates, setManagingTemplates] = useState<boolean>(false);
   const [refreshDiets, setRefreshDiets] = useState<boolean>(false);
   const [refreshMeals, setRefreshMeals] = useState<boolean>(false);
   const [expandedPatient, setExpandedPatient] = useState<string | null>(null);
@@ -66,6 +69,7 @@ const NutricionistaDashboard: React.FC = () => {
       setShowingDiets(false);
       setCreatingDiet(false);
       setManagingGoals(false);
+      setManagingTemplates(false);
     } else {
       setExpandedPatient(patient.id);
       setSelectedPatient(patient);
@@ -73,8 +77,14 @@ const NutricionistaDashboard: React.FC = () => {
       setShowingDiets(false);
       setCreatingDiet(false);
       setManagingGoals(false);
+      setManagingTemplates(false);
       setRefreshMeals(prev => !prev);
     }
+  };
+
+  const handleTemplateAssigned = () => {
+    setRefreshDiets(prev => !prev);
+    setRefreshMeals(prev => !prev);
   };
 
   return (
@@ -137,6 +147,7 @@ const NutricionistaDashboard: React.FC = () => {
                           setShowingDiets(true);
                           setCreatingDiet(false);
                           setManagingGoals(false);
+                          setManagingTemplates(false);
                         }}
                         sx={{ 
                           borderRadius: 2,
@@ -150,11 +161,31 @@ const NutricionistaDashboard: React.FC = () => {
                       </Button>
                       <Button
                         variant="contained"
+                        startIcon={<ContentCopyIcon />}
+                        onClick={() => {
+                          setManagingTemplates(true);
+                          setShowingDiets(false);
+                          setCreatingDiet(false);
+                          setManagingGoals(false);
+                        }}
+                        sx={{ 
+                          borderRadius: 2,
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          boxShadow: 'none',
+                          '&:hover': { boxShadow: 2 }
+                        }}
+                      >
+                        Plantillas
+                      </Button>
+                      <Button
+                        variant="contained"
                         startIcon={<TrendingUpIcon />}
                         onClick={() => {
                           setManagingGoals(true);
                           setShowingDiets(false);
                           setCreatingDiet(false);
+                          setManagingTemplates(false);
                         }}
                         sx={{ 
                           borderRadius: 2,
@@ -206,6 +237,34 @@ const NutricionistaDashboard: React.FC = () => {
                       </Box>
                     )}
 
+                    {managingTemplates && (
+                      <Box sx={{ mb: 3 }}>
+                        <Paper elevation={0} sx={{ p: 3, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}>
+                          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                            <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                              Plantillas de Dietas
+                            </Typography>
+                            <Button
+                              variant="outlined"
+                              onClick={() => {
+                                setManagingTemplates(false);
+                                setShowingDiets(true);
+                              }}
+                              sx={{ 
+                                borderRadius: 2,
+                                textTransform: 'none',
+                                fontWeight: 600,
+                                '&:hover': { boxShadow: 1 }
+                              }}
+                            >
+                              Volver a Dietas
+                            </Button>
+                          </Stack>
+                          <TemplateDietManager onTemplateAssigned={handleTemplateAssigned} />
+                        </Paper>
+                      </Box>
+                    )}
+
                     {creatingDiet && (
                       <Box sx={{ mb: 3 }}>
                         <Paper elevation={0} sx={{ p: 3, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}>
@@ -249,7 +308,7 @@ const NutricionistaDashboard: React.FC = () => {
                       </Box>
                     )}
 
-                    {expandedPatient === patient.id && selectedDietId && !creatingDiet && !showingDiets && (
+                    {expandedPatient === patient.id && selectedDietId && !creatingDiet && !showingDiets && !managingTemplates && (
                       <Box sx={{ mt: 3 }}>
                         <SeguimientoDieta 
                           dietId={selectedDietId} 

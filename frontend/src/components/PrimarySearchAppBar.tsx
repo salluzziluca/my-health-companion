@@ -21,6 +21,8 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { NotificationsBell } from './GoalNotifications';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { jwtDecode } from 'jwt-decode';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -104,6 +106,11 @@ export default function PrimarySearchAppBar() {
     navigate('/weekly-diet');
   };
 
+  const handleGoToTemplateDiets = () => {
+    handleMenuClose();
+    navigate('/template-diets');
+  };
+
   const handleLogout = async () => {
     try {
       // Primero cerramos el menú
@@ -118,6 +125,21 @@ export default function PrimarySearchAppBar() {
       console.error('Error during logout:', error);
     }
   };
+
+  const getUserTypeFromToken = (): string | null => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return null;
+
+      const decoded = jwtDecode<any>(token);
+      return decoded.user_type || decoded.type || decoded.role || null;
+    } catch (error) {
+      console.error('Error decodificando el token:', error);
+      return null;
+    }
+  };
+
+  const isProfessional = getUserTypeFromToken() === 'professional';
 
   const menuId = 'primary-search-account-menu';
   const renderMenu = (
@@ -139,6 +161,9 @@ export default function PrimarySearchAppBar() {
       <MenuItem onClick={handleGoToProfile}>Profile</MenuItem>
       <MenuItem onClick={handleGoToAccount}>My account</MenuItem>
       <MenuItem onClick={handleGoToWeeklyDiet}>Mi Dieta Semanal</MenuItem>
+      {isProfessional && (
+        <MenuItem onClick={handleGoToTemplateDiets}>Plantillas de Dietas</MenuItem>
+      )}
       <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
         <LogoutIcon sx={{ mr: 1, color: 'error.main' }} />
         Logout
@@ -169,6 +194,14 @@ export default function PrimarySearchAppBar() {
         </IconButton>
         <p>Mi Dieta</p>
       </MenuItem>
+      {isProfessional && (
+        <MenuItem onClick={handleGoToTemplateDiets}>
+          <IconButton size="large" color="inherit">
+            <ContentCopyIcon />
+          </IconButton>
+          <p>Plantillas</p>
+        </MenuItem>
+      )}
       <MenuItem onClick={() => navigate('/shopping-list')}>
         <IconButton size="large" color="inherit">
           <ShoppingCartIcon />
@@ -237,6 +270,16 @@ export default function PrimarySearchAppBar() {
             >
               <RestaurantIcon />
             </IconButton>
+            {isProfessional && (
+              <IconButton
+                size="large"
+                color="inherit"
+                onClick={handleGoToTemplateDiets}
+                sx={{ mr: 1 }}
+              >
+                <ContentCopyIcon />
+              </IconButton>
+            )}
             <IconButton
               size="large"
               color="inherit"
