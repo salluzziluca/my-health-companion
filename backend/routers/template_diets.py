@@ -93,6 +93,14 @@ def get_template_diets(
     templates = session.exec(
         select(TemplateDiet).where(TemplateDiet.professional_id == current_professional.id)
     ).all()
+    
+    # Para cada plantilla, obtener sus comidas
+    for template in templates:
+        meals = session.exec(
+            select(TemplateDietMeal).where(TemplateDietMeal.template_diet_id == template.id)
+        ).all()
+        template.meals = meals
+    
     return templates
 
 
@@ -112,6 +120,13 @@ def get_template_diet(
     ).first()
     if not template:
         raise HTTPException(status_code=404, detail="Template diet not found")
+    
+    # Obtener las comidas de la plantilla
+    meals = session.exec(
+        select(TemplateDietMeal).where(TemplateDietMeal.template_diet_id == template_diet_id)
+    ).all()
+    template.meals = meals
+    
     return template
 
 

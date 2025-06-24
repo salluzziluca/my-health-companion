@@ -229,6 +229,7 @@ const NutricionistaDashboard: React.FC = () => {
                             patientId={patient.id}
                             onSelectDiet={(dietId) => {
                               setSelectedDietId(dietId);
+                              setShowingDiets(false);
                               setRefreshMeals(prev => !prev);
                             }}
                             triggerRefresh={refreshDiets}
@@ -310,10 +311,32 @@ const NutricionistaDashboard: React.FC = () => {
 
                     {expandedPatient === patient.id && selectedDietId && !creatingDiet && !showingDiets && !managingTemplates && (
                       <Box sx={{ mt: 3 }}>
-                        <SeguimientoDieta 
-                          dietId={selectedDietId} 
-                          triggerRefresh={refreshMeals} 
-                        />
+                        <Paper elevation={0} sx={{ p: 3, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}>
+                          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                            <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                              Seguimiento de Dieta
+                            </Typography>
+                            <Button
+                              variant="outlined"
+                              onClick={() => {
+                                setSelectedDietId(null);
+                                setShowingDiets(true);
+                              }}
+                              sx={{ 
+                                borderRadius: 2,
+                                textTransform: 'none',
+                                fontWeight: 600,
+                                '&:hover': { boxShadow: 1 }
+                              }}
+                            >
+                              Volver a Dietas
+                            </Button>
+                          </Stack>
+                          <SeguimientoDieta 
+                            dietId={selectedDietId} 
+                            triggerRefresh={refreshMeals} 
+                          />
+                        </Paper>
                       </Box>
                     )}
                   </Box>
