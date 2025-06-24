@@ -1,5 +1,6 @@
 import psycopg2
 import os
+from config.database import create_db_and_tables
 
 def insert_default_data():
     # Conexión usando la misma configuración que la aplicación principal
