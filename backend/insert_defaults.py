@@ -3,13 +3,26 @@ import os
 
 def insert_default_data():
     # Conexión usando la misma configuración que la aplicación principal
-    conn = psycopg2.connect(
-        dbname=os.getenv("POSTGRES_DB", "health_app"),
-        user=os.getenv("POSTGRES_USER", "postgres"),
-        password=os.getenv("POSTGRES_PASSWORD", "1527"),
-        host=os.getenv("POSTGRES_HOST", "localhost"),
-        port=os.getenv("POSTGRES_PORT", "5432")
-    )
+    # Nota: En desarrollo local usa puerto 5433, en producción usa DATABASE_URL
+    
+    # Verificar si estamos en producción (usando DATABASE_URL)
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        # Producción: usar DATABASE_URL (como en Render)
+        if database_url.startswith("postgres://"):
+            database_url = database_url.replace("postgres://", "postgresql://", 1)
+        conn = psycopg2.connect(database_url)
+        print("🌐 Conectando usando DATABASE_URL (producción)")
+    else:
+        # Desarrollo: usar configuración por partes
+        conn = psycopg2.connect(
+            dbname=os.getenv("POSTGRES_DB", "health_app"),
+            user=os.getenv("POSTGRES_USER", "postgres"),
+            password=os.getenv("POSTGRES_PASSWORD", "1527"),
+            host=os.getenv("POSTGRES_HOST", "localhost"),
+            port=os.getenv("POSTGRES_PORT", "5433")  # Puerto para desarrollo local
+        )
+        print("🏠 Conectando usando configuración local (desarrollo)")
     cursor = conn.cursor()
 
     # SQL en múltiples sentencias separadas por punto y coma
