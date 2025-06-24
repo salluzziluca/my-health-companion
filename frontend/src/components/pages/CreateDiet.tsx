@@ -4,6 +4,7 @@ import {
   Autocomplete, CircularProgress, MenuItem, List, ListItem, ListItemText, Snackbar, Alert
 } from '@mui/material';
 import axios from '../../services/axiosConfig';
+import { getAllFoods } from '../../services/foods';
 
 interface Props {
   patientId: string;
@@ -46,8 +47,8 @@ const CrearDieta: React.FC<Props> = ({ patientId, professionalId, onFinish }) =>
 
   useEffect(() => {
     setLoading(true);
-    axios.get('/foods')
-      .then(res => setFoods(res.data))
+    getAllFoods()
+      .then(setFoods)
       .catch(err => console.error('Error al cargar comidas', err))
       .finally(() => setLoading(false));
   }, []);

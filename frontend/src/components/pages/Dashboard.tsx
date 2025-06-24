@@ -239,7 +239,7 @@ const Dashboard = () => {
 
       // Actualizar el perfil con el nuevo peso
       const token = localStorage.getItem('token');
-      await fetch('http://localhost:8000/patients/me', {
+              await fetch('/patients/me', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
