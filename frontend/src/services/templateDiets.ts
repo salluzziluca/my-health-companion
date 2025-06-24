@@ -5,7 +5,6 @@ export interface TemplateDiet {
   name: string;
   professional_id: number;
   created_at: string;
-  updated_at: string;
   meals?: TemplateDietMeal[];
 }
 
