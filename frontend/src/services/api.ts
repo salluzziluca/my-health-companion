@@ -252,22 +252,8 @@ export const healthService = {
     },
 
     unassignProfessional: async () => {
-        const token = localStorage.getItem('token');
-        if (!token) throw new Error('No hay token de autenticación');
-
-        const response = await fetch('http://localhost:8000/patients/unassign-professional', {
-            method: 'DELETE',
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || 'Error al desvincular del profesional');
-        }
-
-        return response.json();
+        const response = await api.delete('/patients/unassign-professional');
+        return response.data;
     },
 
     getNutrientSummary: async (): Promise<any> => {
