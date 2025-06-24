@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, Avatar, Stack, TextField, Button, CircularProgress, MenuItem } from '@mui/material';
-import axios from 'axios';
+import axios from '../../services/axiosConfig';
 import { jwtDecode } from 'jwt-decode';
 
 interface JwtPayload {
@@ -71,7 +71,7 @@ const MyAccount = () => {
 
       console.log('Usando endpoint para obtener cuenta:', endpoint);
 
-      const { data } = await axios.get(`http://localhost:8000${endpoint}`, {
+      const { data } = await axios.get(endpoint, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -82,7 +82,7 @@ const MyAccount = () => {
       // Si es profesional, obtener el UUID
       let uuid = '';
       if (userType === 'professional') {
-        const uuidResponse = await axios.get('http://localhost:8000/professionals/me/uuid', {
+        const uuidResponse = await axios.get('/professionals/me/uuid', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -185,7 +185,7 @@ const MyAccount = () => {
       console.log('Usando endpoint para actualizar cuenta:', endpoint);
       console.log('Datos a actualizar:', editData);
 
-      const response = await fetch(`http://localhost:8000${endpoint}`, {
+      const response = await fetch(endpoint, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

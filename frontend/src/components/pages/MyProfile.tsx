@@ -8,6 +8,7 @@ import { useLocation } from 'react-router-dom';
 import { Delete as DeleteIcon } from '@mui/icons-material';
 import { goalsService, GoalProgress } from '../../services/goals';
 import { useTheme } from '@mui/material/styles';
+import axios from '../../services/axiosConfig';
 
 interface JwtPayload {
   sub: string;
@@ -136,38 +137,30 @@ const MyProfile = () => {
 
       // Obtener información del profesional asignado
       try {
-        const professionalResponse = await fetch('http://localhost:8000/patients/my-professional', {
+        const professionalResponse = await axios.get('/patients/my-professional', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        if (professionalResponse.ok) {
-          const professionalData = await professionalResponse.json();
-          setProfessionalInfo({
-            first_name: professionalData.first_name,
-            last_name: professionalData.last_name,
-            specialization: professionalData.specialization
-          });
-        } else {
-          setProfessionalInfo(null);
-        }
+        const professionalData = professionalResponse.data;
+        setProfessionalInfo({
+          first_name: professionalData.first_name,
+          last_name: professionalData.last_name,
+          specialization: professionalData.specialization
+        });
       } catch (error) {
         console.error('Error fetching professional data:', error);
         setProfessionalInfo(null);
       }
 
-      const response = await fetch('http://localhost:8000/patients/me', {
+      const response = await axios.get('/patients/me', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      if (!response.ok) {
-        throw new Error(`Error al obtener el perfil: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = response.data;
       console.log('Profile Data:', data);
 
       // Si el perfil existe, actualizamos el estado con todos los datos
@@ -270,55 +263,50 @@ const MyProfile = () => {
 
       console.log('Saving profile with payload:', payload);
 
-      const response = await fetch('http://localhost:8000/patients/me', {
-        method: 'PATCH',
+      await axios.patch('/patients/me', payload, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        if (response.status === 422 && errorData.detail) {
-          // Manejar errores de validación
-          const validationErrors = errorData.detail;
-          if (Array.isArray(validationErrors)) {
-            const newFieldErrors = {
-              height: '',
-              birth_date: '',
-              gender: ''
-            };
-
-            validationErrors.forEach((error: any) => {
-              const field = error.loc[1]; // Obtener el nombre del campo del error
-              let errorMessage = error.msg;
-              if (typeof errorMessage === 'string') {
-                errorMessage = cleanErrorMessage(errorMessage);
-              }
-              if (field in newFieldErrors) {
-                newFieldErrors[field as keyof typeof newFieldErrors] = errorMessage;
-              }
-            });
-
-            setFieldErrors(newFieldErrors);
-            return;
-          }
-        }
-        // Si el error no es de validación de campos, limpiar el mensaje general también
-        let errorMsg = `Error al guardar el perfil: ${response.status}`;
-        if (errorData.detail && typeof errorData.detail === 'string') {
-          errorMsg = cleanErrorMessage(errorData.detail);
-        }
-        throw new Error(errorMsg);
-      }
 
       setProfileExists(true);
       await fetchProfile();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al actualizar perfil:', error);
-      setError(error instanceof Error ? error.message : 'Error al actualizar el perfil');
+      
+      if (error.response && error.response.status === 422 && error.response.data?.detail) {
+        // Manejar errores de validación
+        const validationErrors = error.response.data.detail;
+        if (Array.isArray(validationErrors)) {
+          const newFieldErrors = {
+            height: '',
+            birth_date: '',
+            gender: ''
+          };
+
+          validationErrors.forEach((validationError: any) => {
+            const field = validationError.loc[1]; // Obtener el nombre del campo del error
+            let errorMessage = validationError.msg;
+            if (typeof errorMessage === 'string') {
+              errorMessage = cleanErrorMessage(errorMessage);
+            }
+            if (field in newFieldErrors) {
+              newFieldErrors[field as keyof typeof newFieldErrors] = errorMessage;
+            }
+          });
+
+          setFieldErrors(newFieldErrors);
+          return;
+        }
+      }
+      
+      // Si el error no es de validación de campos, mostrar mensaje general
+      let errorMsg = 'Error al actualizar el perfil';
+      if (error.response?.data?.detail && typeof error.response.data.detail === 'string') {
+        errorMsg = cleanErrorMessage(error.response.data.detail);
+      }
+      setError(errorMsg);
     }
   };
 
@@ -330,24 +318,19 @@ const MyProfile = () => {
         throw new Error('No hay token de autenticación');
       }
 
-      const response = await fetch(`http://localhost:8000/patients/assign-professional/${professionalCode}`, {
-        method: 'POST',
+      await axios.post(`/patients/assign-professional/${professionalCode}`, {}, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Error al vincular con el profesional');
-      }
-
       // Recargar el perfil para actualizar la información
       await fetchProfile();
       setProfessionalCode('');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error assigning professional:', error);
-      setError(error instanceof Error ? error.message : 'Error al vincular con el profesional');
+      const errorMsg = error.response?.data?.detail || 'Error al vincular con el profesional';
+      setError(errorMsg);
     }
   };
 
