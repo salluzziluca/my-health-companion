@@ -158,15 +158,15 @@ export default function PrimarySearchAppBar() {
       open={isMenuOpen}
       onClose={handleMenuClose}
     >
-      <MenuItem onClick={handleGoToProfile}>Profile</MenuItem>
-      <MenuItem onClick={handleGoToAccount}>My account</MenuItem>
+      <MenuItem onClick={handleGoToProfile}>Perfil</MenuItem>
+      <MenuItem onClick={handleGoToAccount}>Cuenta</MenuItem>
       <MenuItem onClick={handleGoToWeeklyDiet}>Mi Dieta Semanal</MenuItem>
       {isProfessional && (
         <MenuItem onClick={handleGoToTemplateDiets}>Plantillas de Dietas</MenuItem>
       )}
       <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
         <LogoutIcon sx={{ mr: 1, color: 'error.main' }} />
-        Logout
+        Cerrar sesión
       </MenuItem>
     </Menu>
   );
@@ -222,13 +222,13 @@ export default function PrimarySearchAppBar() {
         >
           <AccountCircle />
         </IconButton>
-        <p>Profile</p>
+        <p>Perfil</p>
       </MenuItem>
       <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
         <IconButton size="large" color="error">
           <LogoutIcon />
         </IconButton>
-        <p>Logout</p>
+        <p>Cerrar sesión</p>
       </MenuItem>
     </Menu>
   );
