@@ -82,6 +82,10 @@ const TemplateDietManager: React.FC<TemplateDietManagerProps> = ({ onTemplateAss
   const [expandedTemplate, setExpandedTemplate] = useState<number | null>(null);
   const [expandedTemplateMeals, setExpandedTemplateMeals] = useState<number | null>(null);
   
+  // Nuevo estado para almacenar las comidas de cada plantilla
+  const [templateMeals, setTemplateMeals] = useState<Record<number, TemplateDietMeal[]>>({});
+  const [loadingMeals, setLoadingMeals] = useState<Record<number, boolean>>({});
+  
   // Estados para diálogos
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
@@ -114,6 +118,35 @@ const TemplateDietManager: React.FC<TemplateDietManagerProps> = ({ onTemplateAss
     fetchFoods();
     fetchPatients();
   }, []);
+
+  // Función para cargar las comidas de una plantilla específica
+  const fetchTemplateMeals = async (templateId: number) => {
+    if (templateMeals[templateId]) {
+      // Ya están cargadas
+      return;
+    }
+    
+    try {
+      setLoadingMeals(prev => ({ ...prev, [templateId]: true }));
+      const meals = await templateDietsService.getTemplateMeals(templateId);
+      setTemplateMeals(prev => ({ ...prev, [templateId]: meals }));
+    } catch (error) {
+      console.error('Error al cargar comidas de la plantilla:', error);
+      setSnackbar({ open: true, message: 'Error al cargar las comidas de la plantilla', severity: 'error' });
+    } finally {
+      setLoadingMeals(prev => ({ ...prev, [templateId]: false }));
+    }
+  };
+
+  // Modificar la función de toggle expand para cargar comidas
+  const handleToggleExpand = (templateId: number) => {
+    if (expandedTemplate === templateId) {
+      setExpandedTemplate(null);
+    } else {
+      setExpandedTemplate(templateId);
+      fetchTemplateMeals(templateId);
+    }
+  };
 
   const fetchTemplates = async () => {
     try {
@@ -210,18 +243,24 @@ const TemplateDietManager: React.FC<TemplateDietManagerProps> = ({ onTemplateAss
     if (!selectedTemplate || !selectedFood || !selectedMealType || !selectedDayOfWeek) return;
     
     try {
-      await templateDietsService.addMealToTemplate(selectedTemplate.id, {
+      const newMeal = await templateDietsService.addMealToTemplate(selectedTemplate.id, {
         meal_name: `${mealTypeLabels[selectedMealType]} ${selectedFood.food_name}`,
         day_of_week: selectedDayOfWeek,
         meal_of_the_day: selectedMealType,
         food_id: selectedFood.id
       });
+      
+      // Actualizar el estado local
+      setTemplateMeals(prev => ({
+        ...prev,
+        [selectedTemplate.id]: [...(prev[selectedTemplate.id] || []), newMeal]
+      }));
+      
       setSnackbar({ open: true, message: 'Comida agregada a la plantilla', severity: 'success' });
       setAddMealDialogOpen(false);
       setSelectedFood(null);
       setSelectedMealType('');
       setSelectedDayOfWeek('lunes');
-      fetchTemplates();
     } catch (error) {
       console.error('Error al agregar comida:', error);
       setSnackbar({ open: true, message: 'Error al agregar comida a la plantilla', severity: 'error' });
@@ -242,8 +281,14 @@ const TemplateDietManager: React.FC<TemplateDietManagerProps> = ({ onTemplateAss
   const handleDeleteMeal = async (templateId: number, mealId: number) => {
     try {
       await templateDietsService.deleteMealFromTemplate(templateId, mealId);
+      
+      // Actualizar el estado local
+      setTemplateMeals(prev => ({
+        ...prev,
+        [templateId]: prev[templateId]?.filter(meal => meal.id !== mealId) || []
+      }));
+      
       setSnackbar({ open: true, message: 'Comida eliminada de la plantilla', severity: 'success' });
-      fetchTemplates();
     } catch (error) {
       console.error('Error al eliminar comida:', error);
       setSnackbar({ open: true, message: 'Error al eliminar la comida', severity: 'error' });
@@ -306,7 +351,7 @@ const TemplateDietManager: React.FC<TemplateDietManagerProps> = ({ onTemplateAss
             <Card key={template.id} sx={{ mb: 2, borderRadius: 2 }}>
               <CardContent sx={{ p: 0 }}>
                 <ListItemButton
-                  onClick={() => setExpandedTemplate(expandedTemplate === template.id ? null : template.id)}
+                  onClick={() => handleToggleExpand(template.id)}
                   sx={{ py: 2 }}
                 >
                   <ListItemAvatar>
@@ -323,7 +368,7 @@ const TemplateDietManager: React.FC<TemplateDietManagerProps> = ({ onTemplateAss
                     secondary={
                       <Box sx={{ mt: 1 }}>
                         <Chip
-                          label={`${template.meals?.length || 0} comidas`}
+                          label={`${templateMeals[template.id]?.length || 0} comidas`}
                           size="small"
                           color="primary"
                           variant="outlined"
@@ -394,9 +439,15 @@ const TemplateDietManager: React.FC<TemplateDietManagerProps> = ({ onTemplateAss
                       </Button>
                     </Box>
 
-                    {template.meals && template.meals.length > 0 ? (
+                    {loadingMeals[template.id] ? (
+                      <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          Cargando comidas...
+                        </Typography>
+                      </Box>
+                    ) : templateMeals[template.id] && templateMeals[template.id].length > 0 ? (
                       <List dense>
-                        {template.meals.map((meal) => (
+                        {templateMeals[template.id].map((meal) => (
                           <ListItem key={meal.id} sx={{ pl: 0 }}>
                             <ListItemText
                               primary={meal.meal_name}

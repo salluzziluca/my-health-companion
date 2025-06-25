@@ -57,6 +57,12 @@ export const templateDietsService = {
     return response.data;
   },
 
+  // Obtener todas las comidas de una plantilla de dieta específica
+  getTemplateMeals: async (templateId: number): Promise<TemplateDietMeal[]> => {
+    const response = await api.get(`/template-diets/${templateId}/meals`);
+    return response.data;
+  },
+
   // Agregar una comida a un template de dieta
   addMealToTemplate: async (templateId: number, data: AddMealToTemplateRequest): Promise<TemplateDietMeal> => {
     const response = await api.post(`/template-diets/${templateId}/meals`, data);
